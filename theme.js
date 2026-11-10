@@ -974,7 +974,11 @@
   function arcUI(on){
     var f=$('f_idExpiryField'),g=$('f_idType_group');if(!f||!g)return;
     var isArc=(g.dataset.selected||'ARC')==='ARC';
-    f.style.display=(on&&isArc)?'':'none';
+    /* Only the NEW prepaid form controls this field. On Edit Profile the CRM shows ID expiry
+       for every ID type (so missing expiry dates can be filled in) — hiding it there every
+       250 ms made that impossible. */
+    if(on)f.style.display=isArc?'':'none';
+    else if(!isNew()&&f.style.display==='none')f.style.display='';
     var w=$('nfArcWarn');
     var st=on&&isArc?arcState():{block:false};
     if(!st.block){if(w)w.remove();}
