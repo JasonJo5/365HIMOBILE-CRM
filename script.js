@@ -1009,7 +1009,19 @@ const PREETI_FIELD_FONT_SIZE = 10;
 const CHANGE_REASONS = ['new','upgraded_to_postpaid','plan_change','cancelled','switched_carrier','expired_natural','other'];
 
 function uid(prefix){ return prefix+'_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+/* Local calendar date (the store's own clock), NOT UTC. toISOString() is UTC, which in
+   Korea (UTC+9) still reads as yesterday until 9 am — that made early-morning signups get
+   yesterday's activation date and shifted "due today" by a day. */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localISO(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function todayISO(){ return localISO(new Date()); }
+/* "YYYY-MM" for the month that is `offset` months from the current local month. Built from
+   local year/month parts — new Date(y,m,1).toISOString() lands on the previous day in UTC
+   for Korea, which silently shifted every month bucket back by one. */
+function localMonthKey(offset){ const n=new Date(); const d=new Date(n.getFullYear(), n.getMonth()+(offset||0), 1); return d.getFullYear()+'-'+pad2(d.getMonth()+1); }
+/* Adds whole days to an ISO date string using UTC arithmetic on both ends, so the result
+   never depends on the computer's time zone. */
+function addDaysISO(iso, days){ const d = new Date(String(iso).slice(0,10)+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+Number(days||0)); return d.toISOString().slice(0,10); }
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 /* "This month" means the current calendar month specifically (e.g. all of August), not a
    rolling 30-day window — those are genuinely different things: on August 27th, "last 30
@@ -1198,8 +1210,12 @@ function loadDB(){
       repairActiveSubscriptions(db);
       repairJoinDates(db);
       repairMissingExpiryDates(db);
-      const fixedExpiryCount = repairMismatchedPrepaidExpiry(db);
-      if(fixedExpiryCount) pendingExpiryRepairToast = fixedExpiryCount;
+      // repairMismatchedPrepaidExpiry() used to run here on every load and silently force
+      // expiry = activation + contract days. When the stored contract days were the wrong
+      // ones (e.g. an import that read a "days used" column as the plan length), it cut real
+      // 3-month plans down to 1 month, and it also undid any expiry date staff corrected by
+      // hand. Mismatches are now only REPORTED in Import / Export → Data check, never changed
+      // automatically.
       return db;
     }
   }catch(e){}
@@ -1346,16 +1362,56 @@ async function checkServerSchema(){
     // the regular connection check already covers "can't reach the server at all"
   }
 }
-async function pushToServer(){
+/* ---------- change-only sync ----------
+   syncBaseline remembers, per record id, exactly what the SERVER holds (as of the last pull
+   or successful push, this session only). A push sends only records that differ from it.
+   Why: pushing the whole database meant a computer that hadn't pulled for a few seconds
+   re-uploaded its OLD copy of every customer — overwriting another computer's newer edits
+   and bringing back customers that had just been deleted. /api/sync only upserts (it never
+   deletes anything missing from a push), so sending fewer records is always safe. */
+let syncBaseline = null; // {customers: Map<id,json>, services: Map<id,json>} — null = not reconciled yet
+function recordMap(list){ const m = new Map(); (list||[]).forEach(r=>{ if(r && r.id) m.set(r.id, JSON.stringify(r)); }); return m; }
+function setSyncBaselineFrom(customers, services){ syncBaseline = {customers: recordMap(customers), services: recordMap(services)}; }
+function changedRecords(list, baseMap){ return baseMap ? (list||[]).filter(r=> r && r.id && baseMap.get(r.id)!==JSON.stringify(r)) : (list||[]).slice(); }
+/* Server copy wins EXCEPT for records changed on this computer since the last sync — those
+   are kept (and pushed next). Records deleted on another computer (on the server baseline,
+   untouched here, gone from the server) correctly disappear. */
+function mergeServerWithLocalEdits(localList, serverList, baseMap){
+  const dirty = new Map();
+  (localList||[]).forEach(r=>{ if(r && r.id && baseMap.get(r.id)!==JSON.stringify(r)) dirty.set(r.id, r); });
+  const out = (serverList||[]).map(r=> dirty.has(r.id) ? dirty.get(r.id) : r);
+  const onServer = new Set((serverList||[]).map(r=>r.id));
+  dirty.forEach((r,id)=>{ if(!onServer.has(id)) out.push(r); });
+  return {list: out, kept: dirty.size};
+}
+/* Customers deleted here whose server delete hasn't been confirmed yet (offline, server
+   off). Kept in this browser and retried, and filtered out of every pull meanwhile — so a
+   deleted customer no longer reappears after the next pull. */
+const PENDING_DELETES_KEY = 'himobile_pending_deletes';
+function getPendingDeletes(){ try{ const a = JSON.parse(localStorage.getItem(PENDING_DELETES_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function setPendingDeletes(a){ try{ if(a.length) localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(a)); else localStorage.removeItem(PENDING_DELETES_KEY); }catch(e){} }
+async function retryPendingDeletes(){
+  const ids = getPendingDeletes();
+  for(const id of ids){ await deleteCustomerOnServer(id); }
+}
+async function pushToServer(opts){
   const base = getServerUrl();
   if(!base){ pushPending = false; return {ok:false, error:'no server configured'}; }
   pushPending = false; // no longer just "scheduled" — the request is starting now
   pushInFlight = true;
   try{
+    const full = !!(opts && opts.full) || !syncBaseline;
+    const custs = full ? DB.customers.slice() : changedRecords(DB.customers, syncBaseline.customers);
+    const svcs = full ? DB.services.slice() : changedRecords(DB.services, syncBaseline.services);
+    // exactly what is being sent, captured now — the record may change again while in flight
+    const sentC = custs.map(r=>[r.id, JSON.stringify(r)]);
+    const sentS = svcs.map(r=>[r.id, JSON.stringify(r)]);
     const res = await fetch(base+'/api/sync', {
       method:'POST',
       headers: authHeaders({'Content-Type':'application/json'}),
-      body: JSON.stringify({customers: DB.customers, services: DB.services, templates: DB.templates, reminderState: DB.reminderState}),
+      // templates + reminderState are still sent whole, exactly as before (unknown how the
+      // server stores them, so their behaviour is deliberately left unchanged)
+      body: JSON.stringify({customers: custs, services: svcs, templates: DB.templates, reminderState: DB.reminderState}),
     });
     if(res.status===401) throw new Error(LANG==='zh'?'密钥不正确，请检查服务器同步设置':'Incorrect API key — check server sync settings');
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1369,7 +1425,13 @@ async function pushToServer(){
     // now" button handler surfaces this to the user itself
     const failedCount = (result.failedCustomers?.length||0) + (result.failedServices?.length||0);
     if(failedCount > 0) console.warn('Some records failed to sync:', result.failedCustomers, result.failedServices);
-    return {ok:true, failedCustomers: result.failedCustomers, failedServices: result.failedServices};
+    // the server now holds what was sent — except records it reported as failed, which stay
+    // "changed" so they're retried on the next push
+    const failedIds = new Set([...(result.failedCustomers||[]), ...(result.failedServices||[])].map(f=> (f && typeof f==='object') ? (f.id||f.customerId||'') : f));
+    if(!syncBaseline) syncBaseline = {customers:new Map(), services:new Map()};
+    sentC.forEach(([id,json])=>{ if(!failedIds.has(id)) syncBaseline.customers.set(id, json); });
+    sentS.forEach(([id,json])=>{ if(!failedIds.has(id)) syncBaseline.services.set(id, json); });
+    return {ok:true, failedCustomers: result.failedCustomers, failedServices: result.failedServices, sentCustomers: sentC.length, sentServices: sentS.length};
   }catch(err){
     // silent by design: a store computer that's briefly offline, or the server not running
     // yet, should never interrupt someone mid-task — local data keeps working regardless
@@ -1404,8 +1466,27 @@ async function pullFromServer(){
     if(res.status===401) throw new Error(LANG==='zh'?'密钥不正确，请检查服务器同步设置':'Incorrect API key — check server sync settings');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    DB.customers = data.customers || [];
-    DB.services = data.services || [];
+    const serverCustomers = data.customers || [];
+    const serverServices = data.services || [];
+    let keptLocalEdits = 0;
+    if(syncBaseline){
+      // already reconciled this session → don't let the pull wipe edits made here that
+      // haven't reached the server yet (e.g. typed while this request was in flight)
+      const mc = mergeServerWithLocalEdits(DB.customers, serverCustomers, syncBaseline.customers);
+      const ms = mergeServerWithLocalEdits(DB.services, serverServices, syncBaseline.services);
+      DB.customers = mc.list; DB.services = ms.list; keptLocalEdits = mc.kept + ms.kept;
+    } else {
+      // first pull of the session: the server is the truth (local cache may be stale)
+      DB.customers = serverCustomers;
+      DB.services = serverServices;
+    }
+    setSyncBaselineFrom(serverCustomers, serverServices);
+    const pendingDel = new Set(getPendingDeletes());
+    if(pendingDel.size){
+      DB.customers = DB.customers.filter(c=>!pendingDel.has(c.id));
+      DB.services = DB.services.filter(s=>!pendingDel.has(s.customerId));
+      retryPendingDeletes();
+    }
     if(data.templates && data.templates.length) DB.templates = data.templates;
     if(data.reminderState) DB.reminderState = data.reminderState;
     ensurePreetiTemplate(DB);
@@ -1414,15 +1495,15 @@ async function pullFromServer(){
     repairActiveSubscriptions(DB);
     repairJoinDates(DB);
     repairMissingExpiryDates(DB);
-    const fixedExpiryCount = repairMismatchedPrepaidExpiry(DB);
-    if(fixedExpiryCount) pendingExpiryRepairToast = fixedExpiryCount;
+    // (no automatic expiry rewrite here any more — see loadDB)
     saveDBToLocalStorage(DB); // safe against storage-quota errors — a caching failure here
     // must never block the unlock/pull itself, since the real data was already successfully
     // retrieved from the server and is correctly sitting in memory at this point
     localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
     setOfflineBanner(false);
     checkServerSchema(); // don't block the pull on this — just surface a warning if it's stale
-    return {ok:true};
+    if(keptLocalEdits) scheduleServerSync(); // send the kept local edits up
+    return {ok:true, keptLocalEdits};
   }catch(err){
     const message = err.name==='AbortError'
       ? (LANG==='zh'?'连接超时——请确认设备已连接到店内网络，且服务器电脑已开机':'Connection timed out — check that this device is on the store\'s network and the server computer is turned on')
@@ -1439,11 +1520,14 @@ async function pullFromServer(){
 // reappearing after every pull unless this explicit delete also runs. Used by both "Delete
 // customer" and merging duplicates (which removes the older, folded-in record).
 async function deleteCustomerOnServer(id){
+  if(syncBaseline) syncBaseline.customers.delete(id);
   if(!isSyncEnabled()) return {ok:true};
   const base = getServerUrl();
+  const pend = getPendingDeletes(); if(!pend.includes(id)){ pend.push(id); setPendingDeletes(pend); }
   try{
     const res = await fetch(base+'/api/customers/'+id, {method:'DELETE', headers: authHeaders()});
     if(!res.ok && res.status!==404) throw new Error('HTTP '+res.status);
+    setPendingDeletes(getPendingDeletes().filter(x=>x!==id));
     setOfflineBanner(false);
     return {ok:true};
   }catch(err){
@@ -1970,6 +2054,10 @@ function buildReminders(){
   const now = todayISO();
   DB.services.forEach(svc=>{
     if(svc.status==='cancelled') return;
+    // a prepaid/postpaid plan that was replaced (recharge, plan change, cancellation) is
+    // history — only the customer's CURRENT plan should create follow-up reminders,
+    // otherwise every old recharge keeps showing as "overdue" forever
+    if(isSubscriptionType(svc.type) && svc.isActive===false) return;
     const cust = getCustomer(svc.customerId);
     if(!cust) return;
     if(svc.expiryDate){
@@ -2039,7 +2127,8 @@ let reminderNationalityFilter = 'all';
 let reminderStatusFilter = 'all'; // 'all' | 'expired' | 'expiring_soon' | 'active'
 
 function renderNav(){
-  const reminders = buildReminders().filter(r=>r.uiStatus==='pending');
+  // postpaid over-contract has its own tab and is not a "due" item — keep it out of the badge
+  const reminders = buildReminders().filter(r=>r.uiStatus==='pending' && r.type!=='contract_end');
   const dueSoonCount = reminders.filter(r=>r.daysLeft<=7).length;
   const nav = document.getElementById('navMenu');
   nav.innerHTML = NAV_ITEMS.map(it=>{
@@ -2118,7 +2207,12 @@ function populateStaticSelects(){
   const os = document.getElementById('o_status');
   os.innerHTML = STATUSES.map(k=>`<option value="${k}">${t('status.'+k)}</option>`).join('');
   const opm = document.getElementById('o_paymentMethod');
-  opm.innerHTML = `<option value="">—</option>` + PAY_METHODS.map(k=>`<option value="${k}">${t('pay.'+k)}</option>`).join('');
+  // Same payment list as the rest of the CRM (customer form, Sheet View, reports). The old
+  // separate list here (cash/transfer/card/kakaopay/other) didn't contain alipay / wechat /
+  // bank transfer, so opening Edit Order on those customers and saving wiped the method.
+  // Legacy values from that old list are still offered so older records keep theirs.
+  const payOpts = [...PAYMENT_METHODS, ...PAY_METHODS.filter(k=>!PAYMENT_METHODS.includes(k))];
+  opm.innerHTML = `<option value="">—</option>` + payOpts.map(k=>{ const lbl = t('pay.'+k); return `<option value="${escapeHtml(k)}">${escapeHtml(lbl==='pay.'+k ? k : lbl)}</option>`; }).join('');
   // filters — preserve whatever the user already had selected when rebuilding option labels
   // (this is what silently broke the nationality filter: it used to reset to blank on every render)
   const custNat = document.getElementById('custNationalityFilter');
@@ -2134,11 +2228,11 @@ function renderDashboard(){
   const custs = DB.customers;
   const svcs = DB.services;
   const now = new Date();
-  const monthStr = now.toISOString().slice(0,7);
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const lastMonthStr = lastMonthDate.toISOString().slice(0,7);
+  const monthStr = localMonthKey(0);
+  const lastMonthStr = localMonthKey(-1);
 
-  const reminders = buildReminders().filter(r=>r.uiStatus==='pending');
+  // postpaid over-contract has its own calm tab and must never count as "due" here
+  const reminders = buildReminders().filter(r=>r.uiStatus==='pending' && r.type!=='contract_end');
   const due7 = reminders.filter(r=>r.daysLeft<=7);
 
   // "New this month" — counts customers with ANY service activated this month, not just
@@ -2344,8 +2438,7 @@ function renderRevenueTrend(){
   const months = [];
   const now = new Date();
   for(let i=5;i>=0;i--){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    months.push(d.toISOString().slice(0,7));
+    months.push(localMonthKey(-i));
   }
   const pairs = months.map(m=>{
     const total = DB.services.filter(s=>s.activationDate && s.activationDate.slice(0,7)===m).reduce((a,s)=>a+totalRevenueFor(s),0);
@@ -2995,14 +3088,25 @@ function openCustomerModal(customer){
   // only pre-select a tile if it actually matches one of the current choices
   renderTileRadioGroup('f_occupation_group', OCCUPATION_OPTIONS, OCCUPATION_OPTIONS.includes(customer?.occupation) ? customer.occupation : '');
   document.getElementById('f_years').value = customer?.years ?? '';
-  document.getElementById('f_referral').value = customer?.referral || 'friend';
-  document.getElementById('f_carrierType').value = customer?.carrierType || 'SKT';
-  document.getElementById('f_planType').value = customer?.planType || '신규가입';
-  document.getElementById('f_branchOffice').value = ['KY0000489','시엔에스'].includes(customer?.branchOffice) ? customer.branchOffice : 'KY0000489';
-  document.getElementById('f_handlerName').value = STAFF_MEMBERS.includes(customer?.handlerName) ? customer.handlerName : getActiveStaff();
+  // New customer → sensible defaults. Existing customer → exactly what's stored, even if
+  // blank or an old value not in today's option list; previously Edit Profile silently
+  // saved "SKT" / "Friend" / the current staff member over blanks and old values.
+  if(customer){
+    setSelectPreserving(document.getElementById('f_referral'), customer.referral || '');
+    setSelectPreserving(document.getElementById('f_carrierType'), customer.carrierType || '');
+    setSelectPreserving(document.getElementById('f_planType'), customer.planType || '');
+    setSelectPreserving(document.getElementById('f_branchOffice'), customer.branchOffice || '');
+    setSelectPreserving(document.getElementById('f_handlerName'), customer.handlerName || '');
+  } else {
+    document.getElementById('f_referral').value = 'friend';
+    document.getElementById('f_carrierType').value = 'SKT';
+    document.getElementById('f_planType').value = '신규가입';
+    document.getElementById('f_branchOffice').value = 'KY0000489';
+    document.getElementById('f_handlerName').value = getActiveStaff();
+  }
   document.getElementById('f_address').value = customer?.address || '';
   document.getElementById('f_notes').value = customer?.notes || '';
-  setRatingStars(customer?.rating || 5);
+  setRatingStars(customer ? (Number(customer.rating)||0) : 5);
   document.getElementById('p3_number').value = customer?.phone || '';
   document.getElementById('p3_activationDate').value = todayISO();
   document.getElementById('p3_usimNumber').value = '';
@@ -3515,7 +3619,7 @@ function openCustomerDetail(id){
       <div>
         <div class="profile-name">${escapeHtml(c.name)}<button class="copy-name-btn copy-name-btn-lg" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></div>
         <div class="profile-tags">
-          <span class="pill pill-blue">${c.nationality}</span>
+          <span class="pill pill-blue">${escapeHtml(c.nationality)}</span>
           <span class="pill pill-gray">${(c.idType?t('idtype.'+c.idType):'—')} · ${escapeHtml(c.idNumber||'—')}</span>
           ${age!==null?`<span class="pill pill-gray">${age} ${t('age.years')}</span>`:''}
           <span class="pill pill-gray">${'★'.repeat(c.rating||0)}</span>
@@ -3776,13 +3880,29 @@ function idChangeHistoryItemHtml(req){
 
 /* ---------------- ORDER / SERVICE modal ---------------- */
 let editingOrderId = null;
+let orderModalOpening = false;
+/* Sets a <select> to a stored value even when that value isn't one of the current options
+   (old/imported data). Without this the browser silently selects nothing, and the next save
+   writes a blank or a default over the customer's real value. */
+function setSelectPreserving(el, value){
+  if(!el) return;
+  [...el.options].filter(o=>o.dataset.legacy==='1').forEach(o=>o.remove()); // from a previous opening
+  const v = value==null ? '' : String(value);
+  if(v && ![...el.options].some(o=>o.value===v)){
+    const o = document.createElement('option'); o.value = v; o.textContent = v; o.dataset.legacy = '1';
+    el.appendChild(o);
+  }
+  el.value = v;
+}
 function openOrderModal(service, presetCustomerId){
   editingOrderId = service ? service.id : null;
   document.getElementById('orderModalTitle').textContent = service ? t('modal.editOrder') : t('modal.newOrder');
   populateStaticSelects();
   const custSel = document.getElementById('o_customer');
-  custSel.innerHTML = DB.customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  custSel.value = service ? service.customerId : (presetCustomerId || (DB.customers[0]?DB.customers[0].id:''));
+  // starts blank (instead of silently pre-picking the first customer in the list) so a new
+  // order can't be saved onto the wrong person by accident — saving blank is already blocked
+  custSel.innerHTML = `<option value="">${LANG==='zh'?'— 请选择客户 —':'— Choose customer —'}</option>` + DB.customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}${c.phone?' · '+escapeHtml(c.phone):''}</option>`).join('');
+  custSel.value = service ? service.customerId : (presetCustomerId || '');
   document.getElementById('o_type').value = service?.type || 'prepaid';
   document.getElementById('o_plan').value = service?.plan || '';
   document.getElementById('o_number').value = service?.number || '';
@@ -3799,7 +3919,7 @@ function openOrderModal(service, presetCustomerId){
   document.getElementById('o_sellingPrice').value = service?.sellingPrice ?? '';
   document.getElementById('o_cost').value = service?.cost ?? '';
   document.getElementById('o_received').value = service?.received ?? '';
-  document.getElementById('o_paymentMethod').value = service?.paymentMethod || '';
+  setSelectPreserving(document.getElementById('o_paymentMethod'), service?.paymentMethod || '');
   document.getElementById('o_commission').value = service?.commission ?? '';
   document.getElementById('o_notes').value = service?.notes || '';
   document.getElementById('o_expectedProfit').value = service?.expectedProfit ?? '';
@@ -3819,6 +3939,10 @@ function openOrderModal(service, presetCustomerId){
   const rawDays = service?.durationDays || POSTPAID_CONTRACT_DAYS[0];
   const guessedDays = POSTPAID_CONTRACT_DAYS.reduce((best,v)=> Math.abs(v-rawDays)<Math.abs(best-rawDays)?v:best, POSTPAID_CONTRACT_DAYS[0]);
   document.getElementById('o_planDuration').value = String(guessedDays);
+  // While the modal is being filled in, updateOrderTypeUI() must NOT push the picker's
+  // rounded 245/365 value into Duration — that silently rewrote the contract length and
+  // erased frozen days on any postpaid that was opened here and saved.
+  orderModalOpening = !!service;
   // "used days" is informational only — computed from activation date, not stored
   if(service && service.type==='postpaid' && service.activationDate){
     document.getElementById('o_usedDaysField').style.display = '';
@@ -3827,6 +3951,7 @@ function openOrderModal(service, presetCustomerId){
     document.getElementById('o_usedDaysField').style.display = 'none';
   }
   updateOrderTypeUI();
+  orderModalOpening = false;
   document.getElementById('orderModalOverlay').classList.add('show');
 }
 document.getElementById('o_type').addEventListener('change', updateOrderTypeUI);
@@ -3838,7 +3963,7 @@ function updateOrderTypeUI(){
   document.getElementById('o_planDurationField').style.display = isPostpaid ? '' : 'none';
   document.getElementById('o_companyField').style.display = isPostpaid ? '' : 'none';
   document.getElementById('o_partnerCompanyField').style.display = isPostpaid ? '' : 'none';
-  if(isPostpaid){ populatePostpaidOptionSelects('o_'); applyPlanDurationToDays(); }
+  if(isPostpaid){ populatePostpaidOptionSelects('o_'); if(!orderModalOpening) applyPlanDurationToDays(); }
 
   // prepaid is a flat one-time payment (just a price); postpaid now tracks expected/actual
   // profit + discount instead of the old cost/received/commission model — only "other"
@@ -4673,7 +4798,7 @@ function renderReports(){
 function renderMonthlyReport(){
   const allSvcs = DB.services.filter(s=>isSubscriptionType(s.type));
   const now = new Date();
-  const curMonthStr = now.toISOString().slice(0,7);
+  const curMonthStr = localMonthKey(0);
 
   const monthsWithData = [...new Set(allSvcs.map(s=>(s.activationDate||'').slice(0,7)).filter(Boolean))].sort().reverse();
   if(repSelectedMonth===null){
@@ -4894,6 +5019,147 @@ function renderIO(){
     issues.map(({c,problems})=>`<tr><td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span></td><td>${problems.map(p=>`<span class="pill pill-red" style="margin-right:4px;">${p}</span>`).join('')}</td><td><button class="btn btn-sm btn-ghost" data-open-customer="${c.id}">${t('btn.view')}</button></td></tr>`).join('')
   }</tbody></table></div>` : `<div class="empty-state">${t('io.issues.none')}</div>`;
   bindRowOpens();
+  renderPlanCheck();
+}
+
+/* ============================================================
+   PLAN & DATE CHECK — read-only report of customers whose plan length, dates and price
+   disagree (e.g. a "3个月" / ₩55,000 plan stored as 30 days, ending one month after it
+   started). It never changes anything by itself: each row has explicit fix buttons that
+   ask for confirmation first, so no customer data is altered without a person deciding.
+   ============================================================ */
+const PREPAID_STD_DAYS = PREPAID_PLANS.map(p=>p.days);            // 15, 30, 60, 90
+const PREPAID_PRICE_DAYS = {20000:15, 30000:30, 40000:60, 55000:90, 36000:30, 36300:30};
+function frozenDaysOf(svc){ return (svc.freezes||[]).reduce((a,f)=> a + (isIsoDate(f.startDate)&&isIsoDate(f.endDate) ? daysBetween(f.startDate,f.endDate)+1 : 0), 0); }
+function nearestOf(list, v){ return list.reduce((b,x)=> Math.abs(x-v)<Math.abs(b-v)?x:b, list[0]); }
+function runPlanCheck(includeHistory){
+  const out = [];
+  const today = todayISO();
+  const add = (c, svc, severity, code, msg, fix) => out.push({c, svc, severity, code, msg, fix: fix||[]});
+  DB.customers.forEach(c=>{
+    const all = customerServices(c.id).filter(s=>isSubscriptionType(s.type));
+    const actives = all.filter(s=>s.isActive);
+    if(actives.length > 1) add(c, actives[0], 'high', 'multi', `${actives.length} plans are marked active at the same time`);
+    const active = actives[0] || null;
+    if(active && c.subType && active.type!==c.subType) add(c, active, 'medium', 'subtype', `Customer is tagged ${c.subType} but the current plan is ${active.type}`);
+    const list = includeHistory ? all : actives;
+    list.forEach(svc=>{
+      const isPre = svc.type==='prepaid';
+      const fz = frozenDaysOf(svc);
+      const dur = Number(svc.durationDays)||0;
+      const base = dur - fz;
+      const a = isIsoDate(svc.activationDate) ? svc.activationDate.slice(0,10) : '';
+      const e = isIsoDate(svc.expiryDate) ? svc.expiryDate.slice(0,10) : '';
+      const past = svc.isActive===false ? ' (past plan)' : '';
+      if(!a || !e){ add(c, svc, 'high', 'missing', `Missing ${!a?'start':''}${!a&&!e?' and ':''}${!e?'end':''} date${past}`); return; }
+      if(e < a){ add(c, svc, 'high', 'order', `End date ${e} is before start date ${a}${past}`); return; }
+      if(a > addDaysISO(today, 7)) add(c, svc, 'medium', 'future', `Start date ${a} is in the future${past}`);
+      const span = daysBetween(a, e);
+      // 1) the stored length disagrees with what the plan name / price say
+      if(isPre){
+        const planDays = planTextDays(svc.plan);
+        const priceVal = Number(svc.price)||Number(svc.sellingPrice)||0;
+        const priceDays = PREPAID_PRICE_DAYS[priceVal] || 0;
+        const evidence = [];
+        if(planDays && Math.abs(planDays - base) > 5) evidence.push(`plan name "${svc.plan}" = ${planDays} days`);
+        if(priceDays && Math.abs(priceDays - base) > 5 && !(priceDays===30 && base<=35 && base>=28)) evidence.push(`price ${fmtWon(priceVal)} = ${priceDays}-day price`);
+        if(evidence.length){
+          const target = nearestOf(PREPAID_STD_DAYS, planDays || priceDays);
+          add(c, svc, 'high', 'length', `Stored as ${base} days (${a} → ${e}) but ${evidence.join(' and ')}${past}`,
+            [{kind:'length', days: target, label:`Make it ${target} days (ends ${addDaysISO(a, target+fz)})`}]);
+          return;
+        }
+      }
+      // 2) start → end doesn't equal the stored length
+      if(dur && span !== dur){
+        add(c, svc, 'medium', 'span', `Start → end is ${span} days, but plan length is ${dur} days${fz?` (incl. ${fz} frozen)`:''}${past}`,
+          [{kind:'end', label:`Set end to ${addDaysISO(a, dur)} (keep ${dur} days)`},
+           {kind:'dur', days: span, label:`Set length to ${span} days (keep end ${e})`}]);
+      }
+      // 3) lengths that don't exist in the catalogue
+      if(isPre && base && !PREPAID_STD_DAYS.includes(base) && !(base>=28 && base<=31)){
+        add(c, svc, 'low', 'odd', `Unusual prepaid length: ${base} days (normal: 15 / 30 / 60 / 90)${past}`);
+      }
+      if(!isPre && base && ![185,245,365].includes(base)){
+        add(c, svc, 'low', 'odd', `Unusual postpaid contract: ${base} days (normal: 245 / 365)${past}`);
+      }
+      if(isPre && svc.simType==='esim' && base!==90 && svc.isActive){
+        add(c, svc, 'medium', 'esim', `eSIM on a ${base}-day plan — eSIM is only sold on the 90-day plan`);
+      }
+    });
+    if(active && active.type==='postpaid'){
+      const age = calcAge(c.dob);
+      if(age!==null && age < 19) add(c, active, 'low', 'age', `Postpaid customer is ${age} (postpaid needs 19+)`);
+    }
+  });
+  const rank = {high:0, medium:1, low:2};
+  out.sort((x,y)=> rank[x.severity]-rank[y.severity] || String(x.c.name).localeCompare(String(y.c.name)));
+  return out;
+}
+let lastPlanCheck = [];
+function renderPlanCheck(){
+  const listEl = document.getElementById('planCheckList');
+  if(!listEl) return;
+  const zh = LANG==='zh';
+  document.getElementById('planCheckTitle').textContent = zh ? '套餐与日期核对' : 'Plan & date check';
+  document.getElementById('planCheckDesc').textContent = zh ? '套餐天数、开通/到期日期与价格互相不一致的客户。只有点击修正按钮才会更改数据。' : "Customers whose plan length, start/end dates and price don't agree. Nothing is changed unless you press a fix button.";
+  document.getElementById('planCheckHistLabel').textContent = zh ? '包含历史套餐' : 'Include past plans';
+  document.getElementById('btnPlanCheckExport').textContent = zh ? '下载列表（Excel）' : 'Download list (Excel)';
+  const inclHist = document.getElementById('planCheckIncludeHistory').checked;
+  const res = runPlanCheck(inclHist);
+  lastPlanCheck = res;
+  const n = k => res.filter(r=>r.severity===k).length;
+  const custCount = new Set(res.map(r=>r.c.id)).size;
+  document.getElementById('planCheckSummary').innerHTML = res.length
+    ? `<b>${custCount}</b> ${zh?'位客户，':'customer(s), '}<span class="pill pill-red">${n('high')} ${zh?'严重':'high'}</span> <span class="pill pill-orange">${n('medium')} ${zh?'中':'medium'}</span> <span class="pill pill-blue">${n('low')} ${zh?'低':'low'}</span>`
+    : `<span class="pill pill-green">${zh?'全部一致 ✓':'Everything matches ✓'}</span>`;
+  const sevPill = s => s==='high' ? 'pill-red' : s==='medium' ? 'pill-orange' : 'pill-blue';
+  listEl.innerHTML = res.length ? `<div class="tbl-wrap"><table><thead><tr><th>${t('col.customer')}</th><th>${zh?'类型':'Type'}</th><th>${zh?'问题':'Problem'}</th><th>${zh?'操作':'Action'}</th></tr></thead><tbody>${
+    res.map((r,i)=>`<tr>
+      <td class="name-cell" title="${escapeHtml(r.c.name)}"><span class="avatar">${initials(r.c.name)}</span><span class="name-text">${escapeHtml(r.c.name)}</span></td>
+      <td><span class="pill ${sevPill(r.severity)}">${escapeHtml(r.svc?.type||'')}</span></td>
+      <td style="white-space:normal;min-width:260px;">${escapeHtml(r.msg)}</td>
+      <td style="white-space:normal;"><div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-ghost" data-open-customer="${r.c.id}">${t('btn.view')}</button>
+        ${r.fix.map((f,j)=>`<button class="btn btn-sm btn-primary" data-plancheck-fix="${i}:${j}">${escapeHtml(f.label)}</button>`).join('')}
+      </div></td></tr>`).join('')
+  }</tbody></table></div>` : '';
+  bindRowOpens();
+  listEl.querySelectorAll('[data-plancheck-fix]').forEach(b=> b.addEventListener('click', ()=>{
+    const [i,j] = b.dataset.plancheckFix.split(':').map(Number);
+    applyPlanCheckFix(lastPlanCheck[i], lastPlanCheck[i]?.fix[j]);
+  }));
+}
+function applyPlanCheckFix(r, f){
+  if(!r || !f) return;
+  const svc = getService(r.svc.id);
+  if(!svc) return;
+  const fz = frozenDaysOf(svc);
+  const before = `${svc.durationDays} days, ${svc.activationDate} → ${svc.expiryDate}`;
+  let durationDays = Number(svc.durationDays)||0, expiryDate = svc.expiryDate;
+  if(f.kind==='length'){ durationDays = f.days + fz; expiryDate = addDaysISO(svc.activationDate, durationDays); }
+  else if(f.kind==='end'){ expiryDate = addDaysISO(svc.activationDate, durationDays); }
+  else if(f.kind==='dur'){ durationDays = f.days; }
+  const after = `${durationDays} days, ${svc.activationDate} → ${expiryDate}`;
+  const zh = LANG==='zh';
+  if(!confirm(zh ? `修改「${r.c.name}」的套餐：
+
+原来：${before}
+修改后：${after}
+
+是否继续？` : `Change ${r.c.name}'s plan?
+
+Now:   ${before}
+After: ${after}
+
+Continue?`)) return;
+  svc.durationDays = durationDays;
+  svc.expiryDate = expiryDate;
+  // the plan name is left exactly as it was — only length and end date change
+  saveDB(DB);
+  toast(zh ? '已修正并保存' : 'Fixed and saved');
+  renderPlanCheck();
+  renderNav();
 }
 
 // export helpers
@@ -5326,6 +5592,29 @@ function parseDurationDaysFlexible(raw){
   // "일"/"日"/"day(s)" or no recognizable unit at all — treat the number as already-days
   return n;
 }
+/* Finds the CONTRACT-length cell of an imported row. The old lookup used loose keywords
+   including "已使用天" (days USED) and a bare "天数" (days) that also matches "剩余天数"
+   (days LEFT) — so on a sheet with no contract-days column, a 3-month customer who had used
+   ~30 days was imported as a 30-day plan. Used/remaining/left columns are now never read. */
+const CONTRACT_DAYS_EXCLUDE = /已使用|使用|剩余|剩|还有|used|remain|left|사용|남은|잔여/i;
+function guessContractDaysCell(row){
+  const keys = Object.keys(row);
+  const ok = k => !CONTRACT_DAYS_EXCLUDE.test(k) && row[k]!=='' && row[k]!=null;
+  const strong = keys.find(k=> ok(k) && /contract\s*(days|length)|contractdays|合同天数|合约天数|套餐天数|合同期|계약일수|계약기간|약정/i.test(k));
+  if(strong) return row[strong];
+  const weak = keys.find(k=> ok(k) && /天数|일수|duration|^days$/i.test(k.trim()));
+  return weak ? row[weak] : '';
+}
+/* Day count stated in a plan name — "3个月", "3개월 충전", "90일", "1 month", "15天".
+   Requires a unit word, so names like "Korea 90" or "PLAN A" are not guessed at. */
+function planTextDays(plan){
+  const s = String(plan||'').trim();
+  if(!s) return 0;
+  const m = s.match(/([0-9]+(?:\.[0-9]+)?)\s*(개월|个月|個月|달|月|months?|일|日|天|days?)/i);
+  if(!m) return 0;
+  const n = Number(m[1]);
+  return /개월|个月|個月|달|月|month/i.test(m[2]) ? Math.round(n*30) : Math.round(n);
+}
 function updateImportSkipDupesUI(){
   const mode = document.querySelector('input[name="importMode"]:checked')?.value || 'merge';
   const skip = document.getElementById('importSkipDupes').checked;
@@ -5401,22 +5690,34 @@ function importRowsIntoDB(rows, sheetName, subTypeChoice, skipDupes){
     cust.workType = String(guessField(row,['worktype','业务向','업무향'])||'');
     const plan = guessField(row,['plan','套餐']);
     const carrier = guessField(row,['carrier','통신사','통신社','签约公司','开通社']);
-    const rawDurationDays = guessField(row,['contractdays','合同天数','已使用天','계약일수','天数']);
+    const rawDurationDays = guessContractDaysCell(row);
     let durationDays;
     // Was the duration actually read off the sheet, or did we have to fall back to a
     // default because that column was blank/unparseable? This distinction matters below —
     // a duration we genuinely parsed is more trustworthy than whatever the sheet's own
     // "Expiry Date" column says, since that column is very often stale (left over from an
     // old plan, copy-pasted from a template, or never updated when the plan tier changed).
-    const parsedDays = parseDurationDaysFlexible(rawDurationDays);
+    let parsedDays = parseDurationDaysFlexible(rawDurationDays);
     const parsedDurationOk = parsedDays > 0;
+    // No real contract-length column: before falling back to a default, use what the row
+    // itself says — the plan name ("3个月", "90일", "1 month") or, failing that, the gap
+    // between the sheet's own activation and expiry dates.
+    if(!(parsedDays > 0)){
+      const fromPlan = planTextDays(plan);
+      if(fromPlan) parsedDays = fromPlan;
+      else {
+        const a0 = parseFlexibleDate(guessField(row,['activationdate','开通日期','开通日']));
+        const e0 = parseFlexibleDate(guessField(row,['expirydate','到期日期','有效使用期']));
+        if(a0 && e0 && e0 > a0) parsedDays = daysBetween(a0, e0);
+      }
+    }
     if(resolvedSubType==='prepaid'){
       // real prepaid plans come in 15/30/60/90-day tiers — snap to the nearest one instead
       // of assuming every prepaid signup is 90 days regardless of what the sheet says
       const tiers = PREPAID_PLANS.map(p=>p.days);
-      durationDays = parsedDurationOk ? tiers.reduce((best,v)=>Math.abs(v-parsedDays)<Math.abs(best-parsedDays)?v:best, tiers[0]) : tiers[tiers.length-1];
+      durationDays = parsedDays > 0 ? tiers.reduce((best,v)=>Math.abs(v-parsedDays)<Math.abs(best-parsedDays)?v:best, tiers[0]) : tiers[tiers.length-1];
     } else {
-      durationDays = parsedDurationOk ? POSTPAID_CONTRACT_DAYS.reduce((best,v)=>Math.abs(v-parsedDays)<Math.abs(best-parsedDays)?v:best, POSTPAID_CONTRACT_DAYS[0]) : POSTPAID_CONTRACT_DAYS[0];
+      durationDays = parsedDays > 0 ? POSTPAID_CONTRACT_DAYS.reduce((best,v)=>Math.abs(v-parsedDays)<Math.abs(best-parsedDays)?v:best, POSTPAID_CONTRACT_DAYS[0]) : POSTPAID_CONTRACT_DAYS[0];
     }
     if(plan || carrier){
       const importedActivationDate = parseFlexibleDate(guessField(row,['activationdate','开通日期','开通日']))||todayISO();
@@ -6297,7 +6598,8 @@ document.getElementById('btnPushSync').addEventListener('click', async ()=>{
   setApiKey(document.getElementById('syncApiKey').value.trim());
   const btn = document.getElementById('btnPushSync');
   btn.disabled = true;
-  const result = await pushToServer();
+  // the manual button is the "send everything" recovery tool — always a full push
+  const result = await pushToServer({full:true});
   btn.disabled = false;
   if(!result.ok){
     toast((LANG==='zh'?'推送失败：':'Push failed: ')+(result.error||''));
@@ -6415,6 +6717,7 @@ document.getElementById('btnFormatData').addEventListener('click', async ()=>{
   DB.customers = [];
   DB.services = [];
   DB.reminderState = {};
+  if(syncOn) setSyncBaselineFrom([], []); // the server is empty now too
   saveDB(DB);
   toast(syncOn
     ? (LANG==='zh' ? '已备份，本机与服务器数据均已清空，可以导入新的文件了' : 'Backed up, then cleared on this computer AND the server — ready to import a new file')
@@ -6423,6 +6726,16 @@ document.getElementById('btnFormatData').addEventListener('click', async ()=>{
   renderNav();
 });
 document.getElementById('btnExportReport').addEventListener('click', exportReportForMonth);
+document.getElementById('planCheckIncludeHistory').addEventListener('change', renderPlanCheck);
+document.getElementById('btnPlanCheckExport').addEventListener('click', ()=>{
+  const rows = (lastPlanCheck||[]).map(r=>({
+    Severity: r.severity, Customer: r.c.name, Phone: r.c.phone||'', Type: r.svc?.type||'',
+    Plan: r.svc?.plan||'', 'Length (days)': r.svc?.durationDays??'', Start: r.svc?.activationDate||'', End: r.svc?.expiryDate||'',
+    Price: r.svc?.price ?? r.svc?.sellingPrice ?? '', Current: r.svc?.isActive===false ? 'past plan' : 'current', Problem: r.msg,
+  }));
+  if(!rows.length){ toast(LANG==='zh'?'没有需要核对的记录':'Nothing to export — everything matches'); return; }
+  downloadXlsx(rows, 'Himobile_Plan_Check_'+todayISO()+'.xlsx', 'Plan check');
+});
 
 const dz = document.getElementById('dropzone');
 dz.addEventListener('click', ()=> document.getElementById('fileInput').click());
@@ -6590,6 +6903,7 @@ if(isStayUnlocked()){
     // cached in this browser from a previous unlock, so "skip" can never accidentally reveal
     // real data without the password having been entered this session
     setSyncEnabled(false);
+    setApiKey(''); // a skipped (no-password) session must not inherit a saved key
     DB = {customers:[], services:[], templates:[], reminderState:{}, meta:{createdAt:Date.now()}};
     ensurePreetiTemplate(DB);
     saveDB(DB);
@@ -6612,6 +6926,11 @@ document.getElementById('btnLogout').addEventListener('click', async ()=>{
   localStorage.removeItem(UNLOCKED_KEY);
   localStorage.removeItem(DB_KEY);
   localStorage.removeItem(SYNC_ENABLED_KEY);
+  // The key IS the password: leaving it behind meant anyone could press "Skip", open
+  // Import / Export (key pre-filled) and pull every customer. The server address is kept
+  // only as a convenience for the next login — it's useless without the key.
+  localStorage.removeItem(API_KEY_STORAGE_KEY);
+  localStorage.removeItem(LAST_SYNC_KEY);
   location.reload();
 });
 // the lock screen's own text should reflect whatever language was last used, even though
