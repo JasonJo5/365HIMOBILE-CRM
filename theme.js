@@ -1022,7 +1022,7 @@
     var groups=[
       ['Customer','user',['pc_name','pc_nationality','pc_dob','pc_idType_group','pc_idNumber','pc_occupation','pc_years']],
       ['Application','doc',['pc_workType_group','pc_handlerName_group']],
-      ['Postpaid plan','card',['pc_contractLength_group','pc_company_group','pc_partnerCompany_group','pc_svcCarrierType_group','pc_plan_group','pc_number','pc_activationDate','pc_monthlyFee','pc_simType_group']],
+      ['Postpaid plan','card',['pc_plan_group','pc_contractLength_group','pc_company_group','pc_partnerCompany_group','pc_svcCarrierType_group','pc_number','pc_activationDate','pc_monthlyFee','pc_simType_group']],
       ['Company price & discount','coin',['pc_expectedProfit','pc_usimFee','pc_discountPerMonth','pc_discountMonths','pc_netExpectedPreview']],
       ['Notes','note',['pc_referralFriend','pc_notes']]
     ];
