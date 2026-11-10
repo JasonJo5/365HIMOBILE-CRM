@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261110">
+<link rel="stylesheet" href="style.css?v=20261110e">
 </head>
 <body>
 
@@ -577,11 +577,11 @@
           <div class="plan-options-box">
             <div class="form-field"><label data-i18n="f.idType">证件类型</label><div class="tile-radio-group" id="pc_idType_group" data-field="idType"></div></div>
             <div class="form-field"><label class="tile-radio-required" data-i18n="f.workType">业务向 Work type</label><div class="tile-radio-group" id="pc_workType_group" data-field="workType"></div></div>
+            <div class="form-field full"><label data-i18n="f.plan">套餐名称 Plan name</label><div class="tile-radio-group" id="pc_plan_group" data-field="plan"></div></div>
             <div class="form-field"><label data-i18n="f.contractLength">合约期限</label><div class="tile-radio-group" id="pc_contractLength_group" data-field="contractLength"></div></div>
             <div class="form-field"><label data-i18n="f.company">가입회사 Company</label><div class="tile-radio-group" id="pc_company_group" data-field="company"></div></div>
             <div class="form-field"><label data-i18n="f.partnerCompany">파트너사 Partner company</label><div class="tile-radio-group" id="pc_partnerCompany_group" data-field="partnerCompany"></div></div>
             <div class="form-field"><label data-i18n="f.svcCarrierType">통신사 Carrier type</label><div class="tile-radio-group" id="pc_svcCarrierType_group" data-field="svcCarrierType"></div></div>
-            <div class="form-field full"><label data-i18n="f.plan">套餐名称 Plan name</label><div class="tile-radio-group" id="pc_plan_group" data-field="plan"></div></div>
           </div>
         </div>
 
@@ -665,8 +665,8 @@
         <div class="prepaid3m-box" id="postpaidEditFields" style="display:none;">
           <div class="section-desc" data-i18n="postpaidEdit.hint">编辑该客户当前后付套餐的完整信息</div>
           <div class="prepaid3m-fields">
-            <div class="form-field full"><label class="tile-radio-required" data-i18n="f.workType">业务向 Work type</label><div class="tile-radio-group" id="pe_workType_group" data-field="workType"></div></div>
             <div class="form-field full"><label data-i18n="f.plan">套餐名称</label><div class="tile-radio-group" id="pe_plan_group" data-field="plan"></div></div>
+            <div class="form-field full"><label class="tile-radio-required" data-i18n="f.workType">业务向 Work type</label><div class="tile-radio-group" id="pe_workType_group" data-field="workType"></div></div>
             <div class="form-field"><label data-i18n="f.contractLength">合约期限</label><div class="tile-radio-group" id="pe_contractLength_group" data-field="contractLength"></div></div>
             <div class="form-field full"><label data-i18n="f.company">가입회사 Company</label><div class="tile-radio-group" id="pe_company_group" data-field="company"></div></div>
             <div class="form-field full"><label data-i18n="f.partnerCompany">파트너사 Partner company</label><div class="tile-radio-group" id="pe_partnerCompany_group" data-field="partnerCompany"></div></div>
@@ -862,6 +862,7 @@
         <div class="form-field full">
           <label data-i18n="f.planOptions">套餐选项 Plan options</label>
           <div class="plan-options-box">
+            <div class="form-field full"><label data-i18n="f.plan">套餐名称</label><div class="tile-radio-group" id="cs_plan_group" data-field="plan"></div></div>
             <div class="form-field"><label class="tile-radio-required" data-i18n="f.workType">业务向 Work type</label><div class="tile-radio-group" id="cs_workType_group" data-field="workType"></div></div>
             <div class="form-field"><label data-i18n="f.contractLength">合约期限</label><div class="tile-radio-group" id="cs_contractLength_group" data-field="contractLength"></div></div>
             <div class="form-field"><label data-i18n="f.company">가입회사 Company</label><div class="tile-radio-group" id="cs_company_group" data-field="company"></div></div>
@@ -871,7 +872,6 @@
         </div>
 
         <div class="form-hr"></div>
-        <div class="form-field full"><label data-i18n="f.plan">套餐名称</label><div class="tile-radio-group" id="cs_plan_group" data-field="plan"></div></div>
         <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="cs_activationDate" type="date"></div>
         <div class="form-field"><label data-i18n="f.monthlyFee">月租费（客户付给运营商，非本店收入）</label><input id="cs_monthlyFee" type="number" min="0"></div>
         <div class="form-field full"><label data-i18n="f.handlerName">办理人 Handled by</label><div class="tile-radio-group" id="cs_handlerName_group" data-field="handlerName"></div></div>
@@ -1104,7 +1104,7 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261110"></script>
-<script src="theme.js?v=20261110"></script>
+<script src="script.js?v=20261110e"></script>
+<script src="theme.js?v=20261110e"></script>
 </body>
 </html>
