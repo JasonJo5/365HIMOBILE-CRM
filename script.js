@@ -250,11 +250,12 @@ const NATIONALITIES = ['CHINA','VIETNAM','UZBEKISTAN','INDONESIA','THAILAND','PH
    different purposes and would collide if merged. */
 const POSTPAID_CONTRACT_DAYS = [185, 245, 365];
 const POSTPAID_COMPANIES = ['청춘','SK-SMS','모빙','Media'];
-const POSTPAID_PARTNER_COMPANIES = ['LG本社','SK本社','KTM','KTSKY','LGM','SK7','MobingLG','MobingKT','MobingSK'];
+const POSTPAID_PARTNER_COMPANIES = ['LG','SK','KTM','KTSKY','LGM','SK7','MobingLG','MobingKT','MobingSK'];
 const POSTPAID_CARRIER_TYPES = ['KT알뜰폰','LGU알뜰폰','SKT알뜰폰','KT','SKT','LGU'];
 const POSTPAID_PLAN_OPTIONS = [
   {name:'PLAN A', fee:13900}, {name:'PLAN B', fee:17900}, {name:'PLAN C', fee:26400}, {name:'PLAN D', fee:34000},
-  {name:'5G PLAN A', fee:22000}, {name:'5G PLAN B', fee:36250}, {name:'5G PLAN C', fee:30500},
+  // 2026-11-10: added 5G EASY M; 5G PLAN A renamed 5G EASY L, 5G PLAN B renamed 5G EASY XL (same prices)
+  {name:'5G EASY M', fee:16700}, {name:'5G EASY L', fee:22000}, {name:'5G EASY XL', fee:36250}, {name:'5G PLAN C', fee:30500},
   {name:'5G PLAN D', fee:34250}, {name:'5G PLAN E', fee:38750},
 ];
 const CONTACT_METHODS = ['Wechat','Kakaotalk','INS','Phone','Other'];
@@ -367,6 +368,7 @@ function paymentBreakdownHtml(prepaidServices, emptyMsg){
 function renderTileRadioGroup(containerId, options, currentVal){
   const el = document.getElementById(containerId);
   if(!el) return;
+  delete el.dataset.auto; // see autoFillPostpaidFromPlan
   el.dataset.selected = currentVal || '';
   el.innerHTML = options.map(opt=>{
     const c = sheetColorFor(options, opt);
@@ -429,8 +431,90 @@ document.addEventListener('click', e=>{
   if(feeInputId){
     const feeInput = document.getElementById(feeInputId);
     if(feeInput) feeInput.value = tile.dataset.fee;
+    autoFillPostpaidFromPlan(group.id.split('_')[0], tile.dataset.val);
   }
 });
+/* ---- Plan → Company / Partner company / Carrier type auto-fill ----
+   Picking a postpaid plan fills those three fields with the combination this store has
+   used MOST OFTEN for that plan (learned from its own postpaid records, current and past).
+   Staff can still change any of them afterwards; picking a different plan refills them.
+   POSTPAID_PLAN_DEFAULTS can pin a fixed combination for a plan — it wins over the learned
+   one. Fields are only filled with values that exist in today's option lists. */
+const PLAN_SET_5G_EASY = {company:'청춘', partnerCompany:'SK',     svcCarrierType:'SKT', contractLength:'365'};
+const PLAN_SET_5G_LG    = {company:'청춘', partnerCompany:'LG',     svcCarrierType:'LGU', contractLength:'365'};
+const PLAN_SET_KT       = {company:'청춘', partnerCompany:'KTM',    svcCarrierType:'KT',  contractLength:'245'};
+const POSTPAID_PLAN_DEFAULTS = {
+  '5G EASY M': PLAN_SET_5G_EASY, '5G EASY L': PLAN_SET_5G_EASY, '5G EASY XL': PLAN_SET_5G_EASY,
+  '5G PLAN C': PLAN_SET_5G_LG,   '5G PLAN D': PLAN_SET_5G_LG,   '5G PLAN E': PLAN_SET_5G_LG,
+  'PLAN A': PLAN_SET_KT, 'PLAN B': PLAN_SET_KT, 'PLAN C': PLAN_SET_KT, 'PLAN D': PLAN_SET_KT,
+};
+// renamed plans also learn from sales recorded under their old name
+const POSTPAID_PLAN_ALIASES = {'5G EASY L':['5G PLAN A'], '5G EASY XL':['5G PLAN B']};
+function learnedPlanDefaults(planName){
+  const names = [planName, ...(POSTPAID_PLAN_ALIASES[planName]||[])];
+  const tally = new Map();
+  DB.services.forEach(s=>{
+    if(s.type!=='postpaid' || !names.includes(s.plan)) return;
+    const combo = {company: s.company||'', partnerCompany: s.partnerCompany||'', svcCarrierType: s.svcCarrierType||s.carrier||''};
+    if(!combo.company && !combo.partnerCompany && !combo.svcCarrierType) return;
+    const key = combo.company+'|'+combo.partnerCompany+'|'+combo.svcCarrierType;
+    const cur = tally.get(key) || {combo, n:0, last:''};
+    cur.n++; if((s.activationDate||'') > cur.last) cur.last = s.activationDate||'';
+    tally.set(key, cur);
+  });
+  // most used wins; on a tie, the one sold most recently
+  const best = [...tally.values()].sort((a,b)=> b.n-a.n || (b.last>a.last?1:b.last<a.last?-1:0))[0];
+  return best ? {...best.combo, count: best.n} : null;
+}
+function autoFillPostpaidFromPlan(prefix, planName){
+  if(!prefix || !planName) return;
+  const fixed = POSTPAID_PLAN_DEFAULTS[planName];
+  const d = fixed || learnedPlanDefaults(planName);
+  const fields = [
+    ['company', prefix+'_company_group', POSTPAID_COMPANIES, t('f.company')],
+    ['partnerCompany', prefix+'_partnerCompany_group', POSTPAID_PARTNER_COMPANIES, t('f.partnerCompany')],
+    ['svcCarrierType', prefix+'_svcCarrierType_group', POSTPAID_CARRIER_TYPES, t('f.svcCarrierType')],
+    ['contractLength', prefix+'_contractLength_group', POSTPAID_CONTRACT_DAYS.map(String), t('f.contractLength')],
+  ];
+  // Edit Profile on a contract that has frozen days: its stored length includes them
+  // (e.g. 365 + 10 = 375), so the plan default must keep those days or the freeze is lost
+  let frozenExtra = 0;
+  if(prefix==='pe' && typeof editingCustomerId!=='undefined' && editingCustomerId){
+    const cur = activeSubscriptionFor(editingCustomerId);
+    if(cur) frozenExtra = frozenDaysOf(cur);
+  }
+  const setField = (el, gid, opts, title, val)=>{
+    if(el.dataset.options) renderCompactOptionField(gid, JSON.parse(el.dataset.options), val, el.dataset.title || title);
+    else renderTileRadioGroup(gid, opts, val);
+  };
+  let filled = 0;
+  fields.forEach(([key, gid, opts, title])=>{
+    const el = document.getElementById(gid);
+    if(!el) return;
+    let val = d ? d[key] : '';
+    if(key==='contractLength' && val && frozenExtra){
+      // 375 isn't one of the tiles, but the tile group keeps any selected value — it's saved as-is
+      el.dataset.selected = String(Number(val)+frozenExtra);
+      el.querySelectorAll('.tile-radio').forEach(x=> x.classList.toggle('selected', x.dataset.val===val));
+      el.dataset.auto = el.dataset.selected; filled++;
+      return;
+    }
+    if(val && opts.includes(val)){
+      setField(el, gid, opts, title, val);
+      el.dataset.auto = val; // remembered so a later plan switch can undo only OUR fill
+      filled++;
+    } else if(el.dataset.auto && el.dataset.auto===el.dataset.selected){
+      // this value came from the previous plan's auto-fill (not picked by hand) and the new
+      // plan has no known default → clear it rather than leave a wrong carrier/company
+      setField(el, gid, opts, title, '');
+    }
+  });
+  if(filled && d){
+    toast(fixed
+      ? (LANG==='zh' ? `已按「${planName}」自动填写公司、合作公司、通信社类型和合约期限，可手动修改` : `Company, partner, carrier and contract length filled in for ${planName} — change them if needed`)
+      : (LANG==='zh' ? `已按以往 ${d.count} 笔「${planName}」填写公司、合作公司和通信社类型，可手动修改` : `Company, partner and carrier filled in from ${d.count} past ${planName} sale(s) — change them if needed`));
+  }
+}
 // Which currency badge each payment-method tile-radio group controls — Alipay and WeChat
 // Pay are Chinese payment methods, so the price next to them is switched to show ¥ (RMB)
 // instead of ₩ (KRW) as a visual cue for whoever's entering the amount. This only changes
@@ -458,6 +542,7 @@ document.addEventListener('click', e=>{
 function renderCompactOptionField(groupId, options, currentVal, title){
   const el = document.getElementById(groupId);
   if(!el) return;
+  delete el.dataset.auto; // see autoFillPostpaidFromPlan
   el.dataset.selected = currentVal || '';
   el.dataset.options = JSON.stringify(options);
   el.dataset.title = title;
@@ -1197,6 +1282,18 @@ function repairMismatchedPrepaidExpiry(db){
   return changed;
 }
 
+/* Partner company names were shortened on 2026-11-10: "LG本社" → "LG", "SK本社" → "SK".
+   Renames only that one field on records still using an old name (also catches imports of
+   older Excel files). Nothing else on the record changes and nothing is deleted. */
+const PARTNER_RENAMES = {'LG本社':'LG', 'SK本社':'SK'};
+function renamePartnerCompanies(db){
+  let changed = false;
+  (db.services||[]).forEach(s=>{
+    const v = s.partnerCompany==null ? '' : String(s.partnerCompany).trim();
+    if(PARTNER_RENAMES[v]){ s.partnerCompany = PARTNER_RENAMES[v]; changed = true; }
+  });
+  if(changed) saveDB(db);
+}
 function loadDB(){
   try{
     const raw = localStorage.getItem(DB_KEY);
@@ -1210,6 +1307,7 @@ function loadDB(){
       repairActiveSubscriptions(db);
       repairJoinDates(db);
       repairMissingExpiryDates(db);
+      renamePartnerCompanies(db);
       // repairMismatchedPrepaidExpiry() used to run here on every load and silently force
       // expiry = activation + contract days. When the stored contract days were the wrong
       // ones (e.g. an import that read a "days used" column as the plan length), it cut real
@@ -1495,6 +1593,7 @@ async function pullFromServer(){
     repairActiveSubscriptions(DB);
     repairJoinDates(DB);
     repairMissingExpiryDates(DB);
+    renamePartnerCompanies(DB);
     // (no automatic expiry rewrite here any more — see loadDB)
     saveDBToLocalStorage(DB); // safe against storage-quota errors — a caching failure here
     // must never block the unlock/pull itself, since the real data was already successfully
@@ -5835,6 +5934,7 @@ function confirmImport(){
       }
     });
   }
+  renamePartnerCompanies(DB); // older Excel files still say LG本社 / SK本社
   saveDB(DB);
   closeAllModals();
   const perSheetHtml = perSheetResults.length>1 ? perSheetResults.map(r=>
