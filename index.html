@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261110">
 </head>
 <body>
 
@@ -501,6 +501,20 @@
             </select>
             <button class="btn btn-danger" id="btnBulkClearPayment" data-i18n="io.bulkClearPayment.btn">清空该月份付款方式</button>
           </div>
+        </div>
+        <div class="card" style="margin-top:16px;" id="planCheckCard">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div class="section-title" id="planCheckTitle">Plan &amp; date check</div>
+              <div class="section-desc" style="margin:6px 0 0;" id="planCheckDesc">Customers whose plan length, start/end dates and price don't agree. Nothing is changed unless you press a fix button.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;gap:6px;align-items:center;font-size:13px;"><input type="checkbox" id="planCheckIncludeHistory"> <span id="planCheckHistLabel">Include past plans</span></label>
+              <button class="btn btn-sm btn-ghost" id="btnPlanCheckExport">Download list (Excel)</button>
+            </div>
+          </div>
+          <div id="planCheckSummary" style="margin:14px 0 10px;"></div>
+          <div id="planCheckList"></div>
         </div>
         <div class="card" style="margin-top:16px;" id="dataIssuesCard">
           <div class="section-title" data-i18n="io.issues.title">数据完整性检查</div>
@@ -1090,7 +1104,7 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js"></script>
-<script src="theme.js"></script>
+<script src="script.js?v=20261110"></script>
+<script src="theme.js?v=20261110"></script>
 </body>
 </html>
