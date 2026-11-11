@@ -888,3 +888,46 @@ html[data-theme="dark"] input[type="date"]{color-scheme:dark;}
 .nf-chip.on{background:var(--blue);border-color:var(--blue);color:#fff;}
 .nf-post .nf-body>.form-field:has(.nf-chips){grid-column:1/-1;}
 #pc_plan_group_mirror{width:100%;}
+
+/* duplicate warning under phone / ID fields (2026-11-11) */
+.dupe-warn{margin-top:8px;padding:9px 11px;border-radius:10px;background:#FFF6E8;border:1px solid #F3C27C;color:#7A4300;font-size:12.5px;line-height:1.45;}
+.dupe-warn-title{font-weight:700;margin-bottom:4px;}
+.dupe-warn-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0;}
+.dupe-warn-row .btn{padding:3px 10px;font-size:12px;}
+html[data-theme="dark"] .dupe-warn{background:rgba(245,166,35,.12);border-color:rgba(245,166,35,.4);color:#F5C27A;}
+
+/* Sheet View layout (2026-11-11): full names, name column stays visible when scrolling
+   sideways, filters on one row, sort next to the customer count */
+#sheetTable .sheet-name{max-width:none;min-width:240px;position:sticky;left:0;z-index:2;background:var(--card);box-shadow:1px 0 0 var(--border);}
+#sheetTable .sheet-name .name-text{overflow:visible;text-overflow:clip;}
+#sheetTable th.sheet-name-th{position:sticky;left:0;z-index:3;background:var(--card);box-shadow:1px 0 0 var(--border);}
+#sheetTable tr[style*="EFF6FF"] .sheet-name{background:#EFF6FF;}
+#page-sheet .filter-bar{flex-wrap:nowrap;}
+#page-sheet .filter-bar .search-input{flex:1 1 200px;min-width:160px;}
+#page-sheet .filter-bar .select-input,#page-sheet .filter-bar .date-range-pill{flex:0 1 auto;min-width:0;}
+.sheet-count-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.select-compact{height:36px;font-size:12.5px;}
+.plan-tag.m0{background:#e0f5f5;color:#0f7b7b}
+html[data-theme="dark"] .plan-tag.m0{background:#0f3333;color:#5fd6d6}
+.plan-name-chip{display:inline-flex;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#EEF2FF;color:#3730A3;white-space:nowrap;}
+html[data-theme="dark"] .plan-name-chip{background:#232a55;color:#a5b4fc;}
+
+/* Dashboard banner (2026-11-11): one-line greeting + "Today" tiles that open Reminders */
+#page-dashboard>.card:first-child{padding-top:22px;padding-bottom:22px;}
+#page-dashboard>.card:first-child .dash-hero-txt{margin-bottom:14px!important;}
+#page-dashboard>.card:first-child .search-input{height:46px;}
+.dash-today{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px;position:relative;z-index:1;max-width:calc(100% - 300px);}
+.dash-today-tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;cursor:pointer;text-align:left;transition:background .15s,transform .15s;}
+.dash-today-tile:hover{background:rgba(255,255,255,.24);transform:translateY(-1px);}
+.dash-today-tile .v{font-size:22px;font-weight:800;line-height:1.1;}
+.dash-today-tile .l{font-size:12px;opacity:.9;}
+.dash-today-tile.zero{opacity:.7;}
+@media(max-width:1100px){.dash-today{max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));}}
+#page-dashboard>.card:first-child .dash-hero-row{max-width:calc(100% - 300px);}
+@media(max-width:1100px){#page-dashboard>.card:first-child .dash-hero-row{max-width:none;}}
+
+/* Profile progress bar states (2026-11-11) */
+.progress-fill.pg-expired{background:#DC2626;}
+.progress-fill.pg-soon{background:#EA580C;}
+.progress-fill.pg-over{background:#94A3B8;}
+.dash-today-tile .l{white-space:nowrap;}
