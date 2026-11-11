@@ -898,9 +898,9 @@ html[data-theme="dark"] .dupe-warn{background:rgba(245,166,35,.12);border-color:
 
 /* Sheet View layout (2026-11-11): full names, name column stays visible when scrolling
    sideways, filters on one row, sort next to the customer count */
-#sheetTable .sheet-name{max-width:none;min-width:240px;position:sticky;left:0;z-index:2;background:var(--card);box-shadow:1px 0 0 var(--border);}
-#sheetTable .sheet-name .name-text{overflow:visible;text-overflow:clip;}
-#sheetTable th.sheet-name-th{position:sticky;left:0;z-index:3;background:var(--card);box-shadow:1px 0 0 var(--border);}
+#sheetTable .sheet-name{width:210px;min-width:210px;max-width:210px;position:sticky;left:0;z-index:2;background:var(--card);}
+#sheetTable .sheet-name .name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} /* full name: hover, or open the profile */
+#sheetTable th.sheet-name-th{position:sticky;left:0;z-index:3;background:var(--bg);} /* same grey as every other header cell */
 #sheetTable tr[style*="EFF6FF"] .sheet-name{background:#EFF6FF;}
 #page-sheet .filter-bar{flex-wrap:nowrap;}
 #page-sheet .filter-bar .search-input{flex:1 1 200px;min-width:160px;}
@@ -931,3 +931,47 @@ html[data-theme="dark"] .plan-name-chip{background:#232a55;color:#a5b4fc;}
 .progress-fill.pg-soon{background:#EA580C;}
 .progress-fill.pg-over{background:#94A3B8;}
 .dash-today-tile .l{white-space:nowrap;}
+
+
+/* ===== Table / card / chart consistency (2026-11-11) ===== */
+/* Name cells stay real table cells: as flex boxes they didn't stretch to the row height, so
+   the name's divider line sat higher than the rest of the row in every table. */
+td.name-cell{display:table-cell;white-space:nowrap;max-width:none;vertical-align:middle;}
+td.name-cell>.avatar{vertical-align:middle;}
+td.name-cell>.name-text{display:inline-block;vertical-align:middle;max-width:140px;}
+td.name-cell>.copy-name-btn{display:inline-block;vertical-align:middle;}
+#sheetTable td.sheet-name>.name-text{max-width:116px;}
+/* dates never break onto two lines ("2026-" / "10-29") */
+td.nowrap,.sheet-tbl-wrap td{white-space:nowrap;}
+/* Sheet View: same header + status look as the other tables */
+#sheetTable th{background:var(--bg);}
+.sheet-status{font-size:12px;padding:3px 10px;}
+.sheet-pill{font-weight:600;}
+/* dashboard number cards: both rows the same height */
+#dashStats .stat-card,#dashStats2 .stat-card{min-height:162px;box-sizing:border-box;}
+/* Reports: a text value ("Not reconciled yet") shouldn't make its card taller than the rest */
+.stat-card .stat-value.stat-value-text{font-family:inherit;font-size:20px;line-height:1.3;margin:12px 0 8px;}
+#repIncomeCards .stat-card{min-height:150px;box-sizing:border-box;}
+/* dashboard order: things to act on first, then money, then lists */
+#page-dashboard>.grid-2:nth-child(6){order:5;margin-top:0!important;margin-bottom:16px;}
+#page-dashboard>.grid-2:nth-child(7){order:6;margin-top:0!important;margin-bottom:16px;}
+#page-dashboard>.grid-2:nth-child(8){order:7;margin-top:0!important;margin-bottom:16px;}
+#page-dashboard>.card:nth-child(9){order:8;margin-top:0!important;margin-bottom:16px;}
+#page-dashboard>.card:nth-child(5){order:9;margin-bottom:16px;}
+/* column charts (dashboard revenue trend, Reports month comparison) */
+.colchart{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:10px;align-items:end;height:220px;padding:6px 2px 0;}
+.cc-col{display:flex;flex-direction:column;align-items:center;height:100%;min-width:0;cursor:default;}
+.cc-val{font-size:11.5px;font-weight:700;color:var(--text-soft);margin-bottom:6px;white-space:nowrap;}
+.cc-track{flex:1;width:100%;max-width:56px;display:flex;align-items:flex-end;border-radius:8px;background:var(--gray-light);overflow:hidden;}
+.cc-bar{width:100%;display:flex;flex-direction:column-reverse;border-radius:8px 8px 0 0;overflow:hidden;transition:height .6s var(--ease);}
+.cc-seg{min-height:2px;}
+.cc-lbl{font-size:11.5px;color:var(--text-soft);margin-top:8px;white-space:nowrap;}
+.cc-col.current .cc-lbl,.cc-col.current .cc-val{color:var(--text);font-weight:800;}
+.cc-col:hover .cc-track{box-shadow:0 0 0 2px var(--blue-light);}
+.cc-legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-soft);}
+.cc-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+
+/* short separator after the name column (half the row height) instead of a full line */
+#sheetTable .sheet-name::after,#sheetTable th.sheet-name-th::after{content:"";position:absolute;right:0;top:25%;height:50%;width:1px;background:var(--border);}
+/* slightly tighter side padding so tables like Orders fit without the action column covering Status */
+.tbl-wrap:not(.sheet-tbl-wrap) td,.tbl-wrap:not(.sheet-tbl-wrap) th{padding-left:9px;padding-right:9px;}
