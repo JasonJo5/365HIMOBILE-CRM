@@ -610,8 +610,18 @@ document.addEventListener('click', e=>{
 /* Renders a colored, clickable pill for a single-select field. `recordType` is 'customer'
    or 'service'; clicking it opens a popover with all `options`, and picking one writes
    straight back to the record and re-renders that cell in place. */
+/* Sheet View pill colours (2026-11-11) — match the other tables instead of a different
+   colour per value: Company / Carrier type / Partner company in the blue accent (the fields
+   staff check most), payment method in the same colours as the Reports payment breakdown,
+   everything else a calm neutral pill. */
+const SHEET_ACCENT_FIELDS = ['company','svcCarrierType','partnerCompany'];
+function sheetPillColour(field, options, value){
+  if(SHEET_ACCENT_FIELDS.includes(field)) return {bg:'var(--blue-light)', fg:'var(--blue)'};
+  if(field==='paymentMethod') return sheetColorFor(options, value);
+  return {bg:'var(--gray-light)', fg:'var(--text)'};
+}
 function sheetPillCell(recordType, recordId, field, value, options, title){
-  const c = value ? sheetColorFor(options, value) : null;
+  const c = value ? sheetPillColour(field, options, value) : null;
   const label = value ? escapeHtml(value) : '—';
   const style = value ? `background:${c.bg};color:${c.fg};` : '';
   return `<span class="sheet-pill ${value?'':'empty'}" style="${style}"
@@ -910,6 +920,15 @@ function renderSheetPage(){
      (postpaid), then dates and status. Rarely-filled fields (plan type, ID…) move right.
      Cells carry data-col so filters never depend on a column's position. */
   const usedCell = svc => sheetReadonlyCell((usedDaysFor(svc)??'—')+(usedDaysFor(svc)!==null?(LANG==='zh'?' 天':' d'):''));
+  // same pill colours as the Status column in the other tables: green in contract, orange in
+  // the last 7 days, red expired (prepaid), calm blue over contract (postpaid keeps working)
+  const statusCell = svc => {
+    const txt = contractStatusTextFor(svc, true);
+    if(!txt || !svc.expiryDate) return sheetReadonlyCell('—');
+    const rem = daysBetween(todayISO(), svc.expiryDate);
+    const cls = rem < 0 ? (svc.type==='postpaid' ? 'pill-blue' : 'pill-red') : rem <= 7 ? 'pill-orange' : 'pill-green';
+    return `<span class="pill ${cls} sheet-status">${escapeHtml(txt)}</span>`;
+  };
   const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>`;
   const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
     <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.durationDays')}</th>
@@ -932,7 +951,7 @@ function renderSheetPage(){
           <td>${sheetPlanTagHtml(svc)}</td>
           <td>${sheetTextCell('service',svc.id,'activationDate',svc.activationDate,'date')}</td>
           <td>${sheetTextCell('service',svc.id,'expiryDate',svc.expiryDate,'date')}</td>
-          <td>${sheetReadonlyCell(contractStatusTextFor(svc, true)||'—')}</td>
+          <td>${statusCell(svc)}</td>
           <td>${usedCell(svc)}</td>
           <td>${sheetTextCell('service',svc.id,'durationDays',svc.durationDays,'number')}</td>
           <td>${sheetTextCell('service',svc.id,'price',svc.price,'number')}</td>
@@ -959,7 +978,7 @@ function renderSheetPage(){
         <td data-col="svcCarrierType">${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>
         <td>${sheetTextCell('service',svc.id,'activationDate',svc.activationDate,'date')}</td>
         <td>${sheetTextCell('service',svc.id,'expiryDate',svc.expiryDate,'date')}</td>
-        <td>${sheetReadonlyCell(contractStatusTextFor(svc, true)||'—')}</td>
+        <td>${statusCell(svc)}</td>
         <td>${usedCell(svc)}</td>
         <td>${sheetPillCell('service',svc.id,'durationDays',svc.durationDays?String(svc.durationDays):'',POSTPAID_CONTRACT_DAYS.map(String), t('f.contractLength'))}</td>
         <td>${frozenNow ? `<button class="btn btn-sm" style="background:#2563EB;color:#fff;border:none;" data-freeze-toggle="${svc.customerId}">🧊 ${t('btn.unfreezeSim')}</button>` : sheetReadonlyCell('—')}</td>
@@ -1101,7 +1120,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       <td>${c.idType?t('idtype.'+c.idType):'—'}</td>
       ${statusCell}
       <td>${recent? t('type.'+recent.type) : '—'}</td>
-      <td>${fmtDate(customerJoinDate(c))}</td>
+      <td class="nowrap">${fmtDate(customerJoinDate(c))}</td>
       <td>${'★'.repeat(c.rating||0)}<span style="color:#DADEEA">${'★'.repeat(5-(c.rating||0))}</span></td>
       <td style="white-space:nowrap;">${mergeBtn}<button class="btn btn-sm btn-ghost" data-open-customer="${c.id}">${t('btn.view')}</button></td>
     </tr>`;
@@ -2576,7 +2595,7 @@ function renderDashboard(){
       <td>${s.number||'—'}</td>
       <td>${t('type.'+s.type)}</td>
       <td>${escapeHtml(s.carrier||'—')}</td>
-      <td>${fmtDate(s.activationDate)}</td>
+      <td class="nowrap">${fmtDate(s.activationDate)}</td>
       <td><span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span></td>
     </tr>`;
   }).join('') || `<tr><td colspan="6">${emptyState()}</td></tr>`;
@@ -2645,12 +2664,11 @@ function renderRevenueTrend(){
   for(let i=5;i>=0;i--){
     months.push(localMonthKey(-i));
   }
-  const pairs = months.map(m=>{
+  const cur = localMonthKey(0);
+  renderColumnChart('dashRevenueTrend', months.map(m=>{
     const total = DB.services.filter(s=>s.activationDate && s.activationDate.slice(0,7)===m).reduce((a,s)=>a+totalRevenueFor(s),0);
-    const label = new Date(m+'-01').toLocaleDateString(LANG==='zh'?'zh-CN':'en-US',{month:'short', year:'2-digit'});
-    return [label, total];
-  });
-  renderBarChart('dashRevenueTrend', pairs, v=>fmtWon(v));
+    return {label: shortMonthLabel(m), total, current: m===cur, segments:[{v:total, color: m===cur ? 'var(--orange)' : 'var(--blue)', name:''}]};
+  }));
 }
 
 /* why customers have cancelled, last 6 months of ended subscriptions */
@@ -2741,6 +2759,32 @@ function groupCount(arr, field, labelFn){
   const m = {};
   arr.forEach(x=>{ const k = x[field]||'other'; m[k]=(m[k]||0)+1; });
   return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[labelFn?labelFn(k):k, v]);
+}
+/* Short money label for chart columns: ₩1.68M / ₩520K / ₩9,000 (full amount on hover) */
+function fmtWonShort(n){
+  n = Math.round(Number(n)||0);
+  if(Math.abs(n)>=1e6) return '₩'+(n/1e6).toFixed(n>=1e7?1:2).replace(/\.?0+$/,'')+'M';
+  if(Math.abs(n)>=1e4) return '₩'+Math.round(n/1e3)+'K';
+  return fmtWon(n);
+}
+/* Vertical column chart. cols = [{label, total, segments:[{v, color, name}], current}] —
+   one segment = simple columns, several = stacked (bottom first). */
+function renderColumnChart(elId, cols, opts){
+  const el = document.getElementById(elId); if(!el) return;
+  const max = Math.max(1, ...cols.map(c=>c.total));
+  const legend = (opts && opts.legend) ? `<div class="cc-legend">${opts.legend.map(l=>`<span><i style="background:${l.color}"></i>${escapeHtml(l.name)}</span>`).join('')}</div>` : '';
+  el.innerHTML = `<div class="colchart" style="--cols:${cols.length}">${cols.map(c=>{
+    const h = c.total ? Math.max(2, c.total/max*100) : 0;
+    const tip = c.segments.length>1 ? c.segments.map(sg=>`${sg.name}: ${fmtWon(sg.v)}`).join('\n')+`\n= ${fmtWon(c.total)}` : fmtWon(c.total);
+    return `<div class="cc-col${c.current?' current':''}" title="${escapeHtml(c.label+'\n'+tip)}">
+      <div class="cc-val">${c.total?fmtWonShort(c.total):'—'}</div>
+      <div class="cc-track"><div class="cc-bar" style="height:${h}%">${c.segments.filter(sg=>sg.v>0).map(sg=>`<div class="cc-seg" style="flex:${sg.v};background:${sg.color}"></div>`).join('')}</div></div>
+      <div class="cc-lbl">${escapeHtml(c.label)}</div>
+    </div>`;}).join('')}</div>${legend}`;
+}
+function shortMonthLabel(m){
+  const [y,mo] = m.split('-');
+  return LANG==='zh' ? `${String(y).slice(2)}年${Number(mo)}月` : new Date(Number(y),Number(mo)-1,1).toLocaleDateString('en-US',{month:'short', year:'2-digit'});
 }
 function renderBarChart(elId, pairs, valFmt){
   const el = document.getElementById(elId);
@@ -3168,7 +3212,7 @@ function renderCustomers(){
       <td>${subBadge}</td>
       <td>${statusCell}</td>
       <td>${recent? t('type.'+recent.type) : '—'}</td>
-      <td>${fmtDate(customerJoinDate(c))}</td>
+      <td class="nowrap">${fmtDate(customerJoinDate(c))}</td>
       ${showDuration ? `<td>${durTxt}</td>` : ''}
       ${isDupeView ? dupeReasonCell : ''}
       <td>${'★'.repeat(c.rating||0)}<span style="color:#DADEEA">${'★'.repeat(5-(c.rating||0))}</span></td>
@@ -5136,7 +5180,7 @@ function renderOrders(){
       <td><span class="cell-ellipsis" style="max-width:160px;">${escapeHtml(s.plan||'—')}</span></td>
       <td>${fmtWon(amount)}</td>
       <td>${(s.type!=='postpaid' && outstanding>0)?`<span style="color:var(--red);font-weight:700;">${fmtWon(outstanding)}</span>`:'—'}</td>
-      <td>${fmtDate(s.activationDate)}</td>
+      <td class="nowrap">${fmtDate(s.activationDate)}</td>
       <td><span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span></td>
       <td style="white-space:nowrap;">
         <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
@@ -5199,7 +5243,7 @@ function renderMonthlyReport(){
     {label:t('rep.accumulated'), value:fmtWon(accumulated), sub:isAllTime?t('rep.allTime'):fmtMonthLabel(repSelectedMonth), highlight:true},
   ].map(s=>`<div class="card stat-card" ${s.highlight?'style="background:linear-gradient(135deg,#0F1B3D,#1E3A6E);"':''}>
       <div class="stat-label" ${s.highlight?'style="color:#B9C2E0;"':''}>${s.label}</div>
-      <div class="stat-value" ${s.highlight?'style="color:#fff;"':''}>${s.value}</div>
+      <div class="stat-value${/\d/.test(String(s.value))?'':' stat-value-text'}" ${s.highlight?'style="color:#fff;"':''}>${s.value}</div>
       <div class="stat-delta" ${s.highlight?'style="color:#B9C2E0;"':''}>${s.sub}</div>
     </div>`).join('');
 
@@ -5241,24 +5285,16 @@ function renderMonthlyReport(){
   });
   const months = Object.keys(byMonth).sort().reverse();
   const chartMax = Math.max(1, ...months.map(m=>byMonth[m].prepaidIncome + (byMonth[m].postpaidReconciled===byMonth[m].postpaidN ? byMonth[m].postpaidActual : byMonth[m].postpaidExpected)));
-  document.getElementById('repMonthlyChart').innerHTML = months.slice(0,12).reverse().map(m=>{
-    const d = byMonth[m];
-    const monthTotal = d.prepaidIncome + (d.postpaidReconciled===d.postpaidN && d.postpaidN ? d.postpaidActual : d.postpaidExpected);
-    const prepaidPct = monthTotal ? (d.prepaidIncome/chartMax*100) : 0;
+  // stacked columns, oldest → newest, last 12 months with activity; proper "Oct 26" labels
+  // (the old row chart stripped the month and showed only the year on every row)
+  const last12 = []; for(let i=11;i>=0;i--) last12.push(localMonthKey(-i)); // consecutive months, so gaps show as gaps
+  const emptyMonth = {prepaidN:0,prepaidIncome:0,postpaidN:0,postpaidExpected:0,postpaidActual:0,postpaidReconciled:0};
+  renderColumnChart('repMonthlyChart', last12.map(m=>{
+    const d = byMonth[m] || emptyMonth;
     const postpaidVal = d.postpaidReconciled===d.postpaidN && d.postpaidN ? d.postpaidActual : d.postpaidExpected;
-    const postpaidPct = monthTotal ? (postpaidVal/chartMax*100) : 0;
-    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-      <div style="width:70px;font-size:11px;color:var(--text-soft);flex-shrink:0;">${fmtMonthLabel(m).replace(/^\D*(\d)/,'$1')}</div>
-      <div style="flex:1;display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--gray-light);">
-        <div style="width:${prepaidPct}%;background:var(--orange);" title="${t('opt.prepaidShort')}: ${fmtWon(d.prepaidIncome)}"></div>
-        <div style="width:${postpaidPct}%;background:var(--blue);" title="${t('opt.postpaidShort')}: ${fmtWon(postpaidVal)}"></div>
-      </div>
-      <div style="width:90px;text-align:right;font-size:12px;font-weight:700;flex-shrink:0;">${fmtWon(monthTotal)}</div>
-    </div>`;
-  }).join('') + `<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text-soft);">
-      <span><span style="display:inline-block;width:9px;height:9px;background:var(--orange);border-radius:2px;margin-right:5px;"></span>${t('opt.prepaidShort')}</span>
-      <span><span style="display:inline-block;width:9px;height:9px;background:var(--blue);border-radius:2px;margin-right:5px;"></span>${t('opt.postpaidShort')}</span>
-    </div>`;
+    return {label: shortMonthLabel(m), total: d.prepaidIncome + postpaidVal, current: m===repSelectedMonth,
+      segments:[{v:d.prepaidIncome, color:'var(--orange)', name:t('opt.prepaidShort')}, {v:postpaidVal, color:'var(--blue)', name:t('opt.postpaidShort')}]};
+  }), {legend:[{name:t('opt.prepaidShort'), color:'var(--orange)'}, {name:t('opt.postpaidShort'), color:'var(--blue)'}]});
 
   // running cumulative total — computed chronologically (oldest first) regardless of the
   // table's newest-first display order, so each month's figure genuinely represents
@@ -5343,7 +5379,7 @@ function renderDailyReport(){
   document.getElementById('repDailyBody').innerHTML = days.length ? days.map(d=>{
     const v = byDay[d];
     return `<tr class="row-click" data-day-row="${d}">
-      <td>${fmtDate(d)}</td><td>${v.prepaidN}</td><td>${fmtWon(v.prepaidIncome)}</td>
+      <td class="nowrap">${fmtDate(d)}</td><td>${v.prepaidN}</td><td>${fmtWon(v.prepaidIncome)}</td>
       <td>${v.postpaidN}</td><td>${fmtWon(v.postpaidExpected)}</td>
       <td style="font-weight:700;">${fmtWon(v.prepaidIncome+v.postpaidExpected)}</td>
     </tr>`;
