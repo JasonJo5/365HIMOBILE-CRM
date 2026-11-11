@@ -975,3 +975,9 @@ td.nowrap,.sheet-tbl-wrap td{white-space:nowrap;}
 #sheetTable .sheet-name::after,#sheetTable th.sheet-name-th::after{content:"";position:absolute;right:0;top:25%;height:50%;width:1px;background:var(--border);}
 /* slightly tighter side padding so tables like Orders fit without the action column covering Status */
 .tbl-wrap:not(.sheet-tbl-wrap) td,.tbl-wrap:not(.sheet-tbl-wrap) th{padding-left:9px;padding-right:9px;}
+
+/* copy button pinned to the right edge of the name cell, next to the separator (2026-11-11) */
+td.name-cell:has(> .copy-name-btn){position:relative;padding-right:46px;}
+#sheetTable td.sheet-name{padding-right:46px;}
+td.name-cell>.copy-name-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);margin:0;}
+#sheetTable td.sheet-name>.name-text{max-width:112px;}
