@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261110f">
+<link rel="stylesheet" href="style.css?v=20261111a">
 </head>
 <body>
 
@@ -261,13 +261,12 @@
               <input type="date" id="sheetDateTo" data-i18n-title="filter.activationDateTo" title="开通日期止">
               <button class="date-range-clear" id="sheetDateRangeClear" data-i18n-title="filter.clearDates" title="清除日期">✕</button>
             </div>
-            <select class="select-input" id="sheetSortOrder">
+          </div>
+          <div class="sheet-count-row"><div class="section-desc" style="margin:10px 0;" id="sheetCount"></div><select class="select-input select-compact" id="sheetSortOrder">
               <option value="" data-i18n="sort.newest">排序：最新优先</option>
               <option value="az" data-i18n="sort.nameAsc">姓名 A → Z</option>
               <option value="za" data-i18n="sort.nameDesc">姓名 Z → A</option>
-            </select>
-          </div>
-          <div class="section-desc" style="margin:10px 0;" id="sheetCount"></div>
+            </select></div>
           <div class="tbl-wrap sheet-tbl-wrap">
             <table id="sheetTable"></table>
           </div>
@@ -565,8 +564,8 @@
     </div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-field"><label data-i18n="f.name">客户姓名</label><input id="pc_name" placeholder="例如: KIM MINJUN"></div>
-        <div class="form-field"><label data-i18n="f.nationality">国籍 / Country</label><input id="pc_nationality" placeholder="例如：CHINA"></div>
+        <div class="form-field"><label data-i18n="f.name">客户姓名</label><input id="pc_name" data-i18n-ph="ph.custName" placeholder="例如：KIM MINJUN"></div>
+        <div class="form-field"><label data-i18n="f.nationality">国籍 / Country</label><input id="pc_nationality" data-i18n-ph="ph.nationality" placeholder="例如：CHINA"></div>
         <div class="form-field"><label data-i18n="f.dob">出生日期</label><input id="pc_dob" type="date"></div>
         <div class="form-field"><label data-i18n="f.years">在韩年数</label><input id="pc_years" type="number" min="0" step="0.5"></div>
         <div class="form-field"><label data-i18n="f.idNumber">证件号码</label><input id="pc_idNumber"></div>
@@ -621,13 +620,13 @@
     </div>
     <div class="modal-body">
       <div class="form-grid" id="customerForm">
-        <div class="form-field"><label data-i18n="f.name">客户姓名</label><input id="f_name" class="uppercase-input" placeholder="例如: KIM MINJUN"></div>
+        <div class="form-field"><label data-i18n="f.name">客户姓名</label><input id="f_name" class="uppercase-input" data-i18n-ph="ph.custName" placeholder="例如：KIM MINJUN"></div>
         <div class="form-field"><label data-i18n="f.phone">联系电话</label><input id="f_phone" placeholder="010-0000-0000"></div>
         <div class="form-field"><label data-i18n="f.nationality">国籍 / Country</label><input id="f_nationality" class="uppercase-input" data-i18n-ph="f.nationalityPh" placeholder="例如：CHINA"></div>
-        <div class="form-field"><label data-i18n="f.dob">出生日期（6位数字 YYMMDD）</label><input id="f_dob" placeholder="예: 040728" maxlength="6" inputmode="numeric"></div>
+        <div class="form-field"><label data-i18n="f.dob">出生日期（6位数字 YYMMDD）</label><input id="f_dob" data-i18n-ph="ph.dob6" placeholder="例如：040728" maxlength="6" inputmode="numeric"></div>
         <div class="form-field full"><label data-i18n="f.idType">证件类型</label><div class="tile-radio-group" id="f_idType_group" data-field="idType"></div></div>
         <div class="form-field"><label data-i18n="f.idNumber">证件号码 (ARC/Passport)</label><input id="f_idNumber" class="uppercase-input"></div>
-        <div class="form-field" id="f_idExpiryField"><label data-i18n="f.idExpiry">证件有效期至</label><input id="f_idExpiry" type="date"></div>
+        <div class="form-field" id="f_idExpiryField"><label data-i18n="f.idExpiry6">证件有效期至（6位数字 YYMMDD）</label><input id="f_idExpiry" data-i18n-ph="ph.idExpiry6" placeholder="例如：290101" maxlength="6" inputmode="numeric" autocomplete="off"></div>
         <div class="form-field full"><label data-i18n="f.occupation">职业</label><div class="tile-radio-group" id="f_occupation_group" data-field="occupation"></div></div>
         <div class="form-field"><label data-i18n="f.years">在韩年数</label><input id="f_years" type="number" min="0" step="0.5"></div>
         <div class="form-field"><label data-i18n="f.referral">客户来源</label><select id="f_referral"></select></div>
@@ -702,7 +701,9 @@
     </div>
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-foot">
-      <button class="btn btn-danger" id="detailDeleteBtn" style="margin-right:auto;" data-i18n="btn.deleteCustomer">删除客户</button>
+      <button class="btn btn-ghost" id="detailMoreBtn" style="margin-right:0;">⋯ More</button>
+      <button class="btn btn-danger" id="detailDeleteBtn" style="display:none;" data-i18n="btn.deleteCustomer">删除客户</button>
+      <span style="margin-right:auto;"></span>
       <button class="btn btn-ghost" id="detailEditBtn" data-i18n="btn.edit">编辑资料</button>
       <button class="btn btn-primary" id="detailAddServiceBtn" data-i18n="btn.addService">＋ 新增业务</button>
     </div>
@@ -1104,6 +1105,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261110f"></script>
+<script src="script.js?v=20261111a"></script>
 </body>
 </html>
