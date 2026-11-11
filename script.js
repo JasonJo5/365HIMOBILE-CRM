@@ -244,6 +244,8 @@ const I18N = {
   }
 };
 /* 2026-11-11 reminder tabs: clearer names + new buckets */
+Object.assign(I18N.en, {'sort.u19':'Under 19 only (turning 19 first)', 'col.u19':'Age · turns 19'});
+Object.assign(I18N.zh, {'sort.u19':'仅未满19岁（最快满19岁优先）', 'col.u19':'年龄 · 满19岁'});
 Object.assign(I18N.en, {'ph.custName':'e.g. KIM MINJUN', 'ph.nationality':'e.g. CHINA / VIETNAM', 'ph.dob6':'e.g. 040728', 'ph.idExpiry6':'e.g. 290101', 'f.idExpiry6':'ID expiry date (6 digits YYMMDD)'});
 Object.assign(I18N.zh, {'ph.custName':'例如：KIM MINJUN', 'ph.nationality':'例如：CHINA / VIETNAM', 'ph.dob6':'例如：040728', 'ph.idExpiry6':'例如：290101', 'f.idExpiry6':'证件有效期至（6位数字 YYMMDD）'});
 Object.assign(I18N.en, {
@@ -880,7 +882,7 @@ function renderSheetPage(){
   // read-only summary table instead of the editable financial columns, sharing the same
   // filter values above.
   if(sheetTypeTab==='inactive' || sheetTypeTab==='dupes' || sheetTypeTab==='all'){
-    renderSheetSimpleView(sheetTypeTab, dupeGroupsForTabCount, {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo});
+    renderSheetSimpleView(sheetTypeTab, dupeGroupsForTabCount, {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo, sortOrder});
     if(scrollWrap && savedScrollLeft!==undefined){
       scrollWrap.scrollLeft = savedScrollLeft;
       scrollWrap.scrollTop = savedScrollTop;
@@ -901,9 +903,11 @@ function renderSheetPage(){
       const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
       if(!hay.includes(search)) return false;
     }
+    if(sortOrder==='u19' && !isUnder19(c)) return false;
     return true;
   })
   .sort((a,b)=>{
+    if(sortOrder==='u19') return String(a.c.dob).localeCompare(String(b.c.dob)); // oldest first = turns 19 soonest
     if(sortOrder==='az') return a.c.name.localeCompare(b.c.name);
     if(sortOrder==='za') return b.c.name.localeCompare(a.c.name);
     // default: newest ACTIVATION DATE first — matches what's actually shown in the
@@ -913,7 +917,8 @@ function renderSheetPage(){
     // didn't match the column people were actually looking at.
     return new Date(b.svc.activationDate||0)-new Date(a.svc.activationDate||0);
   });
-  document.getElementById('sheetCount').textContent = `${rows.length} ${LANG==='zh'?'位客户':'customers'}`;
+  document.getElementById('sheetCount').textContent = `${rows.length} ${LANG==='zh'?'位客户':'customers'}${sortOrder==='u19'?(LANG==='zh'?' · 未满19岁':' under 19'):''}`;
+  const u19 = sortOrder==='u19';
 
   /* Column order (2026-11-11): what staff check first comes first — name, phone, then
      Company / Carrier type and the plan-length tag (prepaid) or plan name / partner
@@ -930,11 +935,12 @@ function renderSheetPage(){
     return `<span class="pill ${cls} sheet-status">${escapeHtml(txt)}</span>`;
   };
   const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>`;
-  const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
+  const u19Head = u19 ? `<th>${t('col.u19')}</th>` : '';
+  const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th>${u19Head}<th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
     <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.durationDays')}</th>
     <th>${t('f.price')}</th><th>${t('f.discount')}</th><th>${t('f.finalPrice')}</th><th>${t('f.paymentMethod')}</th><th>${t('f.planType')}</th>
     <th>${t('f.idType')}</th><th>${t('f.idNumber')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.simType')}</th>`;
-  const postpaidHead = `<th class="sheet-name-th">${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.plan')}</th><th>${t('f.company')}</th><th>${t('f.partnerCompany')}</th><th>${t('f.svcCarrierType')}</th>
+  const postpaidHead = `<th class="sheet-name-th">${t('col.customer')}</th>${u19Head}<th>${t('f.phone')}</th><th>${t('f.plan')}</th><th>${t('f.company')}</th><th>${t('f.partnerCompany')}</th><th>${t('f.svcCarrierType')}</th>
     <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.contractLength')}</th><th>${t('freeze.colHeader')}</th>
     <th>${t('f.monthlyFee')}</th><th>${t('f.expectedProfit')}</th><th>${t('f.actualProfit')}</th><th>${t('f.usimFee')}</th><th>${t('f.discountPerMonth')}</th><th>${t('f.discountMonths')}</th><th>${t('f.netExpectedProfit')}</th><th>${t('f.actualIncome')}</th>
     <th>${t('f.planType')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.simType')}</th>`;
@@ -944,7 +950,7 @@ function renderSheetPage(){
       const planTypeCell = `<td>${sheetPillCell('customer',c.id,'planType',c.planType,['신규가입','번호이동','명의변경','기간연장','선불전환'], t('f.planType'))}</td>`;
       if(sheetTypeTab==='prepaid'){
         const finalPrice = Math.max(0, (Number(svc.price)||0) - (Number(svc.discount)||0));
-        return `<tr>${nameCell(c)}
+        return `<tr>${nameCell(c)}${u19 ? u19Cell(c) : ''}
           <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
           <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,PREPAID_COMPANIES, t('f.company'))}</td>
           <td data-col="svcCarrierType">${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>
@@ -970,7 +976,7 @@ function renderSheetPage(){
         </tr>`;
       }
       const frozenNow = isServiceCurrentlyFrozen(svc);
-      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${nameCell(c)}
+      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${nameCell(c)}${u19 ? u19Cell(c) : ''}
         <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
         <td>${svc.plan ? `<span class="plan-name-chip">${escapeHtml(svc.plan)}</span>` : sheetReadonlyCell('—')}</td>
         <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,POSTPAID_COMPANIES, t('f.company'))}</td>
@@ -1041,8 +1047,19 @@ function sheetPlanTagHtml(svc){
   if(!lab && d>=13 && d<=17) lab = ['m0', LANG==='zh' ? '15天' : '15 days'];
   return lab ? `<span class="plan-tag ${lab[0]}" style="margin-left:0">${escapeHtml(lab[1])}</span>` : sheetReadonlyCell(d ? d+(LANG==='zh'?' 天':' days') : '—');
 }
+/* Under-19 view (Sheet View → Sort → "Under 19 only"): age and the date the customer turns 19 */
+function isUnder19(c){ const a = calcAge(c && c.dob); return a!==null && a < 19; }
+function turns19Date(dob){ return isIsoDate(dob) ? (Number(dob.slice(0,4))+19)+dob.slice(4,10) : ''; }
+function u19Cell(c){
+  const a = calcAge(c.dob), d = turns19Date(c.dob);
+  if(a===null) return `<td>${sheetReadonlyCell('—')}</td>`;
+  const days = d ? daysBetween(todayISO(), d) : null;
+  const soon = days!==null && days <= 30;
+  return `<td><span class="pill ${soon?'pill-orange':'pill-gray'}" title="${escapeHtml(d)}">${a} · ${LANG==='zh'?'满19岁 ':'19 on '}${escapeHtml(d)}${days!==null?` (${days}${LANG==='zh'?'天':'d'})`:''}</span></td>`;
+}
 function renderSheetSimpleView(tab, dupeGroups, filters){
-  const {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo} = filters;
+  const {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo, sortOrder} = filters;
+  const u19 = sortOrder==='u19' && tab!=='dupes';
   const isDupeView = tab==='dupes';
   const isAllView = tab==='all';
   const groupIndexById = {};
@@ -1079,13 +1096,14 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
     }
     return true;
   });
-  if(!isDupeView) list.sort((a,b)=> new Date(customerJoinDate(b)||0)-new Date(customerJoinDate(a)||0));
+  if(u19) list = list.filter(isUnder19).sort((a,b)=> String(a.dob).localeCompare(String(b.dob)));
+  else if(!isDupeView) list.sort((a,b)=> new Date(customerJoinDate(b)||0)-new Date(customerJoinDate(a)||0));
 
   document.getElementById('sheetCount').textContent = isDupeView
     ? `${dupeGroups.length} ${LANG==='zh'?'组重复 · 共':'duplicate groups · '} ${list.length} ${LANG==='zh'?'位客户 · 按姓名或电话匹配':'customers involved · matched by name or phone'}`
-    : `${list.length} ${LANG==='zh'?'位客户':'customers'}`;
+    : `${list.length} ${LANG==='zh'?'位客户':'customers'}${u19?(LANG==='zh'?' · 未满19岁':' under 19'):''}`;
 
-  const head = `<th>${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.nationality')}</th><th>${t('f.idType')}</th>
+  const head = `<th>${t('col.customer')}</th>${u19?`<th>${t('col.u19')}</th>`:''}<th>${t('f.phone')}</th><th>${t('f.nationality')}</th><th>${t('f.idType')}</th>
     <th>${isDupeView ? t('col.dupeReason') : (isAllView ? t('col.status') : t('col.contractStatus'))}</th><th>${t('col.recentActivity')}</th><th>${t('col.dateAdded')}</th><th>${t('col.rating')}</th><th></th>`;
   const rowsHtml = list.length ? list.map(c=>{
     const svcs = customerServices(c.id);
@@ -1114,7 +1132,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       var mergeBtn = '';
     }
     return `<tr class="row-click ${groupBand}" data-open-customer="${c.id}">
-      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>
+      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>${u19 ? u19Cell(c) : ''}
       <td>${escapeHtml(c.phone||'—')}</td>
       <td><span class="cell-ellipsis">${escapeHtml(c.nationality)}</span></td>
       <td>${c.idType?t('idtype.'+c.idType):'—'}</td>
