@@ -243,6 +243,19 @@ const I18N = {
     'prepaid3m.toggle':'Also activate a "3-month prepaid" service and print the application form',
   }
 };
+/* 2026-11-11 reminder tabs: clearer names + new buckets */
+Object.assign(I18N.en, {'ph.custName':'e.g. KIM MINJUN', 'ph.nationality':'e.g. CHINA / VIETNAM', 'ph.dob6':'e.g. 040728', 'ph.idExpiry6':'e.g. 290101', 'f.idExpiry6':'ID expiry date (6 digits YYMMDD)'});
+Object.assign(I18N.zh, {'ph.custName':'例如：KIM MINJUN', 'ph.nationality':'例如：CHINA / VIETNAM', 'ph.dob6':'例如：040728', 'ph.idExpiry6':'例如：290101', 'f.idExpiry6':'证件有效期至（6位数字 YYMMDD）'});
+Object.assign(I18N.en, {
+  'rem.tab.today':'Today', 'rem.tab.week':'This week', 'rem.tab.overdue':'Overdue', 'rem.tab.all':'All open',
+  'rem.tab.old':'Old (30+ days late)', 'rem.tab.idChange':'ID change requests', 'rem.tab.infochange':'Passport → ARC',
+  'rem.copyNumber':'Copy number', 'rem.profile':'Profile', 'rem.copied':'Number copied',
+});
+Object.assign(I18N.zh, {
+  'rem.tab.today':'今天', 'rem.tab.week':'本周', 'rem.tab.overdue':'已逾期', 'rem.tab.all':'全部待办',
+  'rem.tab.old':'旧的（逾期30天以上）', 'rem.tab.idChange':'证件变更申请', 'rem.tab.infochange':'护照 → 外国人登录证',
+  'rem.copyNumber':'复制号码', 'rem.profile':'客户资料', 'rem.copied':'号码已复制',
+});
 let LANG = localStorage.getItem(LANG_KEY) || 'zh';
 function t(key){ return (I18N[LANG] && I18N[LANG][key]) || (I18N.zh[key]) || key; }
 
@@ -892,49 +905,63 @@ function renderSheetPage(){
   });
   document.getElementById('sheetCount').textContent = `${rows.length} ${LANG==='zh'?'位客户':'customers'}`;
 
-  const commonHead = `
-    <th>${t('col.customer')}</th><th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th>
-    <th>${t('f.planType')}</th><th>${t('f.svcCarrierType')}</th>`;
-  const prepaidHead = `${commonHead}<th>${t('f.durationDays')}</th><th>${t('f.usedDays')}</th><th>${t('col.contractStatus')}</th><th>${t('f.price')}</th><th>${t('f.discount')}</th><th>${t('f.finalPrice')}</th><th>${t('f.company')}</th><th>${t('f.idType')}</th><th>${t('f.idNumber')}</th><th>${t('f.number')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.paymentMethod')}</th><th>${t('f.simType')}</th>`;
-  const postpaidHead = `${commonHead}<th>${t('f.company')}</th><th>${t('f.partnerCompany')}</th><th>${t('f.contractLength')}</th><th>${t('f.usedDays')}</th><th>${t('col.contractStatus')}</th><th>${t('freeze.colHeader')}</th><th>${t('f.monthlyFee')}</th><th>${t('f.expectedProfit')}</th><th>${t('f.actualProfit')}</th><th>${t('f.usimFee')}</th><th>${t('f.discountPerMonth')}</th><th>${t('f.discountMonths')}</th><th>${t('f.netExpectedProfit')}</th><th>${t('f.actualIncome')}</th><th>${t('f.number')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.simType')}</th>`;
+  /* Column order (2026-11-11): what staff check first comes first — name, phone, then
+     Company / Carrier type and the plan-length tag (prepaid) or plan name / partner
+     (postpaid), then dates and status. Rarely-filled fields (plan type, ID…) move right.
+     Cells carry data-col so filters never depend on a column's position. */
+  const usedCell = svc => sheetReadonlyCell((usedDaysFor(svc)??'—')+(usedDaysFor(svc)!==null?(LANG==='zh'?' 天':' d'):''));
+  const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>`;
+  const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
+    <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.durationDays')}</th>
+    <th>${t('f.price')}</th><th>${t('f.discount')}</th><th>${t('f.finalPrice')}</th><th>${t('f.paymentMethod')}</th><th>${t('f.planType')}</th>
+    <th>${t('f.idType')}</th><th>${t('f.idNumber')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.simType')}</th>`;
+  const postpaidHead = `<th class="sheet-name-th">${t('col.customer')}</th><th>${t('f.phone')}</th><th>${t('f.plan')}</th><th>${t('f.company')}</th><th>${t('f.partnerCompany')}</th><th>${t('f.svcCarrierType')}</th>
+    <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.contractLength')}</th><th>${t('freeze.colHeader')}</th>
+    <th>${t('f.monthlyFee')}</th><th>${t('f.expectedProfit')}</th><th>${t('f.actualProfit')}</th><th>${t('f.usimFee')}</th><th>${t('f.discountPerMonth')}</th><th>${t('f.discountMonths')}</th><th>${t('f.netExpectedProfit')}</th><th>${t('f.actualIncome')}</th>
+    <th>${t('f.planType')}</th><th>${t('f.dob')}</th><th>${t('f.nationality')}</th><th>${t('f.years')}</th><th>${t('f.occupation')}</th><th>${t('f.handlerName')}</th><th>${t('f.simType')}</th>`;
 
   document.getElementById('sheetTable').innerHTML = `<thead><tr>${sheetTypeTab==='prepaid'?prepaidHead:postpaidHead}</tr></thead><tbody>${
     rows.length ? rows.map(({c,svc})=>{
-      const commonCells = `
-        <td class="name-cell" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>
-        <td>${sheetTextCell('service',svc.id,'activationDate',svc.activationDate,'date')}</td>
-        <td>${sheetTextCell('service',svc.id,'expiryDate',svc.expiryDate,'date')}</td>
-        <td>${sheetPillCell('customer',c.id,'planType',c.planType,['신규가입','번호이동','명의변경','기간연장','선불전환'], t('f.planType'))}</td>
-        <td>${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>`;
+      const planTypeCell = `<td>${sheetPillCell('customer',c.id,'planType',c.planType,['신규가입','번호이동','명의변경','기간연장','선불전환'], t('f.planType'))}</td>`;
       if(sheetTypeTab==='prepaid'){
         const finalPrice = Math.max(0, (Number(svc.price)||0) - (Number(svc.discount)||0));
-        return `<tr>${commonCells}
-          <td>${sheetTextCell('service',svc.id,'durationDays',svc.durationDays,'number')}</td>
-          <td>${sheetReadonlyCell((usedDaysFor(svc)??'—')+(usedDaysFor(svc)!==null?(LANG==='zh'?' 天':' d'):''))}</td>
+        return `<tr>${nameCell(c)}
+          <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
+          <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,PREPAID_COMPANIES, t('f.company'))}</td>
+          <td data-col="svcCarrierType">${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>
+          <td>${sheetPlanTagHtml(svc)}</td>
+          <td>${sheetTextCell('service',svc.id,'activationDate',svc.activationDate,'date')}</td>
+          <td>${sheetTextCell('service',svc.id,'expiryDate',svc.expiryDate,'date')}</td>
           <td>${sheetReadonlyCell(contractStatusTextFor(svc, true)||'—')}</td>
+          <td>${usedCell(svc)}</td>
+          <td>${sheetTextCell('service',svc.id,'durationDays',svc.durationDays,'number')}</td>
           <td>${sheetTextCell('service',svc.id,'price',svc.price,'number')}</td>
           <td>${sheetTextCell('service',svc.id,'discount',svc.discount,'number')}</td>
           <td>${sheetReadonlyCell(fmtWon(finalPrice))}</td>
-          <td>${sheetPillCell('service',svc.id,'company',svc.company,PREPAID_COMPANIES, t('f.company'))}</td>
+          <td>${sheetPillCell('service',svc.id,'paymentMethod',svc.paymentMethod,PAYMENT_METHODS, t('f.paymentMethod'))}</td>
+          ${planTypeCell}
           <td>${sheetPillCell('customer',c.id,'idType',c.idType,['ARC','Passport'], t('f.idType'))}</td>
           <td>${sheetTextCell('customer',c.id,'idNumber',c.idNumber,'text')}</td>
-          <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
           <td>${sheetTextCell('customer',c.id,'dob',c.dob,'date')}</td>
           <td>${sheetPillCell('customer',c.id,'nationality',c.nationality,NATIONALITIES, t('f.nationality'))}</td>
           <td>${sheetTextCell('customer',c.id,'years',c.years,'number')}</td>
           <td>${sheetTextCell('customer',c.id,'occupation',c.occupation,'text')}</td>
           <td>${sheetPillCell('customer',c.id,'handlerName',c.handlerName,STAFF_MEMBERS, t('f.handlerName'))}</td>
-          <td>${sheetPillCell('service',svc.id,'paymentMethod',svc.paymentMethod,PAYMENT_METHODS, t('f.paymentMethod'))}</td>
           <td>${sheetPillCell('service',svc.id,'simType',svc.simType,SIM_TYPES, t('f.simType'))}</td>
         </tr>`;
       }
       const frozenNow = isServiceCurrentlyFrozen(svc);
-      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${commonCells}
-        <td>${sheetPillCell('service',svc.id,'company',svc.company,POSTPAID_COMPANIES, t('f.company'))}</td>
-        <td>${sheetPillCell('service',svc.id,'partnerCompany',svc.partnerCompany,POSTPAID_PARTNER_COMPANIES, t('f.partnerCompany'))}</td>
-        <td>${sheetPillCell('service',svc.id,'durationDays',svc.durationDays?String(svc.durationDays):'',POSTPAID_CONTRACT_DAYS.map(String), t('f.contractLength'))}</td>
-        <td>${sheetReadonlyCell((usedDaysFor(svc)??'—')+(usedDaysFor(svc)!==null?(LANG==='zh'?' 天':' d'):''))}</td>
+      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${nameCell(c)}
+        <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
+        <td>${svc.plan ? `<span class="plan-name-chip">${escapeHtml(svc.plan)}</span>` : sheetReadonlyCell('—')}</td>
+        <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,POSTPAID_COMPANIES, t('f.company'))}</td>
+        <td data-col="partnerCompany">${sheetPillCell('service',svc.id,'partnerCompany',svc.partnerCompany,POSTPAID_PARTNER_COMPANIES, t('f.partnerCompany'))}</td>
+        <td data-col="svcCarrierType">${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>
+        <td>${sheetTextCell('service',svc.id,'activationDate',svc.activationDate,'date')}</td>
+        <td>${sheetTextCell('service',svc.id,'expiryDate',svc.expiryDate,'date')}</td>
         <td>${sheetReadonlyCell(contractStatusTextFor(svc, true)||'—')}</td>
+        <td>${usedCell(svc)}</td>
+        <td>${sheetPillCell('service',svc.id,'durationDays',svc.durationDays?String(svc.durationDays):'',POSTPAID_CONTRACT_DAYS.map(String), t('f.contractLength'))}</td>
         <td>${frozenNow ? `<button class="btn btn-sm" style="background:#2563EB;color:#fff;border:none;" data-freeze-toggle="${svc.customerId}">🧊 ${t('btn.unfreezeSim')}</button>` : sheetReadonlyCell('—')}</td>
         <td>${sheetTextCell('service',svc.id,'monthlyFee',svc.monthlyFee,'number')}</td>
         <td>${sheetTextCell('service',svc.id,'expectedProfit',svc.expectedProfit,'number')}</td>
@@ -943,8 +970,8 @@ function renderSheetPage(){
         <td>${sheetTextCell('service',svc.id,'discountPerMonth',svc.discountPerMonth,'number')}</td>
         <td>${sheetTextCell('service',svc.id,'discountMonths',svc.discountMonths,'number')}</td>
         <td>${sheetReadonlyCell(fmtWon(expectedIncomeFor(svc)))}</td>
-        <td>${sheetReadonlyCell(svc.actualProfit ? fmtWon(netProfitFor(svc)) : (LANG==='zh'?'—':'—'))}</td>
-        <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
+        <td>${sheetReadonlyCell(svc.actualProfit ? fmtWon(netProfitFor(svc)) : '—')}</td>
+        ${planTypeCell}
         <td>${sheetTextCell('customer',c.id,'dob',c.dob,'date')}</td>
         <td>${sheetPillCell('customer',c.id,'nationality',c.nationality,NATIONALITIES, t('f.nationality'))}</td>
         <td>${sheetTextCell('customer',c.id,'years',c.years,'number')}</td>
@@ -952,7 +979,7 @@ function renderSheetPage(){
         <td>${sheetPillCell('customer',c.id,'handlerName',c.handlerName,STAFF_MEMBERS, t('f.handlerName'))}</td>
         <td>${sheetPillCell('service',svc.id,'simType',svc.simType,SIM_TYPES, t('f.simType'))}</td>
       </tr>`;
-    }).join('') : `<tr><td colspan="26">${emptyState()}</td></tr>`
+    }).join('') : `<tr><td colspan="28">${emptyState()}</td></tr>`
   }</tbody>`;
   document.getElementById('sheetTable').querySelectorAll('[data-open-customer]').forEach(el=>{
     el.addEventListener('click', ()=> openCustomerDetail(el.getAttribute('data-open-customer')));
@@ -984,6 +1011,17 @@ function renderSheetPage(){
 /* Simple read-only table for Sheet View's Inactive / Duplicate tabs — these show WHY a
    customer has no active plan or which records look duplicated, not editable financial
    columns, so they don't fit the same shape as the Prepaid/Postpaid sheet. */
+/* Prepaid plan-length tag for Sheet View — same rule as the profile (Recharge = a 30-day
+   plan bought with the Recharge button or priced ₩36,000 / ₩36,300, except SAFARBAYEV BERIK),
+   plus 15-day plans. Read-only: the editable length is the "Contract length (days)" column. */
+function sheetPlanTagHtml(svc){
+  if(!svc || svc.type!=='prepaid') return sheetReadonlyCell('—');
+  let lab = null;
+  try{ lab = window.__planLab ? window.__planLab(svc) : null; }catch(e){}
+  const d = Number(svc.durationDays);
+  if(!lab && d>=13 && d<=17) lab = ['m0', LANG==='zh' ? '15天' : '15 days'];
+  return lab ? `<span class="plan-tag ${lab[0]}" style="margin-left:0">${escapeHtml(lab[1])}</span>` : sheetReadonlyCell(d ? d+(LANG==='zh'?' 天':' days') : '—');
+}
 function renderSheetSimpleView(tab, dupeGroups, filters){
   const {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo} = filters;
   const isDupeView = tab==='dupes';
@@ -1205,6 +1243,18 @@ function parseDobFlexible(v){
     const curYY = Number(String(new Date().getFullYear()).slice(2));
     const century = yy <= curYY+5 ? '20' : '19';
     return `${century}${s.slice(0,2)}-${s.slice(2,4)}-${s.slice(4,6)}`;
+  }
+  return parseFlexibleDate(v);
+}
+/* ID expiry typed like the birth date: 6 digits YYMMDD, always 20YY (an ID expiry is never
+   in the 1900s) — "290101" → 2029-01-01. Anything else falls back to parseFlexibleDate, so
+   "2029-01-01" or "2029/1/1" still work. */
+function parseExpiryFlexible(v){
+  const s = String(v==null?'':v).trim();
+  if(/^\d{6}$/.test(s)){
+    const iso = `20${s.slice(0,2)}-${s.slice(2,4)}-${s.slice(4,6)}`;
+    const d = new Date(iso+'T00:00:00Z');
+    return (!isNaN(d.getTime()) && d.toISOString().slice(0,10)===iso) ? iso : '';
   }
   return parseFlexibleDate(v);
 }
@@ -2269,16 +2319,16 @@ const ICONS = {
   sparkle:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>',
 };
 let currentPage = 'dashboard';
-let reminderTab = 'all';
+let reminderTab = 'today';
 let reminderSignupMonth = 'all'; // used only by the "expiring" tab's filters
 let reminderDurationFilter = 'all';
 let reminderNationalityFilter = 'all';
 let reminderStatusFilter = 'all'; // 'all' | 'expired' | 'expiring_soon' | 'active'
 
 function renderNav(){
-  // postpaid over-contract has its own tab and is not a "due" item — keep it out of the badge
-  const reminders = buildReminders().filter(r=>r.uiStatus==='pending' && r.type!=='contract_end');
-  const dueSoonCount = reminders.filter(r=>r.daysLeft<=7).length;
+  // badge = due today + this week only; overdue / old backlog lives in its own tabs, and
+  // postpaid over-contract in its own tab (see remBadgeCount)
+  const dueSoonCount = remBadgeCount();
   const nav = document.getElementById('navMenu');
   nav.innerHTML = NAV_ITEMS.map(it=>{
     const badge = it.key==='reminders' && dueSoonCount>0 ? `<span class="nav-badge">${dueSoonCount}</span>` : '';
@@ -2382,7 +2432,8 @@ function renderDashboard(){
 
   // postpaid over-contract has its own calm tab and must never count as "due" here
   const reminders = buildReminders().filter(r=>r.uiStatus==='pending' && r.type!=='contract_end');
-  const due7 = reminders.filter(r=>r.daysLeft<=7);
+  const due7 = reminders.filter(r=>{ const b = remBucket(r); return b==='today' || b==='week'; });
+  const overdue30 = reminders.filter(r=>remBucket(r)==='overdue');
 
   // "New this month" — counts customers with ANY service activated this month, not just
   // customers whose record was first created this month. A recharge or a plan-type change
@@ -2401,7 +2452,8 @@ function renderDashboard(){
   const lastMonthRevenue = svcs.filter(s=>s.activationDate && s.activationDate.slice(0,7)===lastMonthStr).reduce((a,s)=>a+totalRevenueFor(s),0);
   const revDelta = computeDelta(monthRevenue, lastMonthRevenue);
 
-  document.getElementById('pageTitle').textContent = t('dash.greeting');
+  // the greeting itself lives in the banner below — the header just names the page
+  document.getElementById('pageTitle').textContent = LANG==='zh' ? '仪表盘' : 'Dashboard';
   document.getElementById('pageSub').textContent = new Date().toLocaleDateString(LANG==='zh'?'zh-CN':'en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
   const deltaHtml = d => d.na ? '' : (d.isNew ? `<span class="up">${t('stat.newActivity')}</span>` : `<span class="${d.up?'up':'down'}">${d.up?'↑':'↓'} ${d.pct}%</span> ${t('stat.vsLastMonth')}`);
@@ -2420,7 +2472,7 @@ function renderDashboard(){
   const stats = [
     {label:t('stat.totalCustomers'), value:custs.length, sub:t('stat.fromRecords'), deltaHtml:null, breakdown:{prepaid:totalPrepaid, postpaid:totalPostpaid}},
     {label:t('stat.newThisMonth'), value:newThisMonth, deltaHtml:deltaHtml(newDelta), breakdown:{prepaid:newThisMonthPrepaid, postpaid:newThisMonthPostpaid}},
-    {label:t('stat.followup7'), value:due7.length, sub:t('stat.includesExpiry'), deltaHtml:null, orange:true},
+    {label:LANG==='zh'?'今天和本周到期':'Due today & this week', value:due7.length, sub:(LANG==='zh'?`另有 ${overdue30.length} 个已逾期（30天内）`:`plus ${overdue30.length} overdue (last 30 days)`), deltaHtml:null, orange:true},
     {label:t('stat.revenueMonth'), value:fmtWon(monthRevenue), deltaHtml:deltaHtml(revDelta)},
   ];
   document.getElementById('dashStats').innerHTML = stats.map((s,i)=>`
@@ -2488,7 +2540,11 @@ function renderDashboard(){
   }
 
   // followups list (top 4)
-  const top = reminders.slice(0,4);
+  const prio = {today:0, overdue:1, week:2};
+  const top = reminders.filter(r=> prio[remBucket(r)]!==undefined)
+    .sort((a,b)=> prio[remBucket(a)]-prio[remBucket(b)] || (remBucket(a)==='overdue' ? b.daysLeft-a.daysLeft : a.daysLeft-b.daysLeft))
+    .slice(0,4);
+  renderDashTodayStrip(reminders, renewalsSoon);
   document.getElementById('dashFollowups').innerHTML = top.length? top.map(r=>renderFollowRow(r)).join('') : emptyState();
 
   // service overview: prepaid vs postpaid activations this month — kept to just these two
@@ -2734,6 +2790,77 @@ function getDuplicateGroups(){
   const groups = {};
   customers.forEach(c=>{ const root = find(c.id); (groups[root] = groups[root]||[]).push(c); });
   return Object.values(groups).filter(g=>g.length>1).sort((a,b)=> a[0].name.localeCompare(b[0].name));
+}
+/* ---------------- DUPLICATE WARNING WHILE TYPING ----------------
+   On the customer forms, typing a phone number or ID number that already belongs to
+   another customer shows a warning under that field, with that customer's name, current
+   plan and an "Open" button. It does NOT block saving (a returning customer, a shared
+   family number…), but saving asks once to confirm. Phone numbers are compared by digits
+   only and also against existing SIM numbers; ID numbers ignoring dashes and spaces. */
+function dupePhoneKey(v){ const d = String(v||'').replace(/[^0-9]/g,''); return d.length>=9 ? d : ''; }
+function dupeIdKey(v){ const k = String(v||'').toUpperCase().replace(/[^0-9A-Z]/g,''); return k.length>=6 ? k : ''; }
+function findExistingMatches(kind, value, excludeId){
+  const key = kind==='phone' ? dupePhoneKey(value) : dupeIdKey(value);
+  if(!key) return [];
+  const hits = new Map();
+  DB.customers.forEach(c=>{
+    if(c.id===excludeId) return;
+    if(kind==='phone' ? dupePhoneKey(c.phone)===key : dupeIdKey(c.idNumber)===key) hits.set(c.id, c);
+  });
+  if(kind==='phone') DB.services.forEach(sv=>{
+    if(sv.customerId===excludeId || dupePhoneKey(sv.number)!==key) return;
+    const c = getCustomer(sv.customerId); if(c) hits.set(c.id, c);
+  });
+  return [...hits.values()];
+}
+// [input id, what it holds, which form]
+const DUPE_WATCH = [['f_phone','phone','cust'], ['f_idNumber','id','cust'], ['pc_number','phone','pc'], ['pc_idNumber','id','pc']];
+function dupeExcludeId(form){ return form==='cust' ? (editingCustomerId||null) : null; }
+function dupePlanText(c){
+  const sv = activeSubscriptionFor(c.id);
+  if(!sv) return LANG==='zh' ? '无当前套餐' : 'no current plan';
+  const kind = sv.type==='postpaid' ? (LANG==='zh'?'后付':'Postpaid') : (LANG==='zh'?'预付':'Prepaid');
+  return `${kind}${sv.plan?' '+sv.plan:''}${sv.expiryDate?(LANG==='zh'?' · 到期 ':' · ends ')+sv.expiryDate:''}`;
+}
+function renderDupeWarning(inputId, kind, form){
+  const input = document.getElementById(inputId); if(!input) return;
+  const field = input.closest('.form-field') || input.parentElement;
+  let box = field.querySelector(':scope > .dupe-warn');
+  const matches = findExistingMatches(kind, input.value, dupeExcludeId(form));
+  if(!matches.length){ if(box) box.remove(); return; }
+  if(!box){ box = document.createElement('div'); box.className = 'dupe-warn'; field.appendChild(box); }
+  const zh = LANG==='zh';
+  const title = kind==='phone' ? (zh?'这个电话号码已在系统中':'This phone number is already in the CRM') : (zh?'这个证件号码已在系统中':'This ID number is already in the CRM');
+  box.innerHTML = `<div class="dupe-warn-title">⚠ ${title}</div>` + matches.slice(0,3).map(c=>
+    `<div class="dupe-warn-row"><span><b>${escapeHtml(c.name)}</b>${c.phone?' · '+escapeHtml(c.phone):''} · ${escapeHtml(dupePlanText(c))}</span>`+
+    `<button type="button" class="btn btn-sm btn-ghost" data-dupe-open="${escapeHtml(c.id)}">${zh?'查看':'Open'}</button></div>`).join('') +
+    (matches.length>3 ? `<div class="dupe-warn-row">+${matches.length-3} ${zh?'位':'more'}</div>` : '');
+}
+function clearDupeWarnings(){ document.querySelectorAll('.dupe-warn').forEach(b=>b.remove()); }
+let dupeTimer = null;
+document.addEventListener('input', e=>{
+  const w = DUPE_WATCH.find(x=>x[0]===e.target.id); if(!w) return;
+  clearTimeout(dupeTimer); dupeTimer = setTimeout(()=> renderDupeWarning(w[0], w[1], w[2]), 200);
+});
+document.addEventListener('click', e=>{
+  const b = e.target.closest('[data-dupe-open]'); if(!b) return;
+  e.preventDefault();
+  if(!confirm(LANG==='zh' ? '离开这个表单并打开现有客户？未保存的内容会丢失。' : 'Leave this form and open the existing customer? What you typed here will not be saved.')) return;
+  const id = b.dataset.dupeOpen;
+  closeAllModals(); openCustomerDetail(id);
+});
+/* Called by the save buttons. Returns true when it's OK to save: no matches, or the user
+   confirmed saving anyway. */
+function confirmNoDuplicates(form){
+  const lines = [];
+  DUPE_WATCH.filter(w=>w[2]===form).forEach(([id, kind])=>{
+    const el = document.getElementById(id); if(!el) return;
+    findExistingMatches(kind, el.value, dupeExcludeId(form)).slice(0,3).forEach(c=>{
+      lines.push(`${kind==='phone'?(LANG==='zh'?'电话':'Phone'):(LANG==='zh'?'证件号码':'ID number')} ${el.value.trim()} → ${c.name}`);
+    });
+  });
+  if(!lines.length) return true;
+  return confirm((LANG==='zh' ? '以下信息已属于其他客户：\n\n' : 'Already used by another customer:\n\n') + [...new Set(lines)].join('\n') + (LANG==='zh' ? '\n\n仍然保存？' : '\n\nSave anyway?'));
 }
 /* ---------------- AI BUSINESS INTELLIGENCE PAGE ---------------- */
 const AI_PRIORITY_PILL = {high:'pill-red', medium:'pill-orange', low:'pill-blue', none:'pill-gray'};
@@ -3119,6 +3246,7 @@ document.getElementById('chooseTypePostpaid').addEventListener('click', ()=>{
   openNewPostpaidModal();
 });
 function openNewPostpaidModal(){
+  clearDupeWarnings();
   document.getElementById('pc_name').value = '';
   document.getElementById('pc_nationality').value = '';
   document.getElementById('pc_dob').value = '';
@@ -3159,6 +3287,7 @@ function updatePcNetExpectedPreview(){
 document.getElementById('savePostpaidCustomerBtn').addEventListener('click', ()=>{
   const name = document.getElementById('pc_name').value.trim();
   if(!name){ toast(LANG==='zh'?'请输入客户姓名':'Please enter a customer name'); return; }
+  if(!confirmNoDuplicates('pc')) return;
   const workType = document.getElementById('pc_workType_group').dataset.selected;
   if(!workType){ toast(LANG==='zh'?'请选择「业务向」':'Please select a work type'); return; }
   const idType = document.getElementById('pc_idType_group').dataset.selected || 'ARC';
@@ -3218,6 +3347,7 @@ document.getElementById('savePostpaidCustomerBtn').addEventListener('click', ()=
 });
 
 function openCustomerModal(customer){
+  clearDupeWarnings();
   editingCustomerId = customer ? customer.id : null;
   document.getElementById('customerModalTitle').textContent = customer ? t('modal.editCustomer') : t('modal.newCustomer');
   populateStaticSelects();
@@ -3228,7 +3358,8 @@ function openCustomerModal(customer){
   document.getElementById('f_dob').value = toYYMMDD(customer?.dob) || '';
   renderTileRadioGroup('f_idType_group', ['ARC','Passport'], customer?.idType || 'ARC');
   document.getElementById('f_idNumber').value = customer?.idNumber || '';
-  document.getElementById('f_idExpiry').value = customer?.idExpiry || '';
+  document.getElementById('f_idExpiry').value = toYYMMDD(customer?.idExpiry) || '';
+  updateIdExpiryHint();
   // Not needed at initial signup time — it's still useful data (AI eligibility checks,
   // data completeness), so it stays available on Edit Profile for filling in later, same
   // reasoning as Payment Method.
@@ -3340,6 +3471,33 @@ document.getElementById('f_idType_group').addEventListener('click', ()=> setTime
 document.getElementById('f_dob').addEventListener('input', e=>{
   e.target.value = e.target.value.replace(/[^0-9]/g,'').slice(0,6);
 });
+document.getElementById('f_idExpiry').addEventListener('input', e=>{
+  e.target.value = e.target.value.replace(/[^0-9]/g,'').slice(0,6);
+  updateIdExpiryHint();
+});
+/* readable line under ID expiry: "Jan 1, 2029 · in 26 months" / "expired" / how to type it */
+function updateIdExpiryHint(){
+  const inp = document.getElementById('f_idExpiry'); if(!inp) return;
+  const field = inp.closest('.form-field') || inp.parentElement;
+  let el = field.querySelector(':scope > .nf-dobinfo.expiry-hint');
+  if(!el){ el = document.createElement('div'); el.className = 'nf-dobinfo expiry-hint'; field.appendChild(el); }
+  const zh = LANG==='zh';
+  const iso = parseExpiryFlexible(inp.value);
+  let txt = '', cls = '';
+  if(iso){
+    const d = new Date(iso+'T00:00:00');
+    const months = Math.round(daysBetween(todayISO(), iso)/30.44);
+    const when = months<0 ? (zh?'已过期':'already expired') : months===0 ? (zh?'本月到期':'expires this month') : (zh?`还有 ${months} 个月`:`in ${months} month${months===1?'':'s'}`);
+    txt = d.toLocaleDateString(zh?'zh-CN':'en-US',{year:'numeric',month:'short',day:'numeric'}) + ' · ' + when;
+    cls = months<3 ? 'warn' : 'ok';
+  } else if(!inp.value){
+    txt = zh ? '输入6位数字：年、月、日' : 'Type 6 digits: year, month, day';
+  } else if(inp.value.length===6){
+    txt = zh ? '日期无效' : 'Not a valid date'; cls = 'warn';
+  }
+  if(el.textContent!==txt) el.textContent = txt;
+  el.className = 'nf-dobinfo expiry-hint ' + cls;
+}
 /* postpaid-only companies/carrier that a given prepaid plan is allowed to use — three months
    uses one supplier pairing, 1-2 months uses another, and the 15-day plan is unrestricted */
 /* All company / carrier type options are available for every prepaid duration — there's no
@@ -3430,6 +3588,8 @@ document.getElementById('f_rating').addEventListener('click', e=>{
 });
 
 function saveCustomerFromForm(){
+  // new customers only — an existing pair that legitimately shares a number shouldn't be asked on every edit
+  if(!editingCustomerId && !confirmNoDuplicates('cust')) return;
   // Company and Carrier Type are required for prepaid — checked here, before ANYTHING is
   // saved, so a failed check never leaves a half-created customer record behind (with no
   // service attached) if this ran after the customer record was already written.
@@ -3530,7 +3690,7 @@ function saveCustomerCore(name){
     dob:parseDobFlexible(document.getElementById('f_dob').value) || '',
     idType,
     idNumber:document.getElementById('f_idNumber').value.trim().toUpperCase(),
-    idExpiry:document.getElementById('f_idExpiry').value,
+    idExpiry:parseExpiryFlexible(document.getElementById('f_idExpiry').value) || '',
     occupation,
     years:document.getElementById('f_years').value?Number(document.getElementById('f_years').value):0,
     referral:document.getElementById('f_referral').value,
@@ -3587,6 +3747,7 @@ function buildPrepaidServiceFromForm(cust){
 function saveCustomerAndPrint(){
   const name = document.getElementById('f_name').value.trim();
   if(!name){ toast(LANG==='zh'?'请输入客户姓名':'Please enter a customer name'); return; }
+  if(!confirmNoDuplicates('cust')) return;
   if(!document.getElementById('p3_company_group').dataset.selected){
     toast(LANG==='zh'?'请选择加入的公司':'Please select a Company'); return;
   }
@@ -3643,6 +3804,9 @@ function deleteCustomerById(id){
 let detailCustomerId = null;
 function openCustomerDetail(id){
   detailCustomerId = id;
+  // Delete lives behind "More" in the footer — hidden again every time a profile opens
+  const delBtn = document.getElementById('detailDeleteBtn'); if(delBtn) delBtn.style.display = 'none';
+  const moreBtn = document.getElementById('detailMoreBtn'); if(moreBtn) moreBtn.textContent = LANG==='zh' ? '⋯ 更多' : '⋯ More';
   const c = getCustomer(id);
   if(!c) return;
   const active = activeSubscriptionFor(id);
@@ -3891,6 +4055,15 @@ function contractStatusTextFor(s, short){
   if(remaining <= 7) return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天（即将到期）` : `${remaining} days remaining, in contract — expiring soon`;
   return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天` : `${remaining} days remaining, in contract`;
 }
+/* Progress bar colour: red once a prepaid plan has expired, orange in its last 7 days,
+   calm grey for a postpaid past its contract term (it keeps working — not an alarm). */
+function progressStateClass(s){
+  if(!s || !s.expiryDate) return '';
+  const rem = daysBetween(todayISO(), s.expiryDate);
+  if(rem < 0) return s.type==='postpaid' ? 'pg-over' : 'pg-expired';
+  if(rem <= 7) return 'pg-soon';
+  return '';
+}
 function serviceCardHtml(s, customer){
   const st = computedStatus(s);
   let progressPct = 0;
@@ -3958,7 +4131,7 @@ function serviceCardHtml(s, customer){
     <div class="service-card-head">
       <div>
         <div style="font-weight:800;">${t('type.'+s.type)} · ${escapeHtml(s.carrier||'—')}</div>
-        <div class="muted" style="font-size:12px;margin-top:2px;">${escapeHtml(s.plan||'')} · ${s.number||'—'} · ${s.simType==='esim'?'eSIM':t('opt.physical')}</div>
+        <div class="muted" style="font-size:12px;margin-top:2px;">${[s.plan?escapeHtml(s.plan):'', s.number?escapeHtml(s.number):'', s.simType==='esim'?'eSIM':t('opt.physical')].filter(Boolean).join(' · ')}</div>
       </div>
       <div style="text-align:right;">
         <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>
@@ -3979,7 +4152,7 @@ function serviceCardHtml(s, customer){
         <div style="font-size:15px;font-weight:800;">${fmtDateHuman(s.expiryDate)}</div>
       </div>
     </div>
-    <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+    <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill ${progressStateClass(s)}" style="width:${progressPct}%"></div></div>
     <div class="muted" style="font-size:11.5px;margin-top:6px;">${contractStatusText}</div>`:''}
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
       ${identityCard}
@@ -4672,15 +4845,59 @@ document.getElementById('confirmCancelSubBtn').addEventListener('click', ()=>{
 });
 
 /* ---------------- REMINDERS ---------------- */
+/* Which list a reminder belongs to. Plans more than 30 days late go to "Old" so they no
+   longer bury today's work; nothing is deleted or auto-completed. */
+const REM_OLD_AFTER_DAYS = 30;
+function remBucket(r){
+  if(r.uiStatus==='completed') return 'done';
+  if(r.daysLeft===0) return 'today';
+  if(r.daysLeft>0 && r.daysLeft<=7) return 'week';
+  if(r.daysLeft<0 && r.daysLeft>=-REM_OLD_AFTER_DAYS) return 'overdue';
+  if(r.daysLeft<-REM_OLD_AFTER_DAYS) return 'old';
+  return 'later'; // 8–30 days ahead
+}
+/* what the sidebar badge counts: due today + this week (not overdue/old backlog) */
+function remBadgeCount(){
+  return buildReminders().filter(r=> r.type!=='contract_end' && (remBucket(r)==='today' || remBucket(r)==='week')).length;
+}
+/* "Good morning / afternoon / evening, <staff member>" for the dashboard banner */
+function dashGreetingText(){
+  const h = new Date().getHours();
+  let who = ''; try{ who = getActiveStaff() || ''; }catch(e){}
+  if(LANG==='zh') return (h<12?'早上好':h<18?'下午好':'晚上好') + (who?'，'+who:'');
+  return (h<12?'Good morning':h<18?'Good afternoon':'Good evening') + (who?', '+who:'');
+}
+/* "Today" tiles inside the dashboard banner — each opens the matching Reminders tab */
+function renderDashTodayStrip(reminders, renewalsSoon){
+  const card = document.querySelector('#page-dashboard>.card:first-child'); if(!card) return;
+  let strip = document.getElementById('dashTodayStrip');
+  if(!strip){ strip = document.createElement('div'); strip.id = 'dashTodayStrip'; strip.className = 'dash-today'; card.appendChild(strip); }
+  const n = k => reminders.filter(r=>remBucket(r)===k).length;
+  const zh = LANG==='zh';
+  const tiles = [
+    {tab:'today', label: zh?'今天到期':'Due today', v:n('today')},
+    {tab:'week', label: zh?'本周到期':'This week', v:n('week')},
+    {tab:'overdue', label: zh?'已逾期':'Overdue', hint: zh?'过去30天内到期':'expired in the last 30 days', v:n('overdue')},
+    {tab:'postpaidContract', label: zh?'合约即将结束':'Contracts ending', hint: zh?'后付合约30天内结束':'postpaid contracts ending in the next 30 days', v:(renewalsSoon||[]).length},
+  ];
+  const html = tiles.map(x=>`<button type="button" class="dash-today-tile ${x.v?'':'zero'}" data-today-tab="${x.tab}"${x.hint?` title="${escapeHtml(x.hint)}"`:''}><span class="v">${x.v}</span><span class="l">${escapeHtml(x.label)}</span></button>`).join('');
+  if(strip.innerHTML!==html){
+    strip.innerHTML = html;
+    strip.querySelectorAll('[data-today-tab]').forEach(b=> b.addEventListener('click', ()=>{ reminderTab = b.dataset.todayTab; goTo('reminders'); }));
+  }
+}
 function renderReminders(){
   const all = buildReminders().filter(r=>r.type!=='contract_end'); // postpaid contract status gets its own tab below — see why there
   const cohortAll = getPrepaidCohortList(); // unfiltered — used only for the tab's count badge
   const postpaidContractAll = getPostpaidContractList();
   const idChangeAll = getPendingIdChangeRequests();
+  const nb = k => all.filter(r=>remBucket(r)===k).length;
   const tabs = [
-    {key:'all', label:'rem.tab.all', n:all.filter(r=>r.uiStatus!=='completed').length},
-    {key:'today', label:'rem.tab.today', n:all.filter(r=>r.daysLeft<=0 && r.uiStatus!=='completed').length},
-    {key:'week', label:'rem.tab.week', n:all.filter(r=>r.daysLeft>0 && r.daysLeft<=7 && r.uiStatus!=='completed').length},
+    {key:'today', label:'rem.tab.today', n:nb('today')},
+    {key:'week', label:'rem.tab.week', n:nb('week')},
+    {key:'overdue', label:'rem.tab.overdue', n:nb('overdue')},
+    {key:'all', label:'rem.tab.all', n:all.filter(r=>{ const b=remBucket(r); return b!=='done' && b!=='old'; }).length},
+    {key:'old', label:'rem.tab.old', n:nb('old')},
     {key:'expiring', label:'rem.tab.expiring', n:cohortAll.length},
     {key:'postpaidContract', label:'rem.tab.postpaidContract', n:postpaidContractAll.length},
     {key:'idChange', label:'rem.tab.idChange', n:idChangeAll.length},
@@ -4698,11 +4915,11 @@ function renderReminders(){
   if(reminderTab==='idChange'){ renderIdChangeTab(idChangeAll); return; }
 
   let list = all;
-  if(reminderTab==='today') list = all.filter(r=>r.daysLeft<=0 && r.uiStatus!=='completed');
-  else if(reminderTab==='week') list = all.filter(r=>r.daysLeft>0 && r.daysLeft<=7 && r.uiStatus!=='completed');
+  if(['today','week','overdue','old','done'].includes(reminderTab)) list = all.filter(r=>remBucket(r)===reminderTab);
   else if(reminderTab==='infochange') list = all.filter(r=>r.type==='info_change' && r.uiStatus!=='completed');
-  else if(reminderTab==='done') list = all.filter(r=>r.uiStatus==='completed');
-  else list = all.filter(r=>r.uiStatus!=='completed');
+  else list = all.filter(r=>{ const b=remBucket(r); return b!=='done' && b!=='old'; });
+  // overdue lists: most recently expired first (the ones still most likely to recharge)
+  if(reminderTab==='overdue' || reminderTab==='old') list = [...list].sort((x,y)=> y.daysLeft - x.daysLeft);
 
   document.getElementById('reminderList').innerHTML = list.length ? list.map(r=>{
     const c = getCustomer(r.customerId);
@@ -4720,6 +4937,9 @@ function renderReminders(){
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex:0 0 auto;">
         <span class="pill ${r.daysLeft<=0?'pill-red':'pill-orange'}">${dtxt}</span>
+        ${c && c.phone ? `<button class="btn btn-sm btn-ghost rem-quick" data-rem-copy="${escapeHtml(c.phone)}" title="${t('rem.copyNumber')}">📋 ${t('rem.copyNumber')}</button>` : ''}
+        ${c && r.uiStatus!=='completed' && r.type==='expiry' && activeSubscriptionFor(c.id)?.type==='prepaid' ? `<button class="btn btn-sm btn-ghost rem-quick" data-rem-recharge="${c.id}">🔋 ${t('btn.recharge')}</button>` : ''}
+        ${c ? `<button class="btn btn-sm btn-ghost rem-quick" data-open-customer="${c.id}">${t('rem.profile')}</button>` : ''}
         ${r.uiStatus==='completed'
           ? `<span class="pill pill-green">${t('status.completed')}</span>`
           : `<button class="btn btn-sm btn-ghost" data-rem-followup="${r.id}">${t('btn.followUpAgain')}</button><button class="btn btn-sm btn-primary" data-rem-done="${r.id}">${t('btn.complete')}</button>`
@@ -4730,6 +4950,11 @@ function renderReminders(){
   bindRowOpens();
   document.querySelectorAll('[data-rem-done]').forEach(b=> b.addEventListener('click', ()=>{ DB.reminderState[b.dataset.remDone]='completed'; saveDB(DB); toast(t('toast.reminderDone')); renderReminders(); renderNav(); }));
   document.querySelectorAll('[data-rem-followup]').forEach(b=> b.addEventListener('click', ()=>{ DB.reminderState[b.dataset.remFollowup]='pending'; saveDB(DB); toast(t('toast.reminderFollowup')); renderReminders(); }));
+  document.querySelectorAll('[data-rem-copy]').forEach(b=> b.addEventListener('click', ()=>{
+    const v = b.dataset.remCopy;
+    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(()=>toast(t('rem.copied')+': '+v)).catch(()=>{ prompt(t('rem.copyNumber'), v); });
+  }));
+  document.querySelectorAll('[data-rem-recharge]').forEach(b=> b.addEventListener('click', ()=> openPrepaidAssignModal(b.dataset.remRecharge, 'recharge')));
 }
 /* The "Prepaid expiring" tab's own render path — deliberately separate from the generic
    reminder list above, since this works over every current prepaid subscription (not a
@@ -6718,6 +6943,12 @@ document.getElementById('savePrintCustomerBtn').addEventListener('click', saveCu
 document.getElementById('detailEditBtn').addEventListener('click', ()=>{ const c=getCustomer(detailCustomerId); closeAllModals(); openCustomerModal(c); });
 document.getElementById('detailAddServiceBtn').addEventListener('click', ()=>{ const id=detailCustomerId; closeAllModals(); openOrderModal(null, id); });
 document.getElementById('detailDeleteBtn').addEventListener('click', ()=> deleteCustomerById(detailCustomerId));
+document.getElementById('detailMoreBtn').addEventListener('click', ()=>{
+  const d = document.getElementById('detailDeleteBtn');
+  const show = d.style.display==='none';
+  d.style.display = show ? '' : 'none';
+  document.getElementById('detailMoreBtn').textContent = show ? (LANG==='zh'?'收起':'Less') : (LANG==='zh'?'⋯ 更多':'⋯ More');
+});
 document.getElementById('deleteCustomerBtn').addEventListener('click', ()=> deleteCustomerById(editingCustomerId));
 document.getElementById('saveOrderBtn').addEventListener('click', saveOrderFromForm);
 document.getElementById('btnNewOrder').addEventListener('click', ()=> openOrderModal(null));
@@ -7114,7 +7345,7 @@ applyStaticI18n();
 /* Chinese / English helper shared by the blocks below (follows the CRM's own language switch) */
 (function(){
   var Z={'+ New customer':'+ 新增客户','Average stay by nationality':'各国籍平均停留时间','Expected years in Korea, from each customer record':'按每位客户记录的预计在韩年数','All months':'全部月份','No data for this month.':'本月暂无数据。','yrs':'年',
-  'Switch to light mode':'切换到浅色模式','Switch to dark mode':'切换到深色模式','Active subscription':'当前订阅','Plan info':'套餐信息','Plan history':'套餐历史','Income':'收入','Show':'展开','Hide':'收起','More':'更多','Less':'收起',
+  'Switch to light mode':'切换到浅色模式','Switch to dark mode':'切换到深色模式','Active subscription':'当前订阅','Current plan':'当前套餐','Plan info':'套餐信息','Plan history':'套餐历史','Income':'收入','Show':'展开','Hide':'收起','More':'更多','Less':'收起',
   'Company':'公司','Carrier type':'运营商类型','Plan length':'套餐时长','Nationality':'国籍','Used':'已使用','Print':'打印','Copy phone number':'复制电话号码','Phone number copied':'电话号码已复制',
   'plan price':'套餐价','monthly discount':'每月优惠','Not accepted: customer is under 19':'不予受理：客户未满19岁','Month':'月份','Previous plan':'上一个套餐'};
   function zh(){try{return LANG==='zh';}catch(e){return false;}}
@@ -7229,7 +7460,7 @@ applyStaticI18n();
   var css=
   '#page-dashboard>.card:first-child .dash-hero-txt{position:relative;z-index:1;margin-bottom:18px;color:#fff}'+
   '.dash-hero-txt .dh-date{font-size:13px;opacity:.85}'+
-  '.dash-hero-txt .dh-h{margin:6px 0 0;font-size:32px;line-height:1.2;font-weight:700;color:#fff}'+
+  '.dash-hero-txt .dh-h{margin:0;font-size:24px;line-height:1.25;font-weight:700;color:#fff}.dash-hero-txt .dh-count{font-weight:500;opacity:.8;font-size:18px}'+
   '.dash-hero-row{display:flex;gap:10px;align-items:center;position:relative;z-index:1}'+
   '.dash-hero-row .search-input{flex:1 1 auto;min-width:0}'+
   '.dash-hero-new{flex:0 0 auto;height:50px;padding:0 22px;border-radius:999px;border:0;background:#f26a21;color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:transform .2s,filter .2s}'+
@@ -7258,18 +7489,14 @@ applyStaticI18n();
       card.insertBefore(box,card.firstChild);
       var row=document.createElement('div');row.className='dash-hero-row';
       card.insertBefore(row,box.nextSibling);row.appendChild(inp);
-      var nb=document.createElement('button');nb.type='button';nb.className='dash-hero-new';nb.textContent=__T('+ New customer');
-      nb.onclick=function(){var b=document.getElementById('btnNewCustomerTop');if(b)b.click();};
-      row.appendChild(nb);
-      var res=document.getElementById('dashQuickSearchResults');if(res)card.appendChild(res);
+      // (no second "+ New customer" button here — the header already has one)
+      var res=document.getElementById('dashQuickSearchResults');if(res)card.insertBefore(res,row.nextSibling);
     }
-    var pt=document.getElementById('pageTitle'),dt=document.querySelector('.page-sub,#pageSub');
-    var g=(pt&&/Good|早|午|晚/.test(pt.textContent))?pt.textContent.trim():'';
+    var g=dashGreetingText();
     var n=(DB.customers||[]).length;
-    var dd=box.querySelector('.dh-date'),dtx=new Date().toLocaleDateString(__zh()?'zh-CN':'en-GB',{weekday:'long',day:'numeric',month:'long'});if(dd.textContent!==dtx)dd.textContent=dtx;
+    var dd=box.querySelector('.dh-date');if(dd&&dd.textContent!=='')dd.textContent=''; // date is in the header already
     var h=box.querySelector('.dh-h');
-    var html=(g?esc(g)+(__zh()?'。':'.')+'<br>':'')+(__zh()?'数据库中共有 '+n+' 位客户。':n+' customers in your database.');
-    var nbb=card.querySelector('.dash-hero-new');if(nbb&&nbb.textContent!==__T('+ New customer'))nbb.textContent=__T('+ New customer');
+    var html=esc(g)+' <span class="dh-count">· '+(__zh()?'共 '+n+' 位客户':n+' customers')+'</span>';
     if(h.innerHTML!==html)h.innerHTML=html;
   }
   function months(){
@@ -7535,7 +7762,7 @@ applyStaticI18n();
       }
     }
     /* active card */
-    var aCard=card();aCard.appendChild(title(__T('Active subscription'),'sub'));
+    var aCard=card();aCard.appendChild(title(__T('Current plan'),'sub'));
     if(sh){sh.classList.add('section-head');aCard.appendChild(active);aCard.appendChild(sh);}else aCard.appendChild(active);
     /* action buttons: first three visible, the rest under "More" */
     if(sh){var br=sh.querySelector('.btn')&&sh.querySelector('.btn').parentElement;
@@ -7867,7 +8094,7 @@ applyStaticI18n();
 /* ===== Sheet View: "All ratings" becomes Carrier type (prepaid) / Partner company (postpaid) ===== */
 (function(){
   var TX={en:{pre:'All carrier types',post:'All partner companies'},zh:{pre:'全部运营商类型',post:'全部合作公司'},ko:{pre:'전체 통신사 유형',post:'전체 제휴사'}};
-  var COL={prepaid:4,postpaid:6},vals={prepaid:'',postpaid:''};
+  var COL={prepaid:'svcCarrierType',postpaid:'partnerCompany'},vals={prepaid:'',postpaid:''}; // matched via td[data-col], not position
   function lang(){try{return LANG;}catch(e){return 'en';}}
   function tab(){try{return sheetTypeTab;}catch(e){return '';}}
   function cellText(td){if(!td)return '';var i=td.querySelector('input,select');return ((i?i.value:td.textContent)||'').replace(/\s+/g,' ').trim();}
@@ -7901,7 +8128,7 @@ applyStaticI18n();
     var tb=tab();if(tb!=='prepaid'&&tb!=='postpaid')return;
     var v=vals[tb],rows=document.querySelectorAll('#sheetTable tbody tr'),n=0,idx=COL[tb];
     rows.forEach(function(r){
-      var show=!v||cellText(r.children[idx])===v;
+      var show=!v||cellText(r.querySelector('td[data-col="'+idx+'"]'))===v;
       var hidden=r.getAttribute('data-xf')==='1';
       if(!show&&!hidden){r.style.display='none';r.setAttribute('data-xf','1');}
       else if(show&&hidden){r.style.display='';r.removeAttribute('data-xf');}
@@ -8116,7 +8343,7 @@ applyStaticI18n();
     var g=$('f_idType_group'),ex=$('f_idExpiry');
     if(!g||!ex||!ex.value)return {block:false};
     if((g.dataset.selected||'ARC')!=='ARC')return {block:false};
-    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ex.value);if(!m)return {block:false};
+    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(parseExpiryFlexible(ex.value));if(!m)return {block:false}; // 6-digit typing since 2026-11-11
     var d=new Date(+m[1],+m[2]-1,+m[3]),n=new Date(),lim=new Date(n.getFullYear(),n.getMonth()+3,n.getDate()),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate());
     if(d>=lim)return {block:false};
     return {block:true,days:Math.round((d-t0)/86400000)};
