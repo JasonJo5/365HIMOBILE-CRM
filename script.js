@@ -48,7 +48,7 @@ const I18N = {
     'sub.sheet':'像表格一样直接编辑客户与套餐信息',
     'sheet.hint':'💡 点击彩色标签可直接选择新值；点击文字/数字/日期可直接编辑，回车或点击其他地方即保存',
     'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份',
-    'btn.newCustomer':'新建客户','btn.exportExcel':'导出 Excel','btn.exportMonthExcel':'导出该月份 Excel','btn.addFollowup':'＋ 添加跟进','btn.newOrder':'＋ 新增业务','btn.cancel':'取消','btn.saveCustomer':'保存客户','btn.saveOrder':'保存业务','btn.edit':'编辑资料','btn.addService':'＋ 新增业务','btn.confirmImport':'确认导入','btn.view':'查看','btn.complete':'完成','btn.followUpAgain':'再次跟进','btn.delete':'删除','btn.deleteCustomer':'删除客户','btn.saveTemplate':'保存模板','btn.print':'打印','btn.savePrint':'保存并打印申请表','btn.merge':'合并','btn.copyName':'复制姓名','btn.save':'保存','btn.requestIdChange':'信息变更','btn.markComplete':'标记已完成','btn.freezeSim':'暂停卡号','btn.unfreezeSim':'解除暂停',
+    'btn.newCustomer':'新建客户','btn.exportExcel':'导出 Excel','btn.exportMonthExcel':'导出 Excel','btn.addFollowup':'＋ 添加跟进','btn.newOrder':'＋ 新增业务','btn.cancel':'取消','btn.saveCustomer':'保存客户','btn.saveOrder':'保存业务','btn.edit':'编辑资料','btn.addService':'＋ 新增业务','btn.confirmImport':'确认导入','btn.view':'查看','btn.complete':'完成','btn.followUpAgain':'再次跟进','btn.delete':'删除','btn.deleteCustomer':'删除客户','btn.saveTemplate':'保存模板','btn.print':'打印','btn.savePrint':'保存并打印申请表','btn.merge':'合并','btn.copyName':'复制姓名','btn.save':'保存','btn.requestIdChange':'信息变更','btn.markComplete':'标记已完成','btn.freezeSim':'暂停卡号','btn.unfreezeSim':'解除暂停',
     'freeze.modalTitle':'暂停卡号（Freeze SIM）','freeze.modalDesc':'暂停期间不计入合约期限，合约到期日将顺延相应天数。仅限后付卡客户使用。','freeze.byDays':'按天数','freeze.byRange':'按日期范围','freeze.startDate':'开始日期','freeze.endDate':'结束日期','freeze.days':'暂停天数','freeze.frozen':'暂停中','freeze.colHeader':'暂停状态','freeze.clickToUnfreeze':'点击解除暂停',
     'btn.changeToPostpaid':'转为后付卡','btn.changePlan':'变更套餐','btn.cancelSubscription':'取消订阅','btn.startNewSubscription':'开通新订阅','btn.confirmChange':'确认变更','btn.confirmCancel':'确认取消订阅','btn.back':'返回','btn.undoCancel':'恢复订阅 Reactivate',
     'btn.recharge':'充值续约','btn.changeToPrepaid':'转为先付卡','btn.confirmRecharge':'确认充值',
@@ -88,7 +88,7 @@ const I18N = {
     'rem.dueIn':'天后到期','rem.overdue':'天前已到期','rem.today':'今日到期','rem.auto':'自动生成','rem.empty.title':'暂无提醒','rem.empty.desc':'当有客户即将到期或需要跟进时，会显示在这里',
     'orders.title':'业务订单','orders.desc':'记录先付、后付、号码移动、充值和名义变更','orders.showHistory':'显示已变更的历史记录',
     'rep.byCarrier':'按通信社的营收 / 收入','rep.byType':'按业务类型的营收 / 收入','rep.popularPlans':'热门套餐 Top 5','rep.rates':'续约率 / 回头客率','rep.monthly':'全部月份对账','rep.renewalRate':'续约率','rep.repeatRate':'回头客率','rep.totalOrders':'累计订单数','rep.avgProfit':'平均单笔收入',
-    'rep.view.monthly':'📅 月度报表','rep.view.daily':'📆 每日报表','rep.monthlyComparison':'月度对比 — 先付 / 后付收入','rep.prepaidIncome':'先付总收入','rep.postpaidExpected':'后付预期收入','rep.postpaidActual':'后付实际收入','rep.accumulated':'累计总收入',
+    'rep.view.monthly':'月度报表','rep.view.daily':'每日报表','rep.monthlyComparison':'月度对比 — 先付 / 后付收入','rep.prepaidIncome':'先付总收入','rep.postpaidExpected':'后付预期收入','rep.postpaidActual':'后付实际收入','rep.accumulated':'累计总收入',
     'rep.daily.title':'每日报表','rep.daily.desc':'按日期查看先付 / 后付客户数与收入','rep.daily.recent':'近期每日记录','rep.daily.prepaidCustomers':'先付客户数','rep.daily.postpaidCustomers':'后付客户数',
     'col.prepaidCustomers':'先付客户数','col.postpaidCustomers':'后付客户数','col.prepaidIncome':'先付收入','col.postpaidExpected':'后付预期收入','col.postpaidActual':'后付实际收入','col.monthTotal':'合计','col.date':'日期','col.accumulated':'累计总收入',
     'rep.daily.prepaidListTitle':'先付客户明细（本日）','rep.daily.postpaidListTitle':'后付客户明细（本日）','rep.daily.paymentBreakdownTitle':'付款方式汇总（先付，本日）','rep.daily.paymentBreakdownDesc':'按付款方式统计当日先付客户数与收入合计','rep.daily.notSet':'未填写','rep.monthly.paymentBreakdownTitle':'付款方式汇总（先付）','rep.monthly.paymentBreakdownDesc':'按付款方式统计所选月份先付客户数与收入合计',
@@ -97,9 +97,9 @@ const I18N = {
     'io.import.title':'导入 Excel','io.import.desc':'支持导入现有的先付 / 后付客户记录（.xlsx / .csv）','io.import.drop':'拖拽文件到此处，或点击选择文件',
     'io.import.modeTitle':'导入方式','io.import.modeMerge':'与现有客户合并','io.import.modeMergeDesc':'保留现有客户档案，仅新增导入文件中不重复的客户','io.import.modeReplace':'清空现有客户，改用此文件的数据','io.import.modeReplaceDesc':'导入前会先自动导出当前客户数据备份（Excel），再清空并载入新文件','io.import.skipDupes':'自动跳过重复客户（按姓名或电话匹配）',
     'io.import.sheet':'选择表格 Sheet','io.import.sheets':'选择要导入的表格 Sheets to import（可多选，例如同时导入先付卡与后付卡）','io.import.headerRow':'标题行 Header row','io.import.subType':'这批客户属于','io.import.subTypeAuto':'自动判断（根据表格名称）','io.import.subTypePrepaid':'先付卡','io.import.subTypePostpaid':'后付卡',
-    'io.export.title':'导出数据','io.export.desc':'导出全部客户与业务数据为一个 Excel 文件（先付/后付各一个分页），结构与「表格视图」完全一致','io.export.all':'📤 导出全部数据',
+    'io.export.title':'导出数据','io.export.desc':'导出全部客户与业务数据为一个 Excel 文件（先付/后付各一个分页），结构与「表格视图」完全一致','io.export.all':'导出全部数据',
     'io.yearExport.title':'按类型与年份导出','io.yearExport.desc':'按先付/后付与年份导出，格式为一个年份一个分页，月份之间用一行分隔 — 适合整理归档或未来导入数据库','io.yearExport.typeLabel':'业务类型','io.yearExport.yearLabel':'年份','io.yearExport.btn':'📅 导出该年份数据',
-    'io.format.title':'清空数据，重新开始','io.format.desc':'清空全部客户与业务记录，方便导入全新的数据。此操作无法撤销 — 建议先导出备份。','io.format.btn':'🗑 格式化数据 Format Data',
+    'io.format.title':'清空数据，重新开始','io.format.desc':'清空全部客户与业务记录，方便导入全新的数据。此操作无法撤销 — 建议先导出备份。','io.format.btn':'清空全部数据',
     'sync.title':'服务器同步（多台电脑共享数据）','sync.desc':'连接店内共享服务器后，本电脑与其他电脑可以使用同一份客户数据。未连接前，数据仅保存在本电脑。','sync.urlLabel':'服务器地址','sync.keyLabel':'密钥 API Key（在服务器 .env 文件中设置）','sync.test':'测试连接','sync.pushNow':'立即推送本机数据到服务器','sync.pullNow':'从服务器拉取最新数据','sync.enable':'启用自动同步（保存时自动推送，打开页面时自动拉取）',
     'lock.title':'365Himobile 客户管理系统','lock.desc':'请输入服务器地址与密钥以载入客户数据','lock.passwordLabel':'密钥 / 密码','lock.unlock':'解锁并载入数据','lock.skip':'跳过 — 仅在本机使用（空白，不含任何客户数据）','lock.logout':'🔒 退出登录 Log out',
     'io.issues.title':'数据完整性检查','io.issues.desc':'缺失联系方式、有效期、证件信息或付款信息的客户','io.issues.none':'没有发现数据问题，档案很完整 👍','io.bulkClearPayment.title':'批量清空付款方式','io.bulkClearPayment.desc':'用于一次性清空某个月份所有客户的付款方式，方便之后逐一核实填写','io.bulkClearPayment.btn':'清空该月份付款方式','io.bulkClearPayment.byActivation':'按开通日期匹配','io.bulkClearPayment.byAdded':'按添加日期匹配',
@@ -148,7 +148,7 @@ const I18N = {
     'sub.sheet':'Edit customer & plan info directly, like a spreadsheet',
     'sheet.hint':'💡 Click a colored tag to pick a new value; click text/numbers/dates to edit directly — press Enter or click away to save',
     'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup',
-    'btn.newCustomer':'New customer','btn.exportExcel':'Export Excel','btn.exportMonthExcel':'Export this month (Excel)','btn.addFollowup':'＋ Add reminder','btn.newOrder':'＋ New order','btn.cancel':'Cancel','btn.saveCustomer':'Save customer','btn.saveOrder':'Save order','btn.edit':'Edit profile','btn.addService':'＋ Add service','btn.confirmImport':'Confirm import','btn.view':'View','btn.complete':'Complete','btn.followUpAgain':'Follow up again','btn.delete':'Delete','btn.deleteCustomer':'Delete customer','btn.saveTemplate':'Save template','btn.print':'Print','btn.savePrint':'Save & print application form','btn.merge':'Merge','btn.copyName':'Copy name','btn.save':'Save','btn.requestIdChange':'Information change','btn.markComplete':'Mark complete','btn.freezeSim':'Freeze SIM','btn.unfreezeSim':'Unfreeze SIM',
+    'btn.newCustomer':'New customer','btn.exportExcel':'Export Excel','btn.exportMonthExcel':'Export to Excel','btn.addFollowup':'＋ Add reminder','btn.newOrder':'＋ New order','btn.cancel':'Cancel','btn.saveCustomer':'Save customer','btn.saveOrder':'Save order','btn.edit':'Edit profile','btn.addService':'＋ Add service','btn.confirmImport':'Confirm import','btn.view':'View','btn.complete':'Complete','btn.followUpAgain':'Follow up again','btn.delete':'Delete','btn.deleteCustomer':'Delete customer','btn.saveTemplate':'Save template','btn.print':'Print','btn.savePrint':'Save & print application form','btn.merge':'Merge','btn.copyName':'Copy name','btn.save':'Save','btn.requestIdChange':'Information change','btn.markComplete':'Mark complete','btn.freezeSim':'Freeze SIM','btn.unfreezeSim':'Unfreeze SIM',
     'freeze.modalTitle':'Freeze SIM','freeze.modalDesc':'Frozen time doesn\'t count toward the contract — the end date pushes back by however many days are frozen. Postpaid only.','freeze.byDays':'By days','freeze.byRange':'By date range','freeze.startDate':'Start date','freeze.endDate':'End date','freeze.days':'Days to freeze','freeze.frozen':'Frozen','freeze.colHeader':'Freeze status','freeze.clickToUnfreeze':'Click to unfreeze',
     'btn.changeToPostpaid':'Change to Postpaid','btn.changePlan':'Change Plan','btn.cancelSubscription':'Cancel Subscription','btn.startNewSubscription':'＋ Start New Subscription','btn.confirmChange':'Confirm Change','btn.confirmCancel':'Confirm Cancellation','btn.back':'Back','btn.undoCancel':'Reactivate',
     'btn.recharge':'Recharge','btn.changeToPrepaid':'Change to Prepaid','btn.confirmRecharge':'Confirm Recharge',
@@ -188,7 +188,7 @@ const I18N = {
     'rem.dueIn':'days left','rem.overdue':'days overdue','rem.today':'due today','rem.auto':'auto-generated','rem.empty.title':'No reminders','rem.empty.desc':'Reminders will appear here once customers are expiring or need follow-up',
     'orders.title':'Service orders','orders.desc':'Prepaid, postpaid, porting, top-up and ownership-transfer records','orders.showHistory':'Show replaced/history records',
     'rep.byCarrier':'Revenue / income by carrier','rep.byType':'Revenue / income by service type','rep.popularPlans':'Top 5 popular plans','rep.rates':'Renewal rate / repeat-customer rate','rep.monthly':'All months reconciliation','rep.renewalRate':'Renewal rate','rep.repeatRate':'Repeat-customer rate','rep.totalOrders':'Total orders','rep.avgProfit':'Avg. income / order',
-    'rep.view.monthly':'📅 Monthly Report','rep.view.daily':'📆 Daily Report','rep.monthlyComparison':'Month-to-month comparison — Prepaid / Postpaid income','rep.prepaidIncome':'Prepaid total income','rep.postpaidExpected':'Postpaid expected income','rep.postpaidActual':'Postpaid actual income','rep.accumulated':'Accumulated income',
+    'rep.view.monthly':'Monthly','rep.view.daily':'Daily','rep.monthlyComparison':'Month-to-month comparison — Prepaid / Postpaid income','rep.prepaidIncome':'Prepaid total income','rep.postpaidExpected':'Postpaid expected income','rep.postpaidActual':'Postpaid actual income','rep.accumulated':'Accumulated income',
     'rep.daily.title':'Daily Report','rep.daily.desc':'View prepaid / postpaid customer counts and income by date','rep.daily.recent':'Recent daily records','rep.daily.prepaidCustomers':'Prepaid customers','rep.daily.postpaidCustomers':'Postpaid customers',
     'col.prepaidCustomers':'Prepaid customers','col.postpaidCustomers':'Postpaid customers','col.prepaidIncome':'Prepaid income','col.postpaidExpected':'Postpaid expected','col.postpaidActual':'Postpaid actual','col.monthTotal':'Total','col.date':'Date','col.accumulated':'Accumulated total',
     'rep.daily.prepaidListTitle':'Prepaid customers (today)','rep.daily.postpaidListTitle':'Postpaid customers (today)','rep.daily.paymentBreakdownTitle':'Payment method breakdown (prepaid, today)','rep.daily.paymentBreakdownDesc':'Customer count and income total for each payment method used today','rep.daily.notSet':'Not set','rep.monthly.paymentBreakdownTitle':'Payment method breakdown (prepaid)','rep.monthly.paymentBreakdownDesc':'Customer count and income total for each payment method used in the selected month',
@@ -197,9 +197,9 @@ const I18N = {
     'io.import.title':'Import Excel','io.import.desc':'Import existing prepaid / postpaid customer records (.xlsx / .csv)','io.import.drop':'Drag a file here, or click to choose',
     'io.import.modeTitle':'Import mode','io.import.modeMerge':'Merge with existing customers','io.import.modeMergeDesc':'Keeps existing customer records; only adds new customers that aren\'t already in the list','io.import.modeReplace':'Clear existing customers and use this file instead','io.import.modeReplaceDesc':'Automatically exports a backup of current customer data (Excel) first, then clears and loads the new file','io.import.skipDupes':'Automatically skip duplicate customers (matched by name or phone)',
     'io.import.sheet':'Sheet','io.import.sheets':'Sheets to import (select multiple — e.g. prepaid and postpaid together)','io.import.headerRow':'Header row','io.import.subType':'Customer type for this sheet','io.import.subTypeAuto':'Auto-detect from sheet name','io.import.subTypePrepaid':'Prepaid','io.import.subTypePostpaid':'Postpaid',
-    'io.export.title':'Export data','io.export.desc':'Export all customer and business data as one Excel file (Prepaid and Postpaid on separate sheets) — matches Sheet View exactly','io.export.all':'📤 Export all data',
+    'io.export.title':'Export data','io.export.desc':'Export all customer and business data as one Excel file (Prepaid and Postpaid on separate sheets) — matches Sheet View exactly','io.export.all':'Export all data',
     'io.yearExport.title':'Export by type & year','io.yearExport.desc':'Export by prepaid/postpaid and year, formatted as one sheet per year with months separated by a divider row — good for archiving or a future database import','io.yearExport.typeLabel':'Subscription type','io.yearExport.yearLabel':'Year','io.yearExport.btn':'📅 Export this year',
-    'io.format.title':'Clear data and start fresh','io.format.desc':'Clears all customers and service records so you can import a brand new file. This cannot be undone — exporting a backup first is recommended.','io.format.btn':'🗑 Format Data',
+    'io.format.title':'Clear data and start fresh','io.format.desc':'Clears all customers and service records so you can import a brand new file. This cannot be undone — exporting a backup first is recommended.','io.format.btn':'Delete all data',
     'sync.title':'Server sync (share data across computers)','sync.desc':'Once connected to your store\'s shared server, this computer and others can use the same customer data. Until connected, data stays on this computer only.','sync.urlLabel':'Server address','sync.keyLabel':'API Key (set in the server\'s .env file)','sync.test':'Test connection','sync.pushNow':'Push this computer\'s data to the server now','sync.pullNow':'Pull latest data from the server','sync.enable':'Enable automatic sync (push on save, pull on page load)',
     'lock.title':'365Himobile Customer Management','lock.desc':'Enter the server address and password to load customer data','lock.passwordLabel':'Password / Key','lock.unlock':'Unlock & Load Data','lock.skip':'Skip — use this computer only (blank, no customer data)','lock.logout':'🔒 Log out',
     'io.issues.title':'Data health check','io.issues.desc':'Customers missing contact info, expiry dates, ID details or payment info','io.issues.none':'No data issues found — records look complete 👍','io.bulkClearPayment.title':'Bulk clear payment method','io.bulkClearPayment.desc':'Clears the payment method for every customer in a given month at once, so you can go back and fill each one in accurately','io.bulkClearPayment.btn':'Clear payment method for this month','io.bulkClearPayment.byActivation':'Match by activation date','io.bulkClearPayment.byAdded':'Match by date added',
@@ -370,14 +370,17 @@ function paymentBreakdownHtml(prepaidServices, emptyMsg){
   });
   const rows = Object.entries(groups).sort((a,b)=> b[1].sum-a[1].sum);
   if(!rows.length) return `<div class="muted" style="padding:10px 4px;">${emptyMsg||(LANG==='zh'?'没有先付记录':'No prepaid signups')}</div>`;
+  const grand = rows.reduce((a,[,v])=>a+v.sum,0) || 1;
   return rows.map(([method, v])=>{
     const label = method ? method : t('rep.daily.notSet');
     const c = method ? sheetColorFor(PAYMENT_METHODS, method) : {bg:'var(--gray-light)', fg:'var(--text-soft)'};
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:9px;">
+    return `<div class="pay-row">
+      <div style="display:flex;align-items:center;gap:9px;min-width:0;">
         <span class="pill" style="background:${c.bg};color:${c.fg};">${escapeHtml(label)}</span>
         <span class="muted" style="font-size:12.5px;">${v.count} ${LANG==='zh'?'位':(v.count===1?'customer':'customers')}</span>
       </div>
+      <div class="pay-share"><i style="width:${Math.round(v.sum/grand*100)}%;background:${c.fg}"></i></div>
+      <span class="pay-pct">${Math.round(v.sum/grand*100)}%</span>
       <b>${fmtWon(v.sum)}</b>
     </div>`;
   }).join('');
@@ -1805,10 +1808,13 @@ async function deleteCustomerOnServer(id){
 function updateSyncStatusUI(errorMsg){
   const el = document.getElementById('syncStatusText');
   if(!el) return;
-  if(!isSyncEnabled()){ el.textContent = LANG==='zh'?'未启用服务器同步':'Server sync is off'; return; }
-  if(errorMsg){ el.textContent = (LANG==='zh'?'同步失败（使用本地数据）：':'Sync failed (using local data): ')+errorMsg; return; }
+  const pill = document.getElementById('syncStatusPill');
+  const setPill = (cls, txt)=>{ if(pill){ pill.className = 'io-sync-pill '+cls; pill.textContent = txt; } };
+  if(!isSyncEnabled()){ el.textContent = LANG==='zh'?'未启用服务器同步':'Server sync is off'; setPill('off', LANG==='zh'?'未连接':'Off'); return; }
+  if(errorMsg){ el.textContent = (LANG==='zh'?'同步失败（使用本地数据）：':'Sync failed (using local data): ')+errorMsg; setPill('bad', LANG==='zh'?'同步失败':'Sync problem'); return; }
   const last = getLastSync();
   el.textContent = last ? (LANG==='zh'?'最近同步：':'Last synced: ')+new Date(last).toLocaleString() : (LANG==='zh'?'尚未同步':'Not synced yet');
+  setPill('ok', last ? (LANG==='zh'?'已连接 · ':'Connected · ')+new Date(last).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : (LANG==='zh'?'已连接':'Connected'));
 }
 
 /* ---------------- derived helpers ---------------- */
@@ -5533,7 +5539,11 @@ function expectedIncomeFor(s){
 }
 function renderReports(){
   const tabs = [{key:'monthly', label:'rep.view.monthly'}, {key:'daily', label:'rep.view.daily'}];
-  document.getElementById('reportViewTabs').innerHTML = tabs.map(tb=>`<button class="chip-tab ${reportView===tb.key?'active':''}" data-reportview="${tb.key}">${t(tb.label)}</button>`).join('');
+  document.getElementById('reportViewTabs').innerHTML = tabs.map(tb=>`<button class="rem-tab ${reportView===tb.key?'on':''}" data-reportview="${tb.key}">${t(tb.label)}</button>`).join('');
+  // the toolbar shows the picker for the current view; export is per month
+  document.getElementById('repMonthSelect').style.display = reportView==='monthly' ? '' : 'none';
+  document.getElementById('btnExportReport').style.display = reportView==='monthly' ? '' : 'none';
+  document.getElementById('repDaySelect').style.display = reportView==='daily' ? '' : 'none';
   document.querySelectorAll('[data-reportview]').forEach(b=> b.addEventListener('click', ()=>{ reportView=b.dataset.reportview; renderReports(); }));
   document.getElementById('repMonthlyView').style.display = reportView==='monthly' ? '' : 'none';
   document.getElementById('repDailyView').style.display = reportView==='daily' ? '' : 'none';
@@ -5562,15 +5572,28 @@ function renderMonthlyReport(){
   const reconciled = postpaidSvcs.filter(s=>s.actualProfit);
   const postpaidActual = reconciled.reduce((a,s)=>a+netProfitFor(s),0);
   const accumulated = prepaidIncome + postpaidSvcs.reduce((a,s)=>a+netProfitFor(s),0);
+  // compare with the month before (for the current month: the same days of last month)
+  const prev = isAllTime ? null : (()=>{
+    const [y,m] = repSelectedMonth.split('-').map(Number);
+    const pm = new Date(y, m-2, 1), pk = pm.getFullYear()+'-'+pad2(pm.getMonth()+1);
+    const pDays = new Date(pm.getFullYear(), pm.getMonth()+1, 0).getDate();
+    const cut = repSelectedMonth===curMonthStr ? pk+'-'+pad2(Math.min(Number(todayISO().slice(8,10)), pDays)) : pk+'-31';
+    const ps = allSvcs.filter(s=>(s.activationDate||'').slice(0,7)===pk && s.activationDate<=cut);
+    const pPre = ps.filter(s=>s.type==='prepaid'), pPost = ps.filter(s=>s.type==='postpaid');
+    return {label: repSelectedMonth===curMonthStr ? (LANG==='zh'?'较上月同期':'vs same days last month') : (LANG==='zh'?'较上月':'vs '+fmtMonthLabel(pk)),
+      pre: pPre.reduce((a,s)=>a+(Number(s.sellingPrice)||0),0), postExp: pPost.reduce((a,s)=>a+expectedIncomeFor(s),0),
+      acc: pPre.reduce((a,s)=>a+(Number(s.sellingPrice)||0),0) + pPost.reduce((a,s)=>a+netProfitFor(s),0), n: new Set(ps.map(s=>s.customerId)).size};
+  })();
+  const dl = (cur, old)=>{ if(!prev) return ''; const d = computeDelta(cur, old); if(d.na || d.isNew) return ''; return `<span class="rep-delta ${d.up?'up':'down'}">${d.up?'↑':'↓'} ${d.pct}% <span>${prev.label}</span></span>`; };
   document.getElementById('repIncomeCards').innerHTML = [
-    {label:t('rep.prepaidIncome'), value:fmtWon(prepaidIncome), sub:`${prepaidSvcs.length} ${t('rep.transactionCount')}`},
-    {label:t('rep.postpaidExpected'), value:fmtWon(postpaidExpected), sub:`${postpaidSvcs.length} ${t('rep.transactionCount')}`},
+    {label:t('rep.prepaidIncome'), value:fmtWon(prepaidIncome), sub:`${prepaidSvcs.length} ${t('rep.transactionCount')}`, delta:dl(prepaidIncome, prev&&prev.pre)},
+    {label:t('rep.postpaidExpected'), value:fmtWon(postpaidExpected), sub:`${postpaidSvcs.length} ${t('rep.transactionCount')}`, delta:dl(postpaidExpected, prev&&prev.postExp)},
     {label:t('rep.postpaidActual'), value:reconciled.length?fmtWon(postpaidActual):t('stat.notReconciled'), sub:`${reconciled.length}/${postpaidSvcs.length} ${t('stat.reconciledCount')}`},
-    {label:t('rep.accumulated'), value:fmtWon(accumulated), sub:isAllTime?t('rep.allTime'):fmtMonthLabel(repSelectedMonth), highlight:true},
-  ].map(s=>`<div class="card stat-card" ${s.highlight?'style="background:linear-gradient(135deg,#0F1B3D,#1E3A6E);"':''}>
-      <div class="stat-label" ${s.highlight?'style="color:#B9C2E0;"':''}>${s.label}</div>
-      <div class="stat-value${/\d/.test(String(s.value))?'':' stat-value-text'}" ${s.highlight?'style="color:#fff;"':''}>${s.value}</div>
-      <div class="stat-delta" ${s.highlight?'style="color:#B9C2E0;"':''}>${s.sub}</div>
+    {label:t('rep.accumulated'), value:fmtWon(accumulated), sub:isAllTime?t('rep.allTime'):fmtMonthLabel(repSelectedMonth), delta:dl(accumulated, prev&&prev.acc), highlight:true},
+  ].map(s=>`<div class="card stat-card${s.highlight?' rep-hl':''}">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value${/\d/.test(String(s.value))?'':' stat-value-text'}">${s.value}</div>
+      <div class="stat-delta">${s.sub}</div>${s.delta||''}
     </div>`).join('');
 
   const newCustomerIds = new Set(svcs.map(s=>s.customerId));
@@ -5581,11 +5604,30 @@ function renderMonthlyReport(){
   // the actual total was 2 unique customers
   const newThisMonthPrepaidCount = DB.customers.filter(c=> newCustomerIds.has(c.id) && (c.subType||'prepaid')==='prepaid').length;
   const newThisMonthPostpaidCount = DB.customers.filter(c=> newCustomerIds.has(c.id) && c.subType==='postpaid').length;
-  const pendingReminders = buildReminders().filter(r=>r.uiStatus==='pending').length;
-  document.getElementById('repSecondaryStats').innerHTML = [
-    {label:t('stat.newThisMonth'), value:newCustomerIds.size, sub:`${newThisMonthPrepaidCount} ${t('rep.nowPrepaid')} · ${newThisMonthPostpaidCount} ${t('rep.nowPostpaid')}`},
-    {label:t('stat.pendingReminders'), value:pendingReminders},
-  ].map(s=>`<div class="card stat-card"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div>${s.sub?`<div class="stat-delta">${s.sub}</div>`:''}</div>`).join('');
+  // sales by staff member (the customer's "Handled by")
+  const staff = {};
+  svcs.forEach(s=>{
+    const c = getCustomer(s.customerId); const k = (c && c.handlerName) || '';
+    staff[k] = staff[k] || {n:0, sum:0};
+    staff[k].n++; staff[k].sum += s.type==='prepaid' ? (Number(s.sellingPrice)||0) : netProfitFor(s);
+  });
+  const staffRows = Object.entries(staff).sort((a,b)=> b[1].sum-a[1].sum || b[1].n-a[1].n);
+  const staffMax = Math.max(1, ...staffRows.map(r=>r[1].sum));
+  document.getElementById('repSecondaryStats').innerHTML = `
+    <div class="card stat-card">
+      <div class="stat-label">${t('stat.newThisMonth')}</div><div class="stat-value">${newCustomerIds.size}</div>
+      <div class="stat-delta">${newThisMonthPrepaidCount} ${t('rep.nowPrepaid')} · ${newThisMonthPostpaidCount} ${t('rep.nowPostpaid')}</div>
+      ${prev ? dl(newCustomerIds.size, prev.n) : ''}
+    </div>
+    <div class="card rep-staff">
+      <div class="section-title">${LANG==='zh'?'按办理人统计':'Sales by staff'}</div>
+      <div class="section-desc">${LANG==='zh'?'按客户的「办理人」统计该期间的业务数与收入':'Plans sold and income in this period, by the customer\'s "Handled by"'}</div>
+      ${staffRows.length ? staffRows.map(([k,v])=>`<div class="rep-staff-row">
+        <span class="rep-staff-av">${escapeHtml((k||'?').slice(0,1).toUpperCase())}</span>
+        <div class="rep-staff-main"><div class="rep-staff-top"><b>${escapeHtml(k || (LANG==='zh'?'未填写':'Not set'))}</b><span>${v.n} ${LANG==='zh'?'笔':(v.n===1?'plan':'plans')}</span><b class="rep-staff-sum">${fmtWon(v.sum)}</b></div>
+          <div class="rep-bar"><i style="width:${Math.round(v.sum/staffMax*100)}%"></i></div></div>
+      </div>`).join('') : `<div class="muted" style="padding:10px 0;">${LANG==='zh'?'该期间没有记录':'Nothing in this period'}</div>`}
+    </div>`;
   document.getElementById('repMonthlyPaymentBreakdown').innerHTML = paymentBreakdownHtml(prepaidSvcs,
     LANG==='zh'?'该月份没有先付记录':'No prepaid signups in this period');
 
@@ -5734,6 +5776,14 @@ function renderMoneyBars(elId, map){
 
 /* ---------------- IMPORT / EXPORT ---------------- */
 function renderIO(){
+  // months that have any plan, newest first (a plain list — the browser's month box looked broken)
+  const mSel = document.getElementById('bulkClearPaymentMonth');
+  const months = [...new Set(DB.services.map(s=>String(s.activationDate||'').slice(0,7)).concat(DB.customers.map(c=>String(c.createdAt||'').slice(0,7))).filter(m=>/^\d{4}-\d{2}$/.test(m)))].sort().reverse();
+  const keep = mSel.value;
+  mSel.innerHTML = `<option value="">${LANG==='zh'?'选择月份…':'Choose a month…'}</option>` + months.map(m=>`<option value="${m}">${fmtMonthLabel(m)}</option>`).join('');
+  if(months.includes(keep)) mSel.value = keep;
+  document.getElementById('ioDangerTitle').textContent = LANG==='zh' ? '危险操作' : 'Danger zone';
+  document.getElementById('ioDangerDesc').textContent = LANG==='zh' ? '以下操作会一次修改大量客户资料，请先导出备份。' : 'These change many customers at once. Export a backup first.';
   document.getElementById('syncServerUrl').value = getServerUrl();
   document.getElementById('syncApiKey').value = getApiKey();
   document.getElementById('syncEnabledCheckbox').checked = isSyncEnabled();

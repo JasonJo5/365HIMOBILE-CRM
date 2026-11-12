@@ -182,6 +182,18 @@ def run(b):
         pg.evaluate(f"reminderTab='{tab}'; renderReminders()"); pg.wait_for_timeout(60)
     check("every Reminders tab opens", not errs, errs[:3])
 
+    print("Reports and Import / Export")
+    pg.evaluate("goTo('reports')"); pg.wait_for_timeout(300)
+    check("Reports shows sales by staff", pg.locator(".rep-staff-row").count() > 0)
+    opts = pg.evaluate("[...document.getElementById('repMonthSelect').options].map(o=>o.value)")
+    for v in opts[:4]:
+        pg.select_option("#repMonthSelect", v); pg.wait_for_timeout(120)
+    pg.click("[data-reportview=daily]"); pg.wait_for_timeout(200)
+    check("Reports month and daily views work", not errs and pg.is_visible("#repDaySelect") and not pg.is_visible("#repMonthSelect"), errs[:3])
+    pg.click("[data-reportview=monthly]"); pg.wait_for_timeout(100)
+    pg.evaluate("goTo('io')"); pg.wait_for_timeout(300)
+    check("Import / Export month list is filled in", pg.evaluate("document.getElementById('bulkClearPaymentMonth').options.length") > 1)
+
     print("AI Insights")
     pg.evaluate("closeAllModals(); goTo('ai')"); pg.wait_for_timeout(400)
     n_before = pg.evaluate("Number(document.getElementById('aiListCount').textContent)")

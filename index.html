@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261112e">
+<link rel="stylesheet" href="style.css?v=20261112f">
 </head>
 <body>
 
@@ -337,21 +337,19 @@
 
       <!-- REPORTS -->
       <section class="page" id="page-reports">
-        <div class="chip-tabs" id="reportViewTabs" style="margin-bottom:16px;"></div>
+        <div class="rep-toolbar">
+          <div class="rem-seg" id="reportViewTabs"></div>
+          <div class="rep-tools">
+            <select class="select-input" id="repMonthSelect"></select>
+            <input type="date" class="select-input" id="repDaySelect">
+            <button class="btn btn-ghost" id="btnExportReport" data-i18n="btn.exportMonthExcel">导出该月份 Excel</button>
+          </div>
+        </div>
 
         <!-- MONTHLY VIEW -->
         <div id="repMonthlyView">
-        <div class="card" style="margin-bottom:16px;">
-          <div class="section-head">
-            <div>
-              <div class="section-title" data-i18n="rep.selectMonth">选择月份</div>
-              <div class="section-desc" data-i18n="rep.selectMonthDesc">查看该月份的详细营收报告</div>
-            </div>
-            <select class="select-input" id="repMonthSelect" style="min-width:180px;"></select>
-          </div>
-        </div>
         <div class="grid-4" id="repIncomeCards" style="margin-bottom:16px;"></div>
-        <div class="grid-2" id="repSecondaryStats" style="margin-bottom:16px;"></div>
+        <div class="rep-row" id="repSecondaryStats"></div>
         <div class="card" style="margin-bottom:16px;">
           <div class="section-title" data-i18n="rep.monthly.paymentBreakdownTitle">付款方式汇总（先付）</div>
           <div class="section-desc" data-i18n="rep.monthly.paymentBreakdownDesc">按付款方式统计所选月份先付客户数与收入合计</div>
@@ -370,7 +368,6 @@
         <div class="card" style="margin-top:16px;">
           <div class="section-head">
             <div class="section-title" data-i18n="rep.monthlyComparison">月度对比 — 先付 / 后付收入</div>
-            <button class="btn btn-ghost" id="btnExportReport" data-i18n="btn.exportMonthExcel">导出该月份 Excel</button>
           </div>
           <div id="repMonthlyChart" style="margin:14px 0;"></div>
           <div class="tbl-wrap"><table>
@@ -388,7 +385,6 @@
                 <div class="section-title" data-i18n="rep.daily.title">每日报表</div>
                 <div class="section-desc" data-i18n="rep.daily.desc">按日期查看先付 / 后付客户数与收入</div>
               </div>
-              <input type="date" class="select-input" id="repDaySelect" style="min-width:170px;">
             </div>
           </div>
           <div class="grid-4" id="repDailyCards" style="margin-bottom:16px;"></div>
@@ -437,7 +433,6 @@
             <div class="section-title" data-i18n="io.import.title">导入 Excel</div>
             <div class="section-desc" style="margin:6px 0 16px;" data-i18n="io.import.desc">支持导入现有的先付 / 后付客户记录（.xlsx / .csv）</div>
             <div class="dropzone" id="dropzone">
-              <div style="font-size:26px;margin-bottom:8px;">⇪</div>
               <div data-i18n="io.import.drop">拖拽文件到此处，或点击选择文件</div>
               <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
             </div>
@@ -450,7 +445,7 @@
           </div>
         </div>
         <div class="card" style="margin-top:16px;border:1.5px solid #C7D7FB;">
-          <div class="section-title" data-i18n="sync.title">服务器同步（多台电脑共享数据）</div>
+          <div class="io-sync-head"><div class="section-title" data-i18n="sync.title">服务器同步（多台电脑共享数据）</div><span class="io-sync-pill" id="syncStatusPill"></span></div>
           <div class="section-desc" style="margin:6px 0 16px;" data-i18n="sync.desc">连接店内共享服务器后，本电脑与其他电脑可以使用同一份客户数据。未连接前，数据仅保存在本电脑。</div>
           <div class="form-grid">
             <div class="form-field full">
@@ -473,18 +468,6 @@
           </label>
           <div class="section-desc" id="syncStatusText" style="margin-top:8px;"></div>
         </div>
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title" data-i18n="io.bulkClearPayment.title">批量清空付款方式</div>
-          <div class="section-desc" style="margin:6px 0 16px;" data-i18n="io.bulkClearPayment.desc">用于一次性清空某个月份所有客户的付款方式，方便之后逐一核实填写</div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input type="month" class="select-input" id="bulkClearPaymentMonth" style="max-width:160px;">
-            <select class="select-input" id="bulkClearPaymentDateField">
-              <option value="activationDate" data-i18n="io.bulkClearPayment.byActivation">按开通日期匹配</option>
-              <option value="createdAt" data-i18n="io.bulkClearPayment.byAdded">按添加日期匹配</option>
-            </select>
-            <button class="btn btn-danger" id="btnBulkClearPayment" data-i18n="io.bulkClearPayment.btn">清空该月份付款方式</button>
-          </div>
-        </div>
         <div class="card" style="margin-top:16px;" id="planCheckCard">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
@@ -504,10 +487,35 @@
           <div class="section-desc" style="margin:6px 0 16px;" data-i18n="io.issues.desc">缺失联系方式、有效期、证件信息或付款信息的客户</div>
           <div id="dataIssuesList"></div>
         </div>
-        <div class="card" style="margin-top:16px;border:1.5px solid #FBD5D5;">
-          <div class="section-title" style="color:#C0392B;" data-i18n="io.format.title">清空数据，重新开始</div>
-          <div class="section-desc" style="margin:6px 0 16px;" data-i18n="io.format.desc">清空全部客户与业务记录，方便导入全新的数据。此操作无法撤销 — 建议先导出备份。</div>
-          <button class="btn" style="background:#FEF2F2;color:#C0392B;border:1.5px solid #FCA5A5;" id="btnFormatData" data-i18n="io.format.btn">🗑 格式化数据 Format Data</button>
+        <div class="card io-danger">
+          <div class="io-danger-head">
+            <span class="io-danger-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+            <div><div class="section-title" id="ioDangerTitle">Danger zone</div>
+            <div class="section-desc" id="ioDangerDesc">These change many customers at once. Export a backup first.</div></div>
+          </div>
+          <div class="io-danger-item">
+            <div>
+              <div class="io-danger-name" data-i18n="io.bulkClearPayment.title">批量清空付款方式</div>
+              <div class="section-desc" data-i18n="io.bulkClearPayment.desc">用于一次性清空某个月份所有客户的付款方式，方便之后逐一核实填写</div>
+            </div>
+            <div class="io-danger-ctrl">
+              <select class="select-input" id="bulkClearPaymentMonth"></select>
+              <select class="select-input" id="bulkClearPaymentDateField">
+                <option value="activationDate" data-i18n="io.bulkClearPayment.byActivation">按开通日期匹配</option>
+                <option value="createdAt" data-i18n="io.bulkClearPayment.byAdded">按添加日期匹配</option>
+              </select>
+              <button class="btn btn-danger" id="btnBulkClearPayment" data-i18n="io.bulkClearPayment.btn">清空该月份付款方式</button>
+            </div>
+          </div>
+          <div class="io-danger-item">
+            <div>
+              <div class="io-danger-name" data-i18n="io.format.title">清空数据，重新开始</div>
+              <div class="section-desc" data-i18n="io.format.desc">清空全部客户与业务记录，方便导入全新的数据。此操作无法撤销 — 建议先导出备份。</div>
+            </div>
+            <div class="io-danger-ctrl">
+              <button class="btn btn-danger" id="btnFormatData" data-i18n="io.format.btn">格式化数据 Format Data</button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -1089,6 +1097,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261112e"></script>
+<script src="script.js?v=20261112f"></script>
 </body>
 </html>
