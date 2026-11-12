@@ -2967,16 +2967,239 @@ function confirmNoDuplicates(form){
 const AI_PRIORITY_PILL = {high:'pill-red', medium:'pill-orange', low:'pill-blue', none:'pill-gray'};
 const AI_PRIORITY_ICON = {high:'🔥', medium:'🟠', low:'🟢', none:'⚪'};
 function renderAIPage(){
-  renderAIStayCards();
+  renderAIOpportunities();
   if(window.renderNatStay) renderNatStay();
 }
-let aiStayExpanded = null; // which of the 3 categories is currently expanded below
-let aiStaySignupMonth = 'all';
-let aiStayMissingExpanded = false;
-function renderAIStayMissingDataBanner(){
-  const box = document.getElementById('aiStayMissingDataBanner');
-  const diag = getStayBasedDiagnostics();
-  if(diag.total===0){ box.style.display='none'; return; }
+/* ================= AI Insights: who to contact today =================
+   Five groups worked out from age, ID, expected stay in Korea and plan dates
+   (getStayBasedOpportunities). Each customer can be marked "contacted" — stored in
+   DB.reminderState under "ai:<group>:<plan id>", so it syncs to every PC and resets by
+   itself when the customer gets a new plan. Contacted customers drop off the list for
+   AI_CONTACT_QUIET_DAYS days, then come back marked "follow up". */
+const AI_CONTACT_QUIET_DAYS = 30;
+let aiGroup = null, aiSearch = '', aiNat = '', aiMonth = '', aiShowContacted = false, aiMissingOpen = false;
+const AI_TX = {
+  en:{title:'Who to contact today', across:'customers across 5 groups', contactedWeek:'contacted in the last 7 days',
+      estPost:'Est. postpaid profit', estRech:'Est. recharge sales', estNote:'from your own average sales',
+      g_post:'Ready for postpaid', g_post_d:'19+, Passport or ARC, and staying 8+ more months. Listed even while the current prepaid plan is still running.',
+      g_u19:'Turning 19 soon', g_u19_d:'Prepaid customers under 19. Postpaid becomes possible at 19 — soonest birthday first.',
+      g_rech:'Recharge due soon', g_rech_d:'1, 2 or 3-month prepaid plans ending soon, for customers still staying in Korea.',
+      g_end:'Plan ended — recharge', g_end_d:'Prepaid plan already finished; postpaid is not an option for them yet, so a recharge is the offer.',
+      g_up:'Contract upgrade', g_up_d:'Postpaid contract finished, and the customer is staying 8+ more months.',
+      search:'Search name or phone…', allNat:'All nationalities', allMonths:'Any signup month', showContacted:'Show contacted',
+      copyPhones:'Copy phone numbers', copyMsg:'Copy message', markDone:'Mark contacted', undoDone:'Undo', contactedOn:'Contacted', followUp:'Follow up',
+      by:'by', none:'Nobody here right now', noneSub:'Everyone in this group has been contacted, or nobody matches the filters.',
+      age:'Age', stay:'stay', mo:'mo', turns19:'Turns 19 in', days:'days', today:'today', left:'left', ended:'Ended', ago:'ago', due:'Due today',
+      overContract:'Over contract', phonesCopied:'phone numbers copied', msgCopied:'Message copied', markedDone:'Marked as contacted',
+      missingTitle:'Left out — missing information', missingSub:'These customers can\'t be sorted into a group until the data is filled in.',
+      inContract:'In contract'},
+  zh:{title:'今日待联系客户', across:'位客户，分布在5个分组', contactedWeek:'位近7天已联系',
+      estPost:'预计后付利润', estRech:'预计续费收入', estNote:'按本店平均销售额估算',
+      g_post:'可转后付', g_post_d:'已满19岁、持护照或ARC、预计在韩停留8个月以上；当前先付套餐未结束也会列出。',
+      g_u19:'即将满19岁', g_u19_d:'未满19岁的先付客户，满19岁后可办后付 — 生日最近的排在最前。',
+      g_rech:'即将续费', g_rech_d:'1/2/3个月先付套餐即将到期、仍在韩停留的客户。',
+      g_end:'已到期 — 续费', g_end_d:'先付套餐已结束，暂时无法转后付，建议续费。',
+      g_up:'后付续约', g_up_d:'后付合约已到期，且预计还在韩停留8个月以上。',
+      search:'搜索姓名或电话…', allNat:'全部国籍', allMonths:'全部签约月份', showContacted:'显示已联系',
+      copyPhones:'复制电话号码', copyMsg:'复制短信', markDone:'标记已联系', undoDone:'撤销', contactedOn:'已联系', followUp:'需跟进',
+      by:'', none:'暂无客户', noneSub:'该分组的客户都已联系，或没有符合筛选条件的客户。',
+      age:'年龄', stay:'在韩', mo:'个月', turns19:'距19岁还有', days:'天', today:'今天', left:'剩余', ended:'已结束', ago:'前', due:'今天到期',
+      overContract:'合约已到期', phonesCopied:'个电话号码已复制', msgCopied:'短信已复制', markedDone:'已标记为已联系',
+      missingTitle:'未纳入 — 资料不全', missingSub:'补全资料后这些客户才能被分组。', inContract:'合约中'}
+};
+function aiT(k){ return (AI_TX[LANG]||AI_TX.en)[k] || AI_TX.en[k] || k; }
+const AI_GROUPS = [
+  {key:'post', color:'#16A34A', bg:'#ECFDF5', icon:'<path d="M7 17L17 7M9 7h8v8"/>'},
+  {key:'u19',  color:'#0EA5E9', bg:'#F0F9FF', icon:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'},
+  {key:'rech', color:'#2563EB', bg:'#EFF6FF', icon:'<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>'},
+  {key:'end',  color:'#EA580C', bg:'#FFF7ED', icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5M12 16h.01"/>'},
+  {key:'up',   color:'#8B5CF6', bg:'#F5F3FF', icon:'<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"/>'}
+];
+function aiSvg(p){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`; }
+function aiContactKey(g, svc){ return 'ai:'+g+':'+svc.id; }
+function aiContactInfo(g, svc){
+  const v = (DB.reminderState||{})[aiContactKey(g, svc)];
+  if(!v || String(v).indexOf('contacted|')!==0) return null;
+  const [, date, by] = String(v).split('|');
+  const ageDays = date ? daysBetween(date, todayISO()) : 0;
+  return {date, by: by||'', ageDays, quiet: ageDays < AI_CONTACT_QUIET_DAYS};
+}
+function aiAllGroups(){
+  const o = getStayBasedOpportunities();
+  const withDays = x=> ({...x, days: x.service.expiryDate ? daysBetween(todayISO(), x.service.expiryDate) : null});
+  const byDays = (a,b)=> (a.days??0)-(b.days??0);
+  return {
+    post: o.readyForPostpaid.filter(x=>x.subStatus==='eligible').map(withDays).sort(byDays),
+    u19:  o.readyForPostpaid.filter(x=>x.subStatus==='underage').map(withDays).sort((a,b)=>(a.daysUntil19??99999)-(b.daysUntil19??99999)),
+    rech: o.prepaidRecharge.map(withDays).sort(byDays),
+    end:  o.finishedNeedsRecharge.map(withDays).sort(byDays),
+    up:   o.postpaidUpgrade.map(withDays).sort(byDays)
+  };
+}
+/* average of the store's own recent sales, for the "estimated value" figures */
+function aiAverages(){
+  const since = addDaysISO(todayISO(), -365);
+  const post = DB.services.filter(s=>s.type==='postpaid' && Number(s.expectedProfit)>0 && String(s.activationDate||'')>=since).map(s=>Number(s.expectedProfit));
+  const rech = DB.services.filter(s=>s.type==='prepaid' && Number(s.sellingPrice)>0 && String(s.activationDate||'')>=since && (s.changeReason==='recharge' || Number(s.durationDays)===30)).map(s=>Number(s.sellingPrice));
+  const avg = a=> a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+  return {post: avg(post), rech: avg(rech)};
+}
+function aiMessage(g, c, x){
+  const zh = /CHINA|中国|CHN/i.test(c.nationality||'');
+  const name = c.name || '';
+  const end = x.service && x.service.expiryDate ? fmtDateHuman(x.service.expiryDate) : '';
+  if(g==='end') return zh
+    ? `${name}您好，这里是365 Hi Mobile。您的预付套餐已到期，续费即可继续使用原号码。欢迎到店或回复此短信办理，谢谢！`
+    : buildRechargeSmsText(c, x.remainingStayYears);
+  if(g==='rech') return zh
+    ? `${name}您好，这里是365 Hi Mobile。您的预付套餐将于${end}到期，请在到期前续费以保留号码。欢迎到店或回复此短信办理，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Your prepaid plan ends on ${end}. Recharge before then to keep your number active. Please visit us or reply to renew. Thank you!`;
+  if(g==='post') return zh
+    ? `${name}您好，这里是365 Hi Mobile。好消息：您现在可以办理月付（后付）套餐了 — 无需每月充值、流量更多、号码不变。欢迎到店或回复此短信，我们为您办理，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Good news — you can now switch to a monthly postpaid plan: no more recharges, more data, and you keep the same number. Visit us or reply to this message and we'll set it up. Thank you!`;
+  if(g==='u19') return zh
+    ? `${name}您好，这里是365 Hi Mobile。满19岁后您就可以办理月付（后付）套餐，无需每月充值。届时欢迎到店咨询，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Once you turn 19 you can switch to a monthly postpaid plan — no more recharges. Visit us any time after your birthday and we'll set it up. Thank you!`;
+  return zh
+    ? `${name}您好，这里是365 Hi Mobile。您的后付合约已到期，我们可以为您提供新的合约和更优惠的套餐。欢迎到店或回复此短信咨询，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Your postpaid contract has finished — we can offer you a new contract with a better plan. Visit us or reply to this message to find out more. Thank you!`;
+}
+/* short "why" chips for a row */
+function aiWhy(g, c, x){
+  const out = [], age = calcAge(c.dob);
+  if(age!==null) out.push(`${aiT('age')} ${age}`);
+  if(c.idType) out.push(c.idType);
+  if(x.remainingStayYears!=null){ const m = Math.max(0, x.remainingStayYears*12).toFixed(0); out.push(LANG==='zh' ? `${aiT('stay')}约${m}${aiT('mo')}` : `~${m}${aiT('mo')} ${aiT('stay')}`); }
+  return out;
+}
+function aiUrgency(g, x){
+  if(g==='u19'){
+    if(x.daysUntil19==null) return ['', ''];
+    return [`${aiT('turns19')} ${x.daysUntil19} ${aiT('days')}`, x.daysUntil19<=30 ? 'pill-blue' : 'pill-gray'];
+  }
+  if(g==='up') return [aiT('overContract')+(x.days!=null&&x.days<0?` · ${Math.abs(x.days)}${LANG==='zh'?'天':'d'}`:''), 'pill-purple'];
+  const d = x.days; if(d==null) return ['', ''];
+  if(d<0) return [LANG==='zh' ? `${aiT('ended')} ${Math.abs(d)} 天${aiT('ago')}` : `${aiT('ended')} ${Math.abs(d)}d ${aiT('ago')}`, 'pill-red'];
+  if(d===0) return [aiT('due'), 'pill-red'];
+  if(g==='post') return [LANG==='zh' ? `${aiT('inContract')} · ${aiT('left')} ${d} 天` : `${aiT('inContract')} · ${d}d ${aiT('left')}`, d<=7?'pill-orange':'pill-gray'];
+  return [LANG==='zh' ? `${aiT('left')} ${d} 天` : `${d}d ${aiT('left')}`, d<=7?'pill-orange':'pill-gray'];
+}
+function renderAIOpportunities(){
+  const page = document.getElementById('page-ai'); if(!page) return;
+  const groups = aiAllGroups(), avg = aiAverages();
+  const open = g=> groups[g].filter(x=>{ const ci = aiContactInfo(g, x.service); return !(ci && ci.quiet); });
+  if(!aiGroup || !groups[aiGroup]) aiGroup = (AI_GROUPS.find(g=>open(g.key).length)||AI_GROUPS[0]).key;
+  // ---- summary
+  const totalOpen = AI_GROUPS.reduce((n,g)=> n+open(g.key).length, 0);
+  const weekAgo = addDaysISO(todayISO(), -7);
+  const contactedWeek = Object.entries(DB.reminderState||{}).filter(([k,v])=> k.indexOf('ai:')===0 && String(v).indexOf('contacted|')===0 && String(v).split('|')[1]>=weekAgo).length;
+  const estPost = Math.round(avg.post * open('post').length);
+  const estRech = Math.round(avg.rech * (open('rech').length + open('end').length));
+  document.getElementById('aiSummary').innerHTML = `
+    <div class="aio-sum-main">
+      <div class="aio-sum-ic">${aiSvg('<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>')}</div>
+      <div><div class="aio-sum-title">${aiT('title')}</div>
+        <div class="aio-sum-sub"><b>${totalOpen}</b> ${aiT('across')} · <b>${contactedWeek}</b> ${aiT('contactedWeek')}</div></div>
+    </div>
+    <div class="aio-sum-stats">
+      ${avg.post ? `<div class="aio-sum-stat"><span>${aiT('estPost')}</span><b>${fmtWon(estPost)}</b></div>` : ''}
+      ${avg.rech ? `<div class="aio-sum-stat"><span>${aiT('estRech')}</span><b>${fmtWon(estRech)}</b></div>` : ''}
+      ${(avg.post||avg.rech) ? `<div class="aio-sum-note">${aiT('estNote')}</div>` : ''}
+    </div>`;
+  // ---- group cards
+  document.getElementById('aiGroups').innerHTML = AI_GROUPS.map(g=>{
+    const n = open(g.key).length, done = groups[g.key].length - n;
+    return `<button type="button" class="aio-group${aiGroup===g.key?' on':''}" data-ai-group="${g.key}" style="--ac:${g.color};--acbg:${g.bg};">
+      <span class="aio-g-ic">${aiSvg(g.icon)}</span>
+      <span class="aio-g-label">${escapeHtml(aiT('g_'+g.key))}</span>
+      <span class="aio-g-n">${n}</span>
+      <span class="aio-g-sub">${done ? `+${done} ${escapeHtml(aiT('contactedOn').toLowerCase())}` : '&nbsp;'}</span>
+    </button>`;
+  }).join('');
+  page.querySelectorAll('[data-ai-group]').forEach(b=> b.addEventListener('click', ()=>{ aiGroup = b.dataset.aiGroup; renderAIOpportunities(); }));
+  renderAIList(groups);
+  renderAIMissing();
+}
+function renderAIList(groups){
+  const g = AI_GROUPS.find(x=>x.key===aiGroup), all = groups[aiGroup];
+  const card = document.getElementById('aiListCard'); card.style.setProperty('--ac', g.color); card.style.setProperty('--acbg', g.bg);
+  document.getElementById('aiListTitle').textContent = aiT('g_'+aiGroup);
+  document.getElementById('aiListDesc').textContent = aiT('g_'+aiGroup+'_d');
+  // filters
+  const nats = [...new Set(all.map(x=>x.customer.nationality).filter(Boolean))].sort();
+  const months = [...new Set(DB.services.filter(s=>s.type==='prepaid' && s.activationDate).map(s=>s.activationDate.slice(0,7)))].sort().reverse();
+  if(aiNat && !nats.includes(aiNat)) aiNat = '';
+  const natSel = document.getElementById('aiNatFilter'), monSel = document.getElementById('aiMonthFilter');
+  natSel.innerHTML = `<option value="">${aiT('allNat')}</option>`+nats.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  natSel.value = aiNat;
+  monSel.innerHTML = `<option value="">${aiT('allMonths')}</option>`+months.map(m=>`<option value="${m}">${fmtMonthLabel(m)}</option>`).join('');
+  monSel.value = aiMonth;
+  const srch = document.getElementById('aiSearch'); srch.placeholder = aiT('search'); if(srch.value!==aiSearch) srch.value = aiSearch;
+  document.getElementById('aiShowContactedLabel').textContent = aiT('showContacted');
+  document.getElementById('aiShowContacted').checked = aiShowContacted;
+  document.getElementById('aiCopyPhones').lastChild.textContent = aiT('copyPhones');
+  const q = aiSearch.trim().toLowerCase(), qd = q.replace(/[^0-9]/g,'');
+  const rows = all.filter(x=>{
+    const c = x.customer, ci = aiContactInfo(aiGroup, x.service);
+    if(ci && ci.quiet && !aiShowContacted) return false;
+    if(aiNat && c.nationality!==aiNat) return false;
+    if(aiMonth && String(x.service.activationDate||'').slice(0,7)!==aiMonth) return false;
+    if(q && !(String(c.name||'').toLowerCase().includes(q) || (qd && String(c.phone||'').replace(/[^0-9]/g,'').includes(qd)))) return false;
+    return true;
+  });
+  document.getElementById('aiListCount').textContent = rows.length;
+  const box = document.getElementById('aiList');
+  box.innerHTML = rows.length ? rows.map(x=>{
+    const c = x.customer, s = x.service, ci = aiContactInfo(aiGroup, s);
+    const [ul, uc] = aiUrgency(aiGroup, x);
+    const why = aiWhy(aiGroup, c, x);
+    const contacted = ci && ci.quiet;
+    return `<div class="aio-row${contacted?' done':''}" data-open-customer="${c.id}">
+      <span class="avatar">${initials(c.name)}</span>
+      <div class="aio-who">
+        <div class="aio-name">${escapeHtml(c.name)}</div>
+        <div class="aio-meta"><span class="pill pill-blue">${escapeHtml(c.nationality||'—')}</span><span>${escapeHtml(c.phone||'—')}</span></div>
+      </div>
+      <div class="aio-plan">
+        <div class="aio-plan-name">${escapeHtml(s.plan||'—')}${(()=>{ const l = planLengthLabel(s); return l ? ` <span class="plan-tag ${l[0]}">${escapeHtml(l[1])}</span>` : ''; })()}</div>
+        <div class="aio-why">${why.map(w=>`<span>${escapeHtml(w)}</span>`).join('')}</div>
+      </div>
+      <div class="aio-when">${ul ? `<span class="pill ${uc}">${escapeHtml(ul)}</span>` : ''}
+        ${ci ? `<div class="aio-contacted">${ci.quiet ? '✓ '+aiT('contactedOn') : aiT('followUp')+' · '+aiT('contactedOn')} ${fmtDateHuman(ci.date)}${ci.by&&aiT('by')?` ${aiT('by')} ${escapeHtml(ci.by)}`:(ci.by?` · ${escapeHtml(ci.by)}`:'')}</div>` : ''}</div>
+      <div class="aio-act">
+        <button type="button" class="btn btn-sm btn-ghost aio-msg-btn" data-ai-msg="${c.id}" aria-label="${escapeHtml(aiT('copyMsg'))}" title="${escapeHtml(aiT('copyMsg')+':\n\n'+aiMessage(aiGroup, c, x))}">${aiSvg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>')}</button>
+        ${contacted
+          ? `<button type="button" class="btn btn-sm btn-ghost" data-ai-undone="${s.id}">${aiT('undoDone')}</button>`
+          : `<button type="button" class="btn btn-sm aio-done-btn" data-ai-done="${s.id}">${aiSvg('<path d="M5 12l5 5 9-10"/>')}<span>${aiT('markDone')}</span></button>`}
+      </div>
+    </div>`;
+  }).join('') : `<div class="aio-empty"><div class="aio-empty-ic">${aiSvg('<path d="M5 12l5 5 9-10"/>')}</div><b>${aiT('none')}</b><span>${aiT('noneSub')}</span></div>`;
+  bindRowOpens();
+  const byId = new Map(rows.map(x=>[x.customer.id, x]));
+  box.querySelectorAll('[data-ai-msg]').forEach(b=> b.addEventListener('click', e=>{
+    e.stopPropagation(); const x = byId.get(b.dataset.aiMsg); if(!x) return;
+    copyTextToClipboard(aiMessage(aiGroup, x.customer, x), aiT('msgCopied'));
+  }));
+  box.querySelectorAll('[data-ai-done]').forEach(b=> b.addEventListener('click', e=>{
+    e.stopPropagation(); const svc = DB.services.find(s=>s.id===b.dataset.aiDone); if(!svc) return;
+    DB.reminderState = DB.reminderState || {};
+    DB.reminderState[aiContactKey(aiGroup, svc)] = 'contacted|'+todayISO()+'|'+getActiveStaff();
+    saveDB(DB); toast(aiT('markedDone')); renderAIOpportunities();
+  }));
+  box.querySelectorAll('[data-ai-undone]').forEach(b=> b.addEventListener('click', e=>{
+    e.stopPropagation(); const svc = DB.services.find(s=>s.id===b.dataset.aiUndone); if(!svc) return;
+    DB.reminderState[aiContactKey(aiGroup, svc)] = 'pending'; // a real value so the change syncs
+    saveDB(DB); renderAIOpportunities();
+  }));
+  document.getElementById('aiCopyPhones').onclick = ()=>{
+    const phones = [...new Set(rows.map(x=>x.customer.phone).filter(Boolean))];
+    if(!phones.length) return;
+    copyTextToClipboard(phones.join('\n'), phones.length+' '+aiT('phonesCopied'));
+  };
+}
+function renderAIMissing(){
+  const diag = getStayBasedDiagnostics(), box = document.getElementById('aiMissing');
+  if(!diag.total){ box.style.display = 'none'; return; }
   box.style.display = '';
   const groups = [
     {list:diag.missingBoth, label:t('ai.stay.missing.both')},
@@ -2984,158 +3207,27 @@ function renderAIStayMissingDataBanner(){
     {list:diag.missingYearsOnly, label:t('ai.stay.missing.years')},
     {list:diag.noDobOnExpiredPlan, label:t('ai.stay.missing.dob')},
   ].filter(g=>g.list.length);
-  box.innerHTML = `<div class="service-card" style="background:#FFFBEB;border-color:#FDE68A;margin-bottom:18px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" data-missing-toggle>
-      <div>⚠️ <b>${diag.total}</b> ${t('ai.stay.missing.summary')}</div>
-      <span class="pill pill-orange">${aiStayMissingExpanded ? t('btn.hide') : t('btn.show')}</span>
+  box.innerHTML = `<div class="aio-side-head" data-ai-missing-toggle>
+      <div><div class="aio-side-title">${aiSvg('<path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>')} ${aiT('missingTitle')}</div>
+      <div class="aio-side-sub">${aiT('missingSub')}</div></div>
+      <span class="aio-missing-n">${diag.total}</span>
     </div>
-    ${aiStayMissingExpanded ? `<div style="margin-top:12px;">
-      ${groups.map(g=>`
-        <div style="margin-bottom:10px;">
-          <div class="muted" style="font-size:12px;font-weight:700;margin-bottom:4px;">${g.label} (${g.list.length})</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            ${g.list.map(c=>`<span class="pill pill-gray" style="cursor:pointer;" data-open-customer="${c.id}">${escapeHtml(c.name)}</span>`).join('')}
-          </div>
-        </div>`).join('')}
-    </div>` : ''}
-  </div>`;
-  document.querySelector('[data-missing-toggle]')?.addEventListener('click', ()=>{
-    aiStayMissingExpanded = !aiStayMissingExpanded;
-    renderAIStayMissingDataBanner();
-  });
+    ${groups.map(g=>`<div class="aio-miss-group">
+      <div class="aio-miss-label"><span>${escapeHtml(g.label)}</span><b>${g.list.length}</b></div>
+      ${aiMissingOpen ? `<div class="aio-miss-names">${g.list.map(c=>`<span class="pill pill-gray" data-open-customer="${c.id}">${escapeHtml(c.name)}</span>`).join('')}</div>` : ''}
+    </div>`).join('')}
+    <button type="button" class="btn btn-sm btn-ghost aio-miss-more" data-ai-missing-toggle>${aiMissingOpen ? t('btn.hide') : t('btn.show')}</button>`;
+  box.querySelectorAll('[data-ai-missing-toggle]').forEach(el=> el.addEventListener('click', ()=>{ aiMissingOpen = !aiMissingOpen; renderAIMissing(); }));
   bindRowOpens();
 }
-function renderAIStayCards(){
-  const {readyForPostpaid, prepaidRecharge, postpaidUpgrade, finishedNeedsRecharge} = getStayBasedOpportunities();
-  const cats = [
-    {key:'readyForPostpaid', icon:'✓', list:readyForPostpaid, color:'#16A34A', grad:'linear-gradient(135deg,#ECFDF5,#D1FAE5)'},
-    {key:'prepaidRecharge', icon:'↻', list:prepaidRecharge, color:'#2563EB', grad:'linear-gradient(135deg,#EFF6FF,#DBEAFE)'},
-    {key:'finishedNeedsRecharge', icon:'✉', list:finishedNeedsRecharge, color:'#EA580C', grad:'linear-gradient(135deg,#FFF7ED,#FFEDD5)'},
-    {key:'postpaidUpgrade', icon:'★', list:postpaidUpgrade, color:'#8B5CF6', grad:'linear-gradient(135deg,#F5F3FF,#EDE9FE)'},
-  ];
-  renderAIStayMissingDataBanner();
-  document.getElementById('aiStayCards').innerHTML = cats.map(cat=>{
-    const selected = aiStayExpanded===cat.key;
-    return `<div class="ai-stay-card ${selected?'selected':''}" style="background:${cat.list.length?cat.grad:'var(--card)'};--accent:${cat.color};" data-stay-card="${cat.key}">
-      <div class="ai-stay-card-icon" style="color:${cat.color};">${cat.icon}</div>
-      <div class="ai-stay-card-label">${t('ai.stay.'+cat.key)}</div>
-      <div class="ai-stay-card-value">${cat.list.length}</div>
-      <div class="ai-stay-card-action">${t('ai.stay.'+cat.key+'Action')} →</div>
-    </div>`;
-  }).join('');
-  document.querySelectorAll('[data-stay-card]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const key = el.dataset.stayCard;
-      aiStayExpanded = aiStayExpanded===key ? null : key;
-      aiStaySignupMonth = 'all'; // reset the filter whenever switching categories, so it never silently hides everything in a newly-opened list
-      renderAIStayCards(); // re-render so the clicked card's selected state updates too
-    });
-  });
-  document.getElementById('aiStayListClose').onclick = ()=>{ aiStayExpanded=null; renderAIStayCards(); };
-  renderAIStayExpandedList(cats);
-}
-function renderAIStayExpandedList(cats){
-  const listCard = document.getElementById('aiStayListCard');
-  if(!aiStayExpanded){ listCard.style.display='none'; return; }
-  listCard.style.display = '';
-  const cat = cats.find(c=>c.key===aiStayExpanded);
-  document.getElementById('aiStayListTitle').textContent = `${cat.icon} ${t('ai.stay.'+cat.key)} (${cat.list.length})`;
-  document.getElementById('aiStayListDesc').textContent = t('ai.stay.'+cat.key+'Desc');
+(function wireAIFilters(){
+  const on = (id, ev, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener(ev, fn); };
+  on('aiSearch', 'input', e=>{ aiSearch = e.target.value; renderAIList(aiAllGroups()); });
+  on('aiNatFilter', 'change', e=>{ aiNat = e.target.value; renderAIList(aiAllGroups()); });
+  on('aiMonthFilter', 'change', e=>{ aiMonth = e.target.value; renderAIList(aiAllGroups()); });
+  on('aiShowContacted', 'change', e=>{ aiShowContacted = e.target.checked; renderAIList(aiAllGroups()); });
+})();
 
-  // Signup-month filter — pulls from EVERY prepaid signup ever made, not just the months
-  // that happen to have a match in this category right now, so every month is always
-  // selectable even if it currently shows zero for this particular list.
-  const monthsPresent = [...new Set(DB.services.filter(s=>s.type==='prepaid' && s.activationDate).map(s=>s.activationDate.slice(0,7)))].sort().reverse();
-  const monthSel = document.getElementById('aiStaySignupMonth');
-  monthSel.innerHTML = `<option value="all">${t('rep.allTime')}</option>` + monthsPresent.map(m=>`<option value="${m}">${fmtMonthLabel(m)}</option>`).join('');
-  monthSel.value = aiStaySignupMonth;
-  monthSel.onchange = ()=>{ aiStaySignupMonth = monthSel.value; renderAIStayExpandedList(cats); };
-
-  const filtered = aiStaySignupMonth==='all' ? cat.list : cat.list.filter(x=> x.service.activationDate && x.service.activationDate.slice(0,7)===aiStaySignupMonth);
-
-  const box = document.getElementById('aiStayExpandedList');
-  // Sort most-urgent first: already-finished plans furthest in the past, then soonest to
-  // expire — so the person someone should call FIRST is always at the top of the list.
-  // Underage entries (no real "days" of their own) sort to the end, ordered by how soon
-  // they'll turn 19, since they're a heads-up rather than an action to take right now.
-  const withDays = filtered.map(x=>{
-    const days = x.service.expiryDate ? daysBetween(todayISO(), x.service.expiryDate) : null;
-    return {...x, days};
-  }).sort((a,b)=>{
-    if(a.subStatus==='underage' && b.subStatus!=='underage') return 1;
-    if(b.subStatus==='underage' && a.subStatus!=='underage') return -1;
-    if(a.subStatus==='underage' && b.subStatus==='underage') return (a.daysUntil19??999)-(b.daysUntil19??999);
-    return (a.days??0) - (b.days??0);
-  });
-
-  box.innerHTML = withDays.length ? withDays.map(({customer:c, service:svc, days, subStatus, daysUntil19, remainingStayYears})=>{
-    let dayLabel, dayPillClass;
-    if(subStatus==='underage'){
-      dayLabel = daysUntil19===null ? '' : (LANG==='zh' ? `还差 ${daysUntil19} 天满19岁` : `${daysUntil19}d until 19`);
-      dayPillClass = 'pill-gray';
-    } else if(days===null){ dayLabel = ''; dayPillClass = 'pill-gray'; }
-    else if(days<0){ dayLabel = LANG==='zh' ? `${Math.abs(days)} 天前已结束` : `Finished ${Math.abs(days)}d ago`; dayPillClass = 'pill-red'; }
-    else if(days===0){ dayLabel = LANG==='zh' ? '今天到期' : 'Due today'; dayPillClass = 'pill-red'; }
-    else { dayLabel = LANG==='zh' ? `还剩 ${days} 天` : `${days}d left`; dayPillClass = days<=7 ? 'pill-orange' : 'pill-gray'; }
-    // Underage entries can still have their current prepaid plan running or already
-    // finished — shown as a second, separate indicator from the age countdown, since
-    // both are useful to know at a glance: whether they're mid-contract right now, AND
-    // how long until they're even old enough for postpaid to be worth bringing up.
-    let planLabel = '', planPillClass = '';
-    if(subStatus==='underage' && days!==null){
-      if(days>0){ planLabel = LANG==='zh' ? `合约中 · 还剩${days}天` : `In contract · ${days}d left`; planPillClass = 'pill-blue'; }
-      else { planLabel = LANG==='zh' ? '套餐已结束' : 'Plan finished'; planPillClass = 'pill-gray'; }
-    }
-    // Shows the actual worked-out remaining stay (already decayed from whatever was
-    // originally stated, down to what's left as of today) rather than just the raw
-    // "Years in Korea" value — so it's visible AT A GLANCE why someone qualifies, without
-    // needing to check their signup date and do the subtraction by hand.
-    const remainingStayNote = (subStatus==='eligible' && remainingStayYears!=null)
-      ? (LANG==='zh' ? `预计还剩 ${(remainingStayYears*12).toFixed(1)} 个月在韩` : `~${(remainingStayYears*12).toFixed(1)}mo stay left`)
-      : (cat.key==='finishedNeedsRecharge' && remainingStayYears!=null)
-      ? (LANG==='zh' ? `预计还剩 ${(remainingStayYears*12).toFixed(1)} 个月在韩` : `~${(remainingStayYears*12).toFixed(1)}mo stay left`)
-      : '';
-    const smsButtons = (cat.key==='finishedNeedsRecharge' && c.phone) ? `
-      <a class="btn btn-sm btn-ghost" href="sms:${c.phone.replace(/[^0-9+]/g,'')}?body=${encodeURIComponent(buildRechargeSmsText(c, remainingStayYears))}" style="flex:0 0 auto;text-decoration:none;">📱 ${t('btn.openSms')}</a>
-      <button class="btn btn-sm btn-ghost" data-copy-sms="${c.id}" data-recharge-months="${remainingStayYears!=null?Math.max(1,Math.round(remainingStayYears*12)):1}" style="flex:0 0 auto;">📋 ${t('btn.copySms')}</button>` : '';
-    return `<div class="ai-stay-row" style="--accent:${cat.color};${subStatus==='underage'?'opacity:.8;':''}">
-      <span class="avatar">${initials(c.name)}</span>
-      <div style="min-width:0;flex:1;">
-        <div style="font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;flex-wrap:wrap;" data-open-customer="${c.id}">
-          ${escapeHtml(c.name)}
-          <button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button>
-          <span class="pill pill-blue" style="margin-left:2px;">${escapeHtml(c.nationality||'')}</span>
-          ${subStatus==='underage' ? `<span class="pill pill-gray">${t('ai.stay.underage')}</span>` : ''}
-          ${planLabel ? `<span class="pill ${planPillClass}">${planLabel}</span>` : ''}
-        </div>
-        <div class="muted" style="font-size:12px;">${escapeHtml(svc.plan||'')} · ${escapeHtml(c.phone||'—')} · ${LANG==='zh'?'到期':'expiry'} ${fmtDate(svc.expiryDate)}${remainingStayNote?` · ${remainingStayNote}`:''}</div>
-      </div>
-      ${smsButtons}
-      ${dayLabel ? `<span class="pill ${dayPillClass}" style="flex:0 0 auto;font-weight:700;">${dayLabel}</span>` : ''}
-    </div>`;
-  }).join('') : emptyState();
-  bindRowOpens();
-  box.querySelectorAll('[data-copy-name]').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.stopPropagation();
-      copyCustomerNameToClipboard(btn.getAttribute('data-copy-name'), btn);
-    });
-  });
-  box.querySelectorAll('[data-copy-sms]').forEach(btn=>{
-    btn.addEventListener('click', async e=>{
-      e.stopPropagation();
-      const cust = getCustomer(btn.getAttribute('data-copy-sms'));
-      const months = Number(btn.getAttribute('data-recharge-months'))||1;
-      try{
-        await navigator.clipboard.writeText(buildRechargeSmsText(cust, months/12));
-        toast(t('toast.smsCopied'));
-      }catch(err){ toast(LANG==='zh'?'复制失败':'Copy failed'); }
-    });
-  });
-  box.querySelectorAll('a[href^="sms:"]').forEach(a=>{
-    a.addEventListener('click', e=> e.stopPropagation());
-  });
-}
 /* Builds the recharge-reminder SMS text for a customer whose prepaid plan has finished but
    who isn't eligible for postpaid yet (under 19, or not staying long enough) — the only
    real move left for them is recharging for whatever time they have left. Kept in English
@@ -7783,13 +7875,13 @@ window.__planLab = planLengthLabel;
     var m={};(DB.customers||[]).forEach(function(c){var k=String(c.createdAt||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(k))m[k]=1;});
     return Object.keys(m).sort().reverse();}
   function ai(){
-    var host=document.getElementById('aiStayCards'),page=document.getElementById('page-ai');
+    var host=document.getElementById('aiNatHost'),page=document.getElementById('page-ai');
     if(!host||!page||typeof DB==='undefined')return;
     var c=document.getElementById('aiNatStay');
     if(!c){
       c=document.createElement('div');c.id='aiNatStay';c.className='card';
       c.innerHTML='<div class="ans-head"><div><div class="ans-title"></div><div class="ans-sub"></div></div><select id="ansMonth"></select></div><div id="ansBars"></div>';
-      host.insertAdjacentElement('afterend',c);
+      host.appendChild(c);
       c.querySelector('select').onchange=function(){draw(true);};
     }
     c.querySelector('.ans-title').textContent=__T('Average stay by nationality');c.querySelector('.ans-sub').textContent=__T('Expected years in Korea, from each customer record');c.querySelector('select').setAttribute('aria-label',__T('Month'));

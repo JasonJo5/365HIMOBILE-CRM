@@ -164,6 +164,20 @@ def run(b):
     r = pg.evaluate("(()=>{const c=DB.customers.find(c=>c.name==='CI NEW POSTPAID'); const s=c&&activeSubscriptionFor(c.id); return s&&[s.plan,s.durationDays]})()")
     check("new postpaid customer is saved with its plan", r == ["5G EASY L", 365], r)
 
+    print("AI Insights")
+    pg.evaluate("closeAllModals(); goTo('ai')"); pg.wait_for_timeout(400)
+    n_before = pg.evaluate("Number(document.getElementById('aiListCount').textContent)")
+    check("AI Insights shows a list straight away", n_before > 0 and pg.locator(".aio-row").count() == n_before, n_before)
+    pg.click(".aio-row [data-ai-done]"); pg.wait_for_timeout(300)
+    n_after = pg.evaluate("Number(document.getElementById('aiListCount').textContent)")
+    marked = pg.evaluate("Object.entries(DB.reminderState).filter(([k,v])=>k.startsWith('ai:')&&v.startsWith('contacted|')).length")
+    check("'Mark contacted' saves and takes the customer off the list", n_after == n_before - 1 and marked == 1, (n_before, n_after, marked))
+    pg.check("#aiShowContacted"); pg.wait_for_timeout(200); pg.click(".aio-row.done [data-ai-undone]"); pg.wait_for_timeout(200); pg.uncheck("#aiShowContacted"); pg.wait_for_timeout(200)
+    check("undoing 'contacted' puts the customer back", pg.evaluate("Number(document.getElementById('aiListCount').textContent)") == n_before)
+    for g in ("u19", "rech", "end", "up"):
+        pg.click(f"[data-ai-group={g}]"); pg.wait_for_timeout(150)
+    check("every AI group opens", not errs, errs[:3])
+
     print("Sheet View")
     pg.evaluate("closeAllModals(); goTo('sheet')"); pg.wait_for_timeout(300)
     total = pg.evaluate("document.querySelectorAll('#sheetTable tbody tr [data-open-customer]').length")

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261112c">
+<link rel="stylesheet" href="style.css?v=20261112d">
 </head>
 <body>
 
@@ -283,22 +283,29 @@
 
       <!-- AI BUSINESS INTELLIGENCE -->
       <section class="page" id="page-ai">
-        <div class="section-desc" style="margin-bottom:16px;" data-i18n="ai.stay.pageDesc">找出适合转后付、需要续费、或适合升级合约的客户 — 点击任意卡片查看名单与明细</div>
-        <div id="aiStayMissingDataBanner" style="display:none;"></div>
-        <div id="aiStayCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;"></div>
-        <div class="card" id="aiStayListCard" style="display:none;">
-          <div class="section-head">
-            <div>
-              <div class="section-title" id="aiStayListTitle"></div>
-              <div class="section-desc" id="aiStayListDesc"></div>
+        <div class="card aio-summary" id="aiSummary"></div>
+        <div class="aio-groups" id="aiGroups"></div>
+        <div class="aio-layout">
+          <div class="card aio-list-card" id="aiListCard">
+            <div class="aio-list-head">
+              <div>
+                <div class="aio-list-title"><span id="aiListTitle"></span> <span class="aio-list-count" id="aiListCount"></span></div>
+                <div class="aio-list-desc" id="aiListDesc"></div>
+              </div>
+              <button type="button" class="btn btn-sm btn-ghost" id="aiCopyPhones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Copy phone numbers</span></button>
             </div>
-            <button class="btn btn-ghost btn-sm" id="aiStayListClose">✕</button>
+            <div class="aio-filters">
+              <input type="search" class="aio-search" id="aiSearch" autocomplete="off">
+              <select class="select-input" id="aiNatFilter"></select>
+              <select class="select-input" id="aiMonthFilter"></select>
+              <label class="aio-toggle"><input type="checkbox" id="aiShowContacted"><span id="aiShowContactedLabel">Show contacted</span></label>
+            </div>
+            <div id="aiList"></div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
-            <label class="muted" style="font-size:12.5px;" data-i18n="rem.expiring.signedUpIn">签约月份</label>
-            <select class="select-input" id="aiStaySignupMonth" style="max-width:180px;"></select>
-          </div>
-          <div id="aiStayExpandedList" style="margin-top:14px;"></div>
+          <aside class="aio-side">
+            <div id="aiNatHost"></div>
+            <div class="card aio-missing" id="aiMissing" style="display:none;"></div>
+          </aside>
         </div>
       </section>
 
@@ -1084,6 +1091,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261112c"></script>
+<script src="script.js?v=20261112d"></script>
 </body>
 </html>
