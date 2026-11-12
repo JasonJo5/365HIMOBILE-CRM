@@ -997,3 +997,16 @@ html[data-theme="dark"] .plan-tag.m3{background:#12382a;color:#5fd69b}html[data-
 .dash-hero-txt .dh-count{font-weight:500;opacity:.8;font-size:18px}
 .dash-hero-row{display:flex;gap:10px;align-items:center;position:relative;z-index:1}
 .dash-hero-row .search-input{flex:1 1 auto;min-width:0}
+
+/* AI page: Average stay by nationality (moved from script.js) */
+#aiNatStay{margin-top:16px;padding:22px 24px}
+#aiNatStay .ans-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+#aiNatStay .ans-title{font-size:16px;font-weight:700;color:var(--text,#14181f)}
+#aiNatStay .ans-sub{font-size:12px;color:var(--text-soft,#6b7685);margin-top:2px}
+#aiNatStay select{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border,#e3e7ec);background:var(--card,#fff);color:var(--text,#14181f);font-size:13px}
+.ans-row{display:grid;grid-template-columns:130px 1fr 90px;align-items:center;gap:14px;padding:7px 0;font-size:13px}
+.ans-name{font-weight:600;color:var(--text,#14181f);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ans-track{height:12px;border-radius:999px;background:var(--gray-light,#eef1f5);overflow:hidden}
+.ans-fill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.ans-val{text-align:right;font-family:var(--mono,ui-monospace,monospace);color:var(--text-soft,#6b7685);font-size:12px}
+@media(max-width:600px){.ans-row{grid-template-columns:90px 1fr 70px}}
