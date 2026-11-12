@@ -1,0 +1,59 @@
+# Every change pushed to main is tested first (tests/test_crm.py, made-up customers only).
+# The website is published to GitHub Pages ONLY if every check passes — a broken update never
+# reaches the live CRM. Requires: Settings > Pages > Build and deployment > Source = "GitHub Actions".
+name: Test and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# one publish at a time; a newer push waits instead of cancelling the one in progress
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install the test browser
+        run: |
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: Run the CRM checks
+        run: python tests/test_crm.py
+        env:
+          TZ: Asia/Seoul
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect the website files (nothing else is published)
+        run: |
+          mkdir _site
+          cp index.html script.js style.css _site/
+          for f in *.jpg *.jpeg *.png *.svg *.ico *.webmanifest; do [ -e "$f" ] && cp "$f" _site/; done
+          ls -la _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deployment
+        uses: actions/deploy-pages@v4
