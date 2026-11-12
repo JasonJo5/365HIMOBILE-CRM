@@ -1235,3 +1235,8 @@ html[data-theme="dark"] .rem-type.t-info_change{background:rgba(124,58,237,.2);c
 .io-danger-ctrl .select-input{width:auto;min-width:150px;height:38px}
 html[data-theme="dark"] .io-danger{border-color:#6b2b2e!important}
 html[data-theme="dark"] .io-sync-pill.ok{background:rgba(11,122,94,.2)}
+
+/* "Show more (N)" under long lists */
+.more-toggle{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;padding:9px 12px;border-radius:10px;border:1px dashed var(--border);background:transparent;color:var(--blue);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.more-toggle:hover{background:var(--blue-light);border-color:var(--blue)}
+.more-toggle span{font-size:11px}

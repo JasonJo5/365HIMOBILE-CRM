@@ -2822,8 +2822,26 @@ function renderBarChart(elId, pairs, valFmt){
       <div class="bar-track"><div class="bar-fill" style="width:${(val/max*100)}%"></div></div>
       <div class="bar-val">${valFmt?valFmt(val):val}</div>
     </div>`).join('') : `<div class="muted">—</div>`;
+  if(BAR_CHART_LIMIT[elId]) collapseRows(el, '.bar-row', BAR_CHART_LIMIT[elId], elId);
 }
+const BAR_CHART_LIMIT = {chartNationality:6, chartReferral:6, dashCancelReasons:6};
 
+/* Long lists: show the first `limit` rows and a "Show more (N)" button. Whether a list is
+   opened stays remembered (by key) while the page is open, so re-drawing doesn't fold it again. */
+const collapseOpen = new Set();
+function collapseRows(el, rowSelector, limit, key){
+  if(!el) return;
+  const rows = [...el.querySelectorAll(rowSelector)];
+  const old = el.querySelector(':scope > .more-toggle'); if(old) old.remove();
+  if(rows.length <= limit) return;
+  const open = collapseOpen.has(key), hidden = rows.length - limit;
+  rows.forEach((r,i)=>{ r.style.display = (!open && i>=limit) ? 'none' : ''; });
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'more-toggle';
+  b.innerHTML = open ? `${LANG==='zh'?'收起':'Show less'} <span>▴</span>` : `${LANG==='zh'?`显示更多（${hidden}）`:`Show more (${hidden})`} <span>▾</span>`;
+  b.addEventListener('click', e=>{ e.stopPropagation(); if(collapseOpen.has(key)) collapseOpen.delete(key); else collapseOpen.add(key); collapseRows(el, rowSelector, limit, key); });
+  el.appendChild(b);
+}
 function bindRowOpens(){
   document.querySelectorAll('[data-open-customer]').forEach(el=>{
     el.addEventListener('click', ()=>{ const id = el.getAttribute('data-open-customer'); if(id) openCustomerDetail(id); });
@@ -5804,6 +5822,7 @@ function renderIO(){
   document.getElementById('dataIssuesList').innerHTML = issues.length ? `<div class="tbl-wrap"><table><thead><tr><th data-i18n="col.customer">${t('col.customer')}</th><th>${LANG==='zh'?'问题':'Issues'}</th><th></th></tr></thead><tbody>${
     issues.map(({c,problems})=>`<tr><td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span></td><td>${problems.map(p=>`<span class="pill pill-red" style="margin-right:4px;">${p}</span>`).join('')}</td><td><button class="btn btn-sm btn-ghost" data-open-customer="${c.id}">${t('btn.view')}</button></td></tr>`).join('')
   }</tbody></table></div>` : `<div class="empty-state">${t('io.issues.none')}</div>`;
+  collapseRows(document.getElementById('dataIssuesList'), 'tbody tr', 5, 'dataIssues');
   bindRowOpens();
   renderPlanCheck();
 }
@@ -5910,6 +5929,7 @@ function renderPlanCheck(){
         ${r.fix.map((f,j)=>`<button class="btn btn-sm btn-primary" data-plancheck-fix="${i}:${j}">${escapeHtml(f.label)}</button>`).join('')}
       </div></td></tr>`).join('')
   }</tbody></table></div>` : '';
+  collapseRows(listEl, 'tbody tr', 5, 'planCheck');
   bindRowOpens();
   listEl.querySelectorAll('[data-plancheck-fix]').forEach(b=> b.addEventListener('click', ()=>{
     const [i,j] = b.dataset.plancheckFix.split(':').map(Number);

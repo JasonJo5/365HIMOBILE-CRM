@@ -168,6 +168,12 @@ def run(b):
     pg.evaluate("closeAllModals(); goTo('dashboard')"); pg.wait_for_timeout(400)
     check("dashboard shows 4 key figures", pg.locator("#dashStats .dash-kpi").count() == 4)
     check("revenue is compared with the same days last month", "same days last month" in pg.inner_text("#dashStats") or "no data" in pg.inner_text("#dashStats") or "New vs" in pg.inner_text("#dashStats"))
+    shown = pg.evaluate("[...document.querySelectorAll('#chartNationality .bar-row')].filter(r=>r.style.display!=='none').length")
+    total = pg.evaluate("document.querySelectorAll('#chartNationality .bar-row').length")
+    if total > 6:
+        pg.click("#chartNationality .more-toggle"); pg.wait_for_timeout(100)
+        opened = pg.evaluate("[...document.querySelectorAll('#chartNationality .bar-row')].filter(r=>r.style.display!=='none').length")
+        check("long lists fold to 6 with 'Show more'", shown == 6 and opened == total, (shown, opened, total))
     pg.click("[data-dash-opp=u19]"); pg.wait_for_timeout(400)
     check("an opportunity on the dashboard opens that AI Insights list", pg.evaluate("currentPage==='ai' && aiGroup==='u19'"))
     pg.evaluate("reminderTab='all'; goTo('reminders')"); pg.wait_for_timeout(300)
