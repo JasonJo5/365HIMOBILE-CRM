@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261111g">
+<link rel="stylesheet" href="style.css?v=20261111i">
 </head>
 <body>
 
@@ -64,6 +64,7 @@
         </div>
       </div>
       <div class="topbar-right">
+          <button id="themeToggle" type="button" class="theme-toggle" aria-label="Switch to dark mode"></button>
         <div class="lang-switch">
           <button class="lang-btn" data-lang="zh">中文</button>
           <button class="lang-btn" data-lang="en">EN</button>
@@ -82,8 +83,12 @@
       <!-- DASHBOARD -->
       <section class="page" id="page-dashboard">
         <div class="card" style="margin-bottom:16px;">
-          <input class="search-input" id="dashQuickSearch" data-i18n-ph="dash.quickSearch" placeholder="🔍 快速搜索客户姓名、号码或证件号..." style="width:100%;" autocomplete="off">
+          <div class="dash-hero-txt"><h1 class="dh-h" id="dashHeroTitle"></h1></div>
+          <div class="dash-hero-row">
+            <input class="search-input" id="dashQuickSearch" data-i18n-ph="dash.quickSearch" placeholder="🔍 快速搜索客户姓名、号码或证件号..." style="width:100%;" autocomplete="off">
+          </div>
           <div id="dashQuickSearchResults"></div>
+          <div id="dashTodayStrip" class="dash-today"></div>
         </div>
         <div id="dashDupeBanner" style="display:none;margin-bottom:16px;"></div>
         <div class="grid-4" id="dashStats" style="margin-bottom:16px;"></div>
@@ -247,6 +252,7 @@
             <input class="search-input" id="sheetSearch" data-i18n-ph="ph.search" placeholder="搜索姓名、号码、国籍或证件号">
             <select class="select-input" id="sheetNationalityFilter"></select>
             <select class="select-input" id="sheetRatingFilter"></select>
+            <select class="select-input" id="sheetExtraFilter" style="display:none;"></select>
             <select class="select-input" id="sheetRecentFilter">
               <option value="" data-i18n="filter.allTime">添加时间：不限</option>
               <option value="0" data-i18n="filter.today">今天新增</option>
@@ -267,6 +273,7 @@
               <option value="az" data-i18n="sort.nameAsc">姓名 A → Z</option>
               <option value="za" data-i18n="sort.nameDesc">姓名 Z → A</option>
               <option value="u19" data-i18n="sort.u19">仅未满19岁（最快满19岁优先）</option>
+              <option value="unpaid" data-i18n="sort.unpaid">仅未收款（金额最大优先）</option>
             </select></div>
           <div class="tbl-wrap sheet-tbl-wrap">
             <table id="sheetTable"></table>
@@ -303,7 +310,7 @@
               <div class="section-title" data-i18n="rem.title">到期与跟进</div>
               <div class="section-desc" data-i18n="rem.desc">把有效期与合同自动转换为可执行的联系任务</div>
             </div>
-            <button class="btn btn-primary" id="btnAddReminder" data-i18n="btn.addFollowup">＋ 添加跟进</button>
+            
           </div>
           <div class="chip-tabs" id="reminderTabs" style="margin:14px 0 16px;"></div>
           <div id="reminderExpiringFilter" style="display:none;flex-direction:column;gap:10px;margin-bottom:16px;">
@@ -322,35 +329,6 @@
       </section>
 
       <!-- ORDERS -->
-      <section class="page" id="page-orders">
-        <div class="card">
-          <div class="filter-bar">
-            <div class="section-head" style="flex:1;">
-              <div>
-                <div class="section-title" data-i18n="orders.title">业务订单</div>
-                <div class="section-desc" data-i18n="orders.desc">记录先付、后付、号码移动、充值、过户和解约</div>
-              </div>
-            </div>
-            <select class="select-input" id="orderTypeFilter"></select>
-            <select class="select-input" id="orderStatusFilter"></select>
-            <label class="import-skipdupe-opt" style="margin:0;white-space:nowrap;">
-              <input type="checkbox" id="orderShowHistory">
-              <span data-i18n="orders.showHistory">显示已变更的历史记录</span>
-            </label>
-            <button class="btn btn-primary" id="btnNewOrder" data-i18n="btn.newOrder">＋ 新增业务</button>
-          </div>
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr>
-                <th data-i18n="col.customer">客户</th><th data-i18n="col.serviceType">业务类型</th><th data-i18n="col.carrier">通信公司</th>
-                <th data-i18n="col.plan">套餐</th><th data-i18n="col.amount">金额</th><th data-i18n="col.outstanding">欠款</th>
-                <th data-i18n="col.activated">开通日期</th><th data-i18n="col.status">办理状态</th><th></th>
-              </tr></thead>
-              <tbody id="ordersBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
       <!-- REPORTS -->
       <section class="page" id="page-reports">
@@ -1106,6 +1084,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261111g"></script>
+<script src="script.js?v=20261111i"></script>
 </body>
 </html>

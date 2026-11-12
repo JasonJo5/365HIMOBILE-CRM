@@ -244,8 +244,10 @@ const I18N = {
   }
 };
 /* 2026-11-11 reminder tabs: clearer names + new buckets */
-Object.assign(I18N.en, {'sort.u19':'Under 19 only (turning 19 first)', 'col.u19':'Age · turns 19'});
-Object.assign(I18N.zh, {'sort.u19':'仅未满19岁（最快满19岁优先）', 'col.u19':'年龄 · 满19岁'});
+Object.assign(I18N.en, {'btn.editRecord':'Edit'});
+Object.assign(I18N.zh, {'btn.editRecord':'编辑'});
+Object.assign(I18N.en, {'sort.u19':'Under 19 only (turning 19 first)', 'col.u19':'Age · turns 19', 'sort.unpaid':'Unpaid only (biggest first)'});
+Object.assign(I18N.zh, {'sort.u19':'仅未满19岁（最快满19岁优先）', 'col.u19':'年龄 · 满19岁', 'sort.unpaid':'仅未收款（金额最大优先）'});
 Object.assign(I18N.en, {'ph.custName':'e.g. KIM MINJUN', 'ph.nationality':'e.g. CHINA / VIETNAM', 'ph.dob6':'e.g. 040728', 'ph.idExpiry6':'e.g. 290101', 'f.idExpiry6':'ID expiry date (6 digits YYMMDD)'});
 Object.assign(I18N.zh, {'ph.custName':'例如：KIM MINJUN', 'ph.nationality':'例如：CHINA / VIETNAM', 'ph.dob6':'例如：040728', 'ph.idExpiry6':'例如：290101', 'f.idExpiry6':'证件有效期至（6位数字 YYMMDD）'});
 Object.assign(I18N.en, {
@@ -281,7 +283,7 @@ const CONTACT_METHODS = ['Wechat','Kakaotalk','INS','Phone','Other'];
 /* postpaid "업무향" (work type) — from the store's real Tencent Docs single-select field */
 const POSTPAID_WORK_TYPES = ['번호이동','신규가입','유심/이심변경','기타변경','일시정지','번호해지'];
 /* prepaid-specific option sets */
-const PREPAID_COMPANIES = ['스마텔SMS','프리티Free T','모빙Mobing','아시아Asia','벨류컨Vcnk'];
+const PREPAID_COMPANIES = ['스마텔SMS','프리티Free T','모빙Mobing','아시아Asia','벨류컨Vcnk','벨류컨SMT'];
 const PAYMENT_METHODS = ['card','cash','alipay','wechat','bank transfer'];
 const SIM_TYPES = ['physical','esim'];
 const OCCUPATION_OPTIONS = ['Student','Worker','Professor','Other'];
@@ -828,6 +830,7 @@ document.getElementById('sheetNationalityFilter').addEventListener('change', ren
 document.getElementById('sheetRatingFilter').addEventListener('change', renderSheetPage);
 document.getElementById('sheetRecentFilter').addEventListener('change', renderSheetPage);
 document.getElementById('sheetSortOrder').addEventListener('change', renderSheetPage);
+document.getElementById('sheetExtraFilter').addEventListener('change', e=>{ sheetExtraFilterVals[sheetTypeTab] = e.target.value; renderSheetPage(); });
 document.getElementById('sheetDateFrom').addEventListener('change', renderSheetPage);
 document.getElementById('sheetDateTo').addEventListener('change', renderSheetPage);
 document.getElementById('sheetDateRangeClear').addEventListener('click', ()=>{
@@ -865,6 +868,22 @@ function renderSheetPage(){
   { const prev = natSel.value; natSel.innerHTML = `<option value="">${t('filter.allNationalities')}</option>` + NATIONALITIES.map(n=>`<option value="${n}">${n}</option>`).join(''); natSel.value = prev; }
   const ratingSel = document.getElementById('sheetRatingFilter');
   { const prev = ratingSel.value; ratingSel.innerHTML = `<option value="">${t('filter.allRatings')}</option>` + [5,4,3,2,1].map(r=>`<option value="${r}">${'★'.repeat(r)}</option>`).join(''); ratingSel.value = prev; }
+  // Prepaid tab: Carrier type filter · Postpaid tab: Partner company filter · other tabs: rating.
+  // A real filter now (it used to hide rows after drawing, so the customer count ignored it).
+  const extraSel = document.getElementById('sheetExtraFilter');
+  const extraOn = sheetTypeTab==='prepaid' || sheetTypeTab==='postpaid';
+  ratingSel.style.display = extraOn ? 'none' : '';
+  extraSel.style.display = extraOn ? '' : 'none';
+  if(extraOn){
+    if(ratingSel.value) ratingSel.value = '';
+    const key = sheetTypeTab==='prepaid' ? 'svcCarrierType' : 'partnerCompany';
+    const opts = [...new Set(DB.services.filter(x=>x.type===sheetTypeTab).map(x=>String(x[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const allLabel = sheetTypeTab==='prepaid' ? (LANG==='zh'?'全部运营商类型':'All carrier types') : (LANG==='zh'?'全部合作公司':'All partner companies');
+    const html = `<option value="">${allLabel}</option>` + opts.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
+    if(extraSel.dataset.sig !== sheetTypeTab+'|'+LANG+'|'+html.length){ extraSel.innerHTML = html; extraSel.dataset.sig = sheetTypeTab+'|'+LANG+'|'+html.length; }
+    extraSel.value = sheetExtraFilterVals[sheetTypeTab] || '';
+  }
+  const extraFilter = extraOn ? (sheetExtraFilterVals[sheetTypeTab] || '') : '';
   const natFilter = natSel.value;
   const ratingFilter = ratingSel.value;
   const recentFilter = document.getElementById('sheetRecentFilter').value;
@@ -903,10 +922,13 @@ function renderSheetPage(){
       const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
       if(!hay.includes(search)) return false;
     }
+    if(extraFilter && String((sheetTypeTab==='prepaid' ? svc.svcCarrierType : svc.partnerCompany)||'').trim()!==extraFilter) return false;
     if(sortOrder==='u19' && !isUnder19(c)) return false;
+    if(sortOrder==='unpaid' && !(customerUnpaid(c) > 0)) return false;
     return true;
   })
   .sort((a,b)=>{
+    if(sortOrder==='unpaid') return customerUnpaid(b.c) - customerUnpaid(a.c); // biggest first
     if(sortOrder==='u19') return String(a.c.dob).localeCompare(String(b.c.dob)); // oldest first = turns 19 soonest
     if(sortOrder==='az') return a.c.name.localeCompare(b.c.name);
     if(sortOrder==='za') return b.c.name.localeCompare(a.c.name);
@@ -917,8 +939,9 @@ function renderSheetPage(){
     // didn't match the column people were actually looking at.
     return new Date(b.svc.activationDate||0)-new Date(a.svc.activationDate||0);
   });
-  document.getElementById('sheetCount').textContent = `${rows.length} ${LANG==='zh'?'位客户':'customers'}${sortOrder==='u19'?(LANG==='zh'?' · 未满19岁':' under 19'):''}`;
+  document.getElementById('sheetCount').textContent = `${rows.length} ${LANG==='zh'?'位客户':'customers'}${sortOrder==='u19'?(LANG==='zh'?' · 未满19岁':' under 19'):''}${sortOrder==='unpaid'?(LANG==='zh'?` · 未收款 ${fmtWon(rows.reduce((a,r)=>a+customerUnpaid(r.c),0))}`:` with unpaid balance · ${fmtWon(rows.reduce((a,r)=>a+customerUnpaid(r.c),0))}`):''}`;
   const u19 = sortOrder==='u19';
+  const unpaid = sortOrder==='unpaid';
 
   /* Column order (2026-11-11): what staff check first comes first — name, phone, then
      Company / Carrier type and the plan-length tag (prepaid) or plan name / partner
@@ -935,7 +958,7 @@ function renderSheetPage(){
     return `<span class="pill ${cls} sheet-status">${escapeHtml(txt)}</span>`;
   };
   const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>`;
-  const u19Head = u19 ? `<th>${t('col.u19')}</th>` : '';
+  const u19Head = u19 ? `<th>${t('col.u19')}</th>` : unpaid ? `<th>${t('col.outstanding')}</th>` : '';
   const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th>${u19Head}<th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
     <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.durationDays')}</th>
     <th>${t('f.price')}</th><th>${t('f.discount')}</th><th>${t('f.finalPrice')}</th><th>${t('f.paymentMethod')}</th><th>${t('f.planType')}</th>
@@ -950,7 +973,7 @@ function renderSheetPage(){
       const planTypeCell = `<td>${sheetPillCell('customer',c.id,'planType',c.planType,['신규가입','번호이동','명의변경','기간연장','선불전환'], t('f.planType'))}</td>`;
       if(sheetTypeTab==='prepaid'){
         const finalPrice = Math.max(0, (Number(svc.price)||0) - (Number(svc.discount)||0));
-        return `<tr>${nameCell(c)}${u19 ? u19Cell(c) : ''}
+        return `<tr>${nameCell(c)}${u19 ? u19Cell(c) : unpaid ? unpaidCell(customerUnpaid(c)) : ''}
           <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
           <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,PREPAID_COMPANIES, t('f.company'))}</td>
           <td data-col="svcCarrierType">${sheetPillCell('service',svc.id,'svcCarrierType',svc.svcCarrierType,POSTPAID_CARRIER_TYPES, t('f.svcCarrierType'))}</td>
@@ -976,7 +999,7 @@ function renderSheetPage(){
         </tr>`;
       }
       const frozenNow = isServiceCurrentlyFrozen(svc);
-      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${nameCell(c)}${u19 ? u19Cell(c) : ''}
+      return `<tr${frozenNow ? ' style="background:#EFF6FF;"' : ''}>${nameCell(c)}${u19 ? u19Cell(c) : unpaid ? unpaidCell(customerUnpaid(c)) : ''}
         <td>${sheetTextCell('customer',c.id,'phone',c.phone,'text')}</td>
         <td>${svc.plan ? `<span class="plan-name-chip">${escapeHtml(svc.plan)}</span>` : sheetReadonlyCell('—')}</td>
         <td data-col="company">${sheetPillCell('service',svc.id,'company',svc.company,POSTPAID_COMPANIES, t('f.company'))}</td>
@@ -1041,13 +1064,16 @@ function renderSheetPage(){
    plus 15-day plans. Read-only: the editable length is the "Contract length (days)" column. */
 function sheetPlanTagHtml(svc){
   if(!svc || svc.type!=='prepaid') return sheetReadonlyCell('—');
-  let lab = null;
-  try{ lab = window.__planLab ? window.__planLab(svc) : null; }catch(e){}
+  const lab = planLengthLabel(svc);
   const d = Number(svc.durationDays);
-  if(!lab && d>=13 && d<=17) lab = ['m0', LANG==='zh' ? '15天' : '15 days'];
   return lab ? `<span class="plan-tag ${lab[0]}" style="margin-left:0">${escapeHtml(lab[1])}</span>` : sheetReadonlyCell(d ? d+(LANG==='zh'?' 天':' days') : '—');
 }
 /* Under-19 view (Sheet View → Sort → "Under 19 only"): age and the date the customer turns 19 */
+/* Unpaid balance = selling price − received, for every service except plans that were
+   replaced (same rule as the dashboard's "Outstanding total", so the list adds up to it). */
+function unpaidOf(s){ if(!s || (isSubscriptionType(s.type) && s.isActive===false)) return 0; return Math.max(0, (Number(s.sellingPrice)||0) - (Number(s.received)||0)); }
+function customerUnpaid(c){ return customerServices(c.id).reduce((a,s)=>a+unpaidOf(s),0); }
+function unpaidCell(amount){ return `<td><span class="pill pill-red">${fmtWon(amount)}</span></td>`; }
 function isUnder19(c){ const a = calcAge(c && c.dob); return a!==null && a < 19; }
 function turns19Date(dob){ return isIsoDate(dob) ? (Number(dob.slice(0,4))+19)+dob.slice(4,10) : ''; }
 function u19Cell(c){
@@ -1057,9 +1083,11 @@ function u19Cell(c){
   const soon = days!==null && days <= 30;
   return `<td><span class="pill ${soon?'pill-orange':'pill-gray'}" title="${escapeHtml(d)}">${a} · ${LANG==='zh'?'满19岁 ':'19 on '}${escapeHtml(d)}${days!==null?` (${days}${LANG==='zh'?'天':'d'})`:''}</span></td>`;
 }
+const sheetExtraFilterVals = {prepaid:'', postpaid:''}; // remembered per tab
 function renderSheetSimpleView(tab, dupeGroups, filters){
   const {natFilter, ratingFilter, recentFilter, search, dateFrom, dateTo, sortOrder} = filters;
   const u19 = sortOrder==='u19' && tab!=='dupes';
+  const unpaid = sortOrder==='unpaid' && tab!=='dupes';
   const isDupeView = tab==='dupes';
   const isAllView = tab==='all';
   const groupIndexById = {};
@@ -1097,13 +1125,14 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
     return true;
   });
   if(u19) list = list.filter(isUnder19).sort((a,b)=> String(a.dob).localeCompare(String(b.dob)));
+  else if(unpaid) list = list.filter(c=>customerUnpaid(c)>0).sort((a,b)=> customerUnpaid(b)-customerUnpaid(a));
   else if(!isDupeView) list.sort((a,b)=> new Date(customerJoinDate(b)||0)-new Date(customerJoinDate(a)||0));
 
   document.getElementById('sheetCount').textContent = isDupeView
     ? `${dupeGroups.length} ${LANG==='zh'?'组重复 · 共':'duplicate groups · '} ${list.length} ${LANG==='zh'?'位客户 · 按姓名或电话匹配':'customers involved · matched by name or phone'}`
-    : `${list.length} ${LANG==='zh'?'位客户':'customers'}${u19?(LANG==='zh'?' · 未满19岁':' under 19'):''}`;
+    : `${list.length} ${LANG==='zh'?'位客户':'customers'}${u19?(LANG==='zh'?' · 未满19岁':' under 19'):''}${unpaid?(LANG==='zh'?` · 未收款 ${fmtWon(list.reduce((a,c)=>a+customerUnpaid(c),0))}`:` with unpaid balance · ${fmtWon(list.reduce((a,c)=>a+customerUnpaid(c),0))}`):''}`;
 
-  const head = `<th>${t('col.customer')}</th>${u19?`<th>${t('col.u19')}</th>`:''}<th>${t('f.phone')}</th><th>${t('f.nationality')}</th><th>${t('f.idType')}</th>
+  const head = `<th>${t('col.customer')}</th>${u19?`<th>${t('col.u19')}</th>`:unpaid?`<th>${t('col.outstanding')}</th>`:''}<th>${t('f.phone')}</th><th>${t('f.nationality')}</th><th>${t('f.idType')}</th>
     <th>${isDupeView ? t('col.dupeReason') : (isAllView ? t('col.status') : t('col.contractStatus'))}</th><th>${t('col.recentActivity')}</th><th>${t('col.dateAdded')}</th><th>${t('col.rating')}</th><th></th>`;
   const rowsHtml = list.length ? list.map(c=>{
     const svcs = customerServices(c.id);
@@ -1132,7 +1161,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       var mergeBtn = '';
     }
     return `<tr class="row-click ${groupBand}" data-open-customer="${c.id}">
-      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>${u19 ? u19Cell(c) : ''}
+      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>${u19 ? u19Cell(c) : unpaid ? unpaidCell(customerUnpaid(c)) : ''}
       <td>${escapeHtml(c.phone||'—')}</td>
       <td><span class="cell-ellipsis">${escapeHtml(c.nationality)}</span></td>
       <td>${c.idType?t('idtype.'+c.idType):'—'}</td>
@@ -2339,7 +2368,7 @@ const NAV_ITEMS = [
   {key:'sheet', icon:'sheet', label:'nav.sheet'},
   {key:'ai', icon:'sparkle', label:'nav.ai'},
   {key:'reminders', icon:'clock', label:'nav.reminders'},
-  {key:'orders', icon:'list', label:'nav.orders'},
+  // (Orders page retired 2026-11-11 — Sheet View lists every plan; other services and edits live in each customer's profile)
   {key:'reports', icon:'chart', label:'nav.reports'},
   {key:'templates', icon:'printer', label:'nav.templates'},
   {key:'io', icon:'cloud', label:'nav.io'},
@@ -2374,6 +2403,7 @@ function renderNav(){
 }
 
 function goTo(page){
+  if(page==='orders') page = 'sheet'; // Orders page retired 2026-11-11 — old links/saved state land on Sheet View
   currentPage = page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
@@ -2391,7 +2421,6 @@ function renderPage(page){
   if(page==='sheet') renderSheetPage();
   if(page==='ai') renderAIPage();
   if(page==='reminders') renderReminders();
-  if(page==='orders') renderOrders();
   if(page==='reports') renderReports();
   if(page==='templates') renderTemplates();
   if(page==='io') renderIO();
@@ -2454,9 +2483,9 @@ function populateStaticSelects(){
   const custNat = document.getElementById('custNationalityFilter');
   { const prev = custNat.value; custNat.innerHTML = `<option value="">${t('filter.allNationalities')}</option>` + NATIONALITIES.map(n=>`<option value="${n}">${n}</option>`).join(''); custNat.value = prev; }
   const orderType = document.getElementById('orderTypeFilter');
-  { const prev = orderType.value; orderType.innerHTML = `<option value="">${t('filter.allTypes')}</option>` + SERVICE_TYPES.map(k=>`<option value="${k}">${t('type.'+k)}</option>`).join(''); orderType.value = prev; }
+  if(orderType){ const prev = orderType.value; orderType.innerHTML = `<option value="">${t('filter.allTypes')}</option>` + SERVICE_TYPES.map(k=>`<option value="${k}">${t('type.'+k)}</option>`).join(''); orderType.value = prev; }
   const orderStatus = document.getElementById('orderStatusFilter');
-  { const prev = orderStatus.value; orderStatus.innerHTML = `<option value="">${t('filter.allStatus')}</option>` + STATUSES.map(k=>`<option value="${k}">${t('status.'+k)}</option>`).join(''); orderStatus.value = prev; }
+  if(orderStatus){ const prev = orderStatus.value; orderStatus.innerHTML = `<option value="">${t('filter.allStatus')}</option>` + STATUSES.map(k=>`<option value="${k}">${t('status.'+k)}</option>`).join(''); orderStatus.value = prev; }
 }
 
 /* ---------------- DASHBOARD ---------------- */
@@ -2491,6 +2520,8 @@ function renderDashboard(){
 
   // the greeting itself lives in the banner below — the header just names the page
   document.getElementById('pageTitle').textContent = LANG==='zh' ? '仪表盘' : 'Dashboard';
+  const heroTitle = document.getElementById('dashHeroTitle');
+  if(heroTitle) heroTitle.innerHTML = `${escapeHtml(dashGreetingText())} <span class="dh-count">· ${LANG==='zh' ? '共 '+DB.customers.length+' 位客户' : DB.customers.length+' customers'}</span>`;
   document.getElementById('pageSub').textContent = new Date().toLocaleDateString(LANG==='zh'?'zh-CN':'en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
   const deltaHtml = d => d.na ? '' : (d.isNew ? `<span class="up">${t('stat.newActivity')}</span>` : `<span class="${d.up?'up':'down'}">${d.up?'↑':'↓'} ${d.pct}%</span> ${t('stat.vsLastMonth')}`);
@@ -2540,16 +2571,16 @@ function renderDashboard(){
   // second stats row: active book composition, money at risk, renewals coming up
   const activePrepaid = custs.filter(c=>{ const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid'; }).length;
   const activePostpaid = custs.filter(c=>{ const a=activeSubscriptionFor(c.id); return a && a.type==='postpaid'; }).length;
-  const outstandingTotal = svcs.filter(s=>!(isSubscriptionType(s.type)&&s.isActive===false)).reduce((a,s)=>a+Math.max(0,(s.sellingPrice||0)-(s.received||0)),0);
+  const outstandingTotal = svcs.reduce((a,s)=>a+unpaidOf(s),0);
   const renewalsSoon = getUpcomingRenewals(30);
   const stats2 = [
-    {label:t('stat.activePrepaid'), value:activePrepaid, sub:t('stat.activeBook'), color:'var(--orange)'},
-    {label:t('stat.activePostpaid'), value:activePostpaid, sub:t('stat.activeBook'), color:'var(--blue)'},
-    {label:t('stat.outstanding'), value:fmtWon(outstandingTotal), sub:t('stat.outstandingSub'), color: outstandingTotal>0?'var(--red)':'inherit'},
-    {label:t('stat.renewalsSoon'), value:renewalsSoon.length, sub:t('stat.renewalsSub'), color:'var(--orange)'},
+    {label:t('stat.activePrepaid'), value:activePrepaid, sub:t('stat.activeBook'), color:'var(--orange)', go:'sheet:prepaid'},
+    {label:t('stat.activePostpaid'), value:activePostpaid, sub:t('stat.activeBook'), color:'var(--blue)', go:'sheet:postpaid'},
+    {label:t('stat.outstanding'), value:fmtWon(outstandingTotal), sub:t('stat.outstandingSub'), color: outstandingTotal>0?'var(--red)':'inherit', go:'sheet:all:unpaid'},
+    {label:t('stat.renewalsSoon'), value:renewalsSoon.length, sub:t('stat.renewalsSub'), color:'var(--orange)', go:'rem:postpaidContract'},
   ];
   document.getElementById('dashStats2').innerHTML = stats2.map(s=>`
-    <div class="card stat-card">
+    <div class="card stat-card stat-link" data-dash-go="${s.go}" title="${LANG==='zh'?'点击查看列表':'Click to see the list'}">
       <div class="stat-label">${s.label}</div>
       <div class="stat-value" style="color:${s.color||'inherit'}">${s.value}</div>
       <div class="stat-delta">${s.sub}</div>
@@ -2558,6 +2589,13 @@ function renderDashboard(){
   // version, kept right on the dashboard so it's something you glance at each morning
   // instead of something you have to go looking for in Reports
   const todayPrepaid = svcs.filter(s=>s.type==='prepaid' && s.activationDate===todayISO());
+  document.querySelectorAll('#dashStats2 [data-dash-go]').forEach(card=> card.addEventListener('click', ()=>{
+    const [where, tab, sort] = card.dataset.dashGo.split(':');
+    if(where==='rem'){ reminderTab = tab; goTo('reminders'); return; }
+    sheetTypeTab = tab;
+    const so = document.getElementById('sheetSortOrder'); if(so) so.value = sort || '';
+    goTo('sheet');
+  }));
   document.getElementById('dashPaymentToday').innerHTML = paymentBreakdownHtml(todayPrepaid,
     LANG==='zh'?'今天还没有先付记录':'No prepaid signups yet today');
 
@@ -4126,6 +4164,22 @@ function progressStateClass(s){
   if(rem <= 7) return 'pg-soon';
   return '';
 }
+/* Plan-length tag for prepaid plans: 15 days / 1 / 2 / 3 months, or Recharge — a 30-day plan
+   bought with the Recharge button, or priced ₩36,000 / ₩36,300 (except SAFARBAYEV BERIK, who is a
+   normal 1-month plan). Returns [cssClass, label] or null. Used by the profile, Sheet View and
+   the Excel export, so all three always agree. */
+function planLengthLabel(s){
+  if(!s || s.type!=='prepaid') return null;
+  const d = Number(s.durationDays); let n = null;
+  if(d>=85&&d<=95) n=3; else if(d>=55&&d<=65) n=2; else if(d>=28&&d<=35) n=1;
+  const zh = LANG==='zh';
+  if(!n) return (d>=13&&d<=17) ? ['m0', zh?'15天':'15 days'] : null;
+  const pr = Number(s.sellingPrice!=null ? s.sellingPrice : s.price);
+  let cn = ''; try{ cn = ((getCustomer(s.customerId)||{}).name||'').toUpperCase(); }catch(e){}
+  const rc = n===1 && (/recharge/i.test(s.changeReason||'') || ((pr===36000||pr===36300) && cn.indexOf('SAFARBAYEV BERIK')<0));
+  const txt = zh ? n+'个月' : n+(n>1?' months':' month');
+  return rc ? ['rc', zh?'充值'+txt:'Recharge '+txt] : ['m'+n, txt];
+}
 function serviceCardHtml(s, customer){
   const st = computedStatus(s);
   let progressPct = 0;
@@ -4196,8 +4250,9 @@ function serviceCardHtml(s, customer){
         <div class="muted" style="font-size:12px;margin-top:2px;">${[s.plan?escapeHtml(s.plan):'', s.number?escapeHtml(s.number):'', s.simType==='esim'?'eSIM':t('opt.physical')].filter(Boolean).join(' · ')}</div>
       </div>
       <div style="text-align:right;">
-        <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>
+        <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>${(()=>{ const l = planLengthLabel(s); return l ? `<span class="plan-tag ${l[0]}">${escapeHtml(l[1])}</span>` : ''; })()}
         ${isServiceCurrentlyFrozen(s) ? `<span class="pill" style="background:#DBEAFE;color:#1D4ED8;margin-left:4px;">🧊 ${t('freeze.frozen')}</span>` : ''}
+        <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}" style="margin-left:6px;" title="${LANG==='zh'?'编辑套餐详情（价格、已收款、日期…）':'Edit plan details (price, received, dates…)'}">✎ ${t('btn.editRecord')}</button>
         <div style="margin-top:6px;display:flex;gap:6px;justify-content:flex-end;">
           ${(s.type==='prepaid' && s.durationDays===90) ? `<button class="btn btn-sm btn-ghost" data-print-service="${s.id}" style="color:var(--orange);">🖨 ${t('btn.print')}</button>` : ''}
         </div>
@@ -4233,8 +4288,10 @@ function historyItemHtml(s){
         <div style="font-weight:800;">${typeLabel} · ${escapeHtml(s.plan||s.carrier||'—')}</div>
         <div class="muted" style="font-size:12px;margin-top:2px;">${escapeHtml(s.carrier||'')} ${s.number?'· '+s.number:''}</div>
       </div>
-      <div style="text-align:right;">
+      <div style="text-align:right;display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
         <span class="pill pill-gray">${reasonLabel}</span>
+        ${s.type==='prepaid' ? `<button class="btn btn-sm btn-ghost" data-print-service="${s.id}" title="${t('btn.print')}">🖨</button>` : ''}
+        <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}">✎ ${t('btn.editRecord')}</button>
       </div>
     </div>
     <div class="muted" style="font-size:12px;margin-top:8px;font-weight:600;">${fmtDateHuman(s.activationDate)} → ${fmtDateHuman(s.endedAt||s.expiryDate)}</div>
@@ -5174,43 +5231,7 @@ function renderIdChangeTab(list){
 
 
 /* ---------------- ORDERS PAGE ---------------- */
-function renderOrders(){
-  populateStaticSelects();
-  const typeF = document.getElementById('orderTypeFilter').value;
-  const statusF = document.getElementById('orderStatusFilter').value;
-  const showHistory = document.getElementById('orderShowHistory').checked;
-  let list = [...DB.services].sort((a,b)=> new Date(b.activationDate||0)-new Date(a.activationDate||0));
-  // by default, hide subscription records that have been superseded/replaced (Change Plan,
-  // Change to Postpaid, Cancel Subscription) — otherwise every plan change leaves an old
-  // "active-looking" row behind and the list looks full of duplicates
-  if(!showHistory) list = list.filter(s=> !(isSubscriptionType(s.type) && s.isActive===false));
-  if(typeF) list = list.filter(s=>s.type===typeF);
-  if(statusF) list = list.filter(s=>computedStatus(s)===statusF);
-  document.getElementById('ordersBody').innerHTML = list.length ? list.map(s=>{
-    const c = getCustomer(s.customerId);
-    const st = computedStatus(s);
-    const outstanding = Math.max(0,(s.sellingPrice||0)-(s.received||0));
-    const amount = totalRevenueFor(s);
-    return `<tr class="row-click" data-edit-order="${s.id}">
-      <td class="name-cell" title="${c?escapeHtml(c.name):''}"><span class="avatar">${initials(c?c.name:'?')}</span><span class="name-text">${c?escapeHtml(c.name):'—'}</span></td>
-      <td><span class="cell-ellipsis">${t('type.'+s.type)}</span></td>
-      <td><span class="cell-ellipsis">${escapeHtml(s.carrier||'—')}</span></td>
-      <td><span class="cell-ellipsis" style="max-width:160px;">${escapeHtml(s.plan||'—')}</span></td>
-      <td>${fmtWon(amount)}</td>
-      <td>${(s.type!=='postpaid' && outstanding>0)?`<span style="color:var(--red);font-weight:700;">${fmtWon(outstanding)}</span>`:'—'}</td>
-      <td class="nowrap">${fmtDate(s.activationDate)}</td>
-      <td><span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span></td>
-      <td style="white-space:nowrap;">
-        <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
-          ${(s.type==='prepaid' && s.durationDays===90) ? `<button class="btn btn-sm btn-ghost" data-print-order="${s.id}" style="color:var(--orange);" title="${t('btn.print')}">🖨</button>` : ''}
-          <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}">${t('btn.edit')}</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="9">${emptyState()}</td></tr>`;
-  document.querySelectorAll('[data-edit-order]').forEach(el=> el.addEventListener('click', (e)=>{ e.stopPropagation(); openOrderModal(getService(el.getAttribute('data-edit-order'))); }));
-  document.querySelectorAll('[data-print-order]').forEach(el=> el.addEventListener('click', (e)=>{ e.stopPropagation(); const svc=getService(el.getAttribute('data-print-order')); quickPrintService(svc.customerId, svc.id); }));
-}
+/* renderOrders() removed 2026-11-11 with the Orders page (see renderPage). */
 
 /* ---------------- REPORTS ---------------- */
 let repSelectedMonth = null; // null = all time
@@ -5641,8 +5662,9 @@ const POSTPAID_EXPORT_HEADERS = ['CUSTOMER','NATIONALITY','PHONE','DATE OF BIRTH
   'ACTIVATION DATE','EXPIRY DATE','CONTRACT LENGTH (DAYS)','MONTHLY FEE','COMPANY PRICE','REAL COMPANY PRICE',
   'USIM FEE','DISCOUNT / MONTH','DISCOUNT MONTHS','EXPECTED INCOME','NOTES'];
 function prepaidExportRow(c, s){
+  const lab = planLengthLabel(s); // recharge plans are written as "Recharge" in PLAN TYPE (same rule as the CRM)
   return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', c.years||0,
-    c.handlerName||'', c.planType||'', s.svcCarrierType||'', s.company||'',
+    c.handlerName||'', (lab && lab[0]==='rc') ? 'Recharge' : (c.planType||''), s.svcCarrierType||'', s.company||'',
     s.activationDate||'', s.expiryDate||'', s.durationDays||'', Number(s.price)||0, Number(s.discount)||0,
     Math.max(0,(Number(s.price)||0)-(Number(s.discount)||0)), s.paymentMethod||'', s.notes||''];
 }
@@ -6997,6 +7019,12 @@ document.getElementById('savePrintCustomerBtn').addEventListener('click', saveCu
 document.getElementById('detailEditBtn').addEventListener('click', ()=>{ const c=getCustomer(detailCustomerId); closeAllModals(); openCustomerModal(c); });
 document.getElementById('detailAddServiceBtn').addEventListener('click', ()=>{ const id=detailCustomerId; closeAllModals(); openOrderModal(null, id); });
 document.getElementById('detailDeleteBtn').addEventListener('click', ()=> deleteCustomerById(detailCustomerId));
+// Edit / Print buttons on the profile's plan cards and history entries
+document.getElementById('detailBody').addEventListener('click', e=>{
+  const ed = e.target.closest('[data-edit-order]');
+  if(ed){ e.preventDefault(); e.stopPropagation(); const svc = getService(ed.dataset.editOrder); if(svc){ closeAllModals(); openOrderModal(svc); } }
+  // (Print buttons are wired in openCustomerDetail)
+});
 document.getElementById('detailMoreBtn').addEventListener('click', ()=>{
   const d = document.getElementById('detailDeleteBtn');
   const show = d.style.display==='none';
@@ -7005,8 +7033,6 @@ document.getElementById('detailMoreBtn').addEventListener('click', ()=>{
 });
 document.getElementById('deleteCustomerBtn').addEventListener('click', ()=> deleteCustomerById(editingCustomerId));
 document.getElementById('saveOrderBtn').addEventListener('click', saveOrderFromForm);
-document.getElementById('btnNewOrder').addEventListener('click', ()=> openOrderModal(null));
-document.getElementById('btnAddReminder').addEventListener('click', ()=> goTo('orders'));
 document.getElementById('confirmImportBtn').addEventListener('click', confirmImport);
 document.getElementById('menuBtn').addEventListener('click', ()=> document.getElementById('sidebar').classList.toggle('open'));
 
@@ -7015,9 +7041,6 @@ document.getElementById('custNationalityFilter').addEventListener('change', rend
 document.getElementById('custSortBy').addEventListener('change', renderCustomers);
 document.getElementById('custDurationFilter').addEventListener('change', renderCustomers);
 document.getElementById('custRecentFilter').addEventListener('change', renderCustomers);
-document.getElementById('orderTypeFilter').addEventListener('change', renderOrders);
-document.getElementById('orderStatusFilter').addEventListener('change', renderOrders);
-document.getElementById('orderShowHistory').addEventListener('change', renderOrders);
 document.getElementById('btnExportCustomers').addEventListener('click', exportAll);
 document.getElementById('exportAllBtn').addEventListener('click', exportAll);
 document.getElementById('syncServerUrl').addEventListener('change', e=> setServerUrl(e.target.value.trim()));
@@ -7461,64 +7484,18 @@ applyStaticI18n();
     b.setAttribute('aria-label', b.title);
   }
   function apply(t){ document.documentElement.setAttribute('data-theme',t); paint(); }
-  function ensureButton(){
-    if(document.getElementById('themeToggle')) return;
-    var host=document.querySelector('.topbar-right'); if(!host) return;
-    var b=document.createElement('button');
-    b.id='themeToggle'; b.type='button'; b.className='theme-toggle';
-    b.addEventListener('click',function(){ var t=current()==='dark'?'light':'dark'; write(t); apply(t); });
-    host.insertBefore(b,host.firstChild);
-    paint();
-  }
+  // the button is now part of index.html (top bar) — just wire it up once
+  var b=document.getElementById('themeToggle');
+  if(b) b.addEventListener('click',function(){ var t=current()==='dark'?'light':'dark'; write(t); apply(t); });
   apply(read()==='dark' ? 'dark' : 'light');
-  ensureButton();
-  document.addEventListener('DOMContentLoaded',ensureButton);
-  __uiJob(ensureButton);
 })();
 
-/* ===== Plan-length tag (3 months / 2 months / 1 month recharge) ===== */
-(function(){
-  var st=document.createElement('style');
-  st.textContent='.plan-tag{display:inline-flex;align-items:center;margin-left:6px;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;vertical-align:middle}'+
-  '.plan-tag.m3{background:#e3f6ec;color:#12804a}.plan-tag.m2{background:#e6eefc;color:#1f5bd8}.plan-tag.m1{background:#f1e8ff;color:#6d3fd1}.plan-tag.rc{background:#fff1e0;color:#b45f06}'+
-  'html[data-theme="dark"] .plan-tag.m3{background:#12382a;color:#5fd69b}html[data-theme="dark"] .plan-tag.m2{background:#14284d;color:#7fa8ff}html[data-theme="dark"] .plan-tag.m1{background:#2b1d4d;color:#bfa0ff}html[data-theme="dark"] .plan-tag.rc{background:#3d2a12;color:#ffb561}';
-  document.head.appendChild(st);
-  function lab(s){
-    if(!s||s.type!=='prepaid')return null;
-    var d=Number(s.durationDays),n=null;
-    if(d>=85&&d<=95)n=3;else if(d>=55&&d<=65)n=2;else if(d>=28&&d<=35)n=1;
-    if(!n)return null;
-    var pr=Number(s.sellingPrice!=null?s.sellingPrice:s.price);
-    var cn='';try{cn=((getCustomer(s.customerId)||{}).name||'').toUpperCase();}catch(e){}
-    var rc=n===1&&(/recharge/i.test(s.changeReason||'')||((pr===36000||pr===36300)&&cn.indexOf('SAFARBAYEV BERIK')<0));
-    var t=__zh()?n+'个月':n+(n>1?' months':' month');
-    return rc?['rc',__zh()?'充值'+t:'Recharge '+t]:['m'+n,t];}
-  window.__planLab=lab;
-  function install(){
-    var o=window.serviceCardHtml;
-    if(typeof o!=='function'||o.__planTag)return !!(o&&o.__planTag);
-    var w=function(s,c){
-      var h=o.apply(this,arguments);
-      try{var r=lab(s);
-        if(r)h=h.replace(/(<span class="pill [^"]*">[^<]*<\/span>)/,'$1<span class="plan-tag '+r[0]+'">'+r[1]+'</span>');
-      }catch(e){}
-      return h;};
-    w.__planTag=true;window.serviceCardHtml=w;
-    try{if(typeof renderPage==='function')renderPage();}catch(e){}
-    return true;}
-  if(!install()){var n=0,iv=setInterval(function(){if(install()||++n>40)clearInterval(iv);},250);}
-})();
+/* (plan-length tag: now planLengthLabel() + serviceCardHtml; styles in style.css) */
+window.__planLab = planLengthLabel;
 
 /* ===== Dashboard hero text + AI "Average stay by nationality" ===== */
 (function(){
   var css=
-  '#page-dashboard>.card:first-child .dash-hero-txt{position:relative;z-index:1;margin-bottom:18px;color:#fff}'+
-  '.dash-hero-txt .dh-date{font-size:13px;opacity:.85}'+
-  '.dash-hero-txt .dh-h{margin:0;font-size:24px;line-height:1.25;font-weight:700;color:#fff}.dash-hero-txt .dh-count{font-weight:500;opacity:.8;font-size:18px}'+
-  '.dash-hero-row{display:flex;gap:10px;align-items:center;position:relative;z-index:1}'+
-  '.dash-hero-row .search-input{flex:1 1 auto;min-width:0}'+
-  '.dash-hero-new{flex:0 0 auto;height:50px;padding:0 22px;border-radius:999px;border:0;background:#f26a21;color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:transform .2s,filter .2s}'+
-  '.dash-hero-new:hover{transform:translateY(-2px);filter:brightness(1.06)}'+
   '#aiNatStay{margin-top:16px;padding:22px 24px}'+
   '#aiNatStay .ans-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}'+
   '#aiNatStay .ans-title{font-size:16px;font-weight:700;color:var(--text,#14181f)}'+
@@ -7529,30 +7506,11 @@ applyStaticI18n();
   '.ans-track{height:12px;border-radius:999px;background:var(--gray-light,#eef1f5);overflow:hidden}'+
   '.ans-fill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.2,.8,.2,1)}'+
   '.ans-val{text-align:right;font-family:var(--mono,ui-monospace,monospace);color:var(--text-soft,#6b7685);font-size:12px}'+
-  '@media(max-width:600px){.ans-row{grid-template-columns:90px 1fr 70px}.dash-hero-txt .dh-h{font-size:24px}}';
+  '@media(max-width:600px){.ans-row{grid-template-columns:90px 1fr 70px}}';
   var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
   var COL=['#1f5bd8','#f26a21','#0b7a5e','#7c4dff','#d9a400','#c2385a','#2a8fd6','#6b7685'];
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});}
-  function hero(){
-    var d=document.getElementById('page-dashboard');if(!d||typeof DB==='undefined')return;
-    var card=d.firstElementChild,inp=document.getElementById('dashQuickSearch');if(!card||!inp)return;
-    var box=card.querySelector('.dash-hero-txt');
-    if(!box){
-      box=document.createElement('div');box.className='dash-hero-txt';
-      box.innerHTML='<div class="dh-date"></div><h1 class="dh-h"></h1>';
-      card.insertBefore(box,card.firstChild);
-      var row=document.createElement('div');row.className='dash-hero-row';
-      card.insertBefore(row,box.nextSibling);row.appendChild(inp);
-      // (no second "+ New customer" button here — the header already has one)
-      var res=document.getElementById('dashQuickSearchResults');if(res)card.insertBefore(res,row.nextSibling);
-    }
-    var g=dashGreetingText();
-    var n=(DB.customers||[]).length;
-    var dd=box.querySelector('.dh-date');if(dd&&dd.textContent!=='')dd.textContent=''; // date is in the header already
-    var h=box.querySelector('.dh-h');
-    var html=esc(g)+' <span class="dh-count">· '+(__zh()?'共 '+n+' 位客户':n+' customers')+'</span>';
-    if(h.innerHTML!==html)h.innerHTML=html;
-  }
+  /* (dashboard banner is now plain markup in index.html, filled by renderDashboard) */
   function months(){
     var m={};(DB.customers||[]).forEach(function(c){var k=String(c.createdAt||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(k))m[k]=1;});
     return Object.keys(m).sort().reverse();}
@@ -7594,7 +7552,7 @@ applyStaticI18n();
       :'<div class="ans-sub">'+__T('No data for this month.')+'</div>';
     requestAnimationFrame(function(){requestAnimationFrame(function(){bars.querySelectorAll('.ans-fill').forEach(function(f){f.style.width=f.getAttribute('data-w')+'%';});});});
   }
-  function tick(){if(document.hidden)return;try{hero();var p=document.getElementById('page-ai');if(p&&p.classList.contains('active'))ai();}catch(e){}}
+  function tick(){if(document.hidden)return;try{var p=document.getElementById('page-ai');if(p&&p.classList.contains('active'))ai();}catch(e){}}
   __uiJob(tick, 400); // was every 1.2 s; at most every 0.4 s now, and only when something changed
 })();
 
@@ -7841,18 +7799,7 @@ applyStaticI18n();
     hist.classList.add('pf-hist-body');var openH=n>0&&n<=3;hist.style.display=openH?'':'none';if(openH)link.textContent=__T('Hide');hCard.appendChild(hist);
     hRow.addEventListener('click',function(){var o=hist.style.display==='none';hist.style.display=o?'':'none';link.textContent=__T(o?'Hide':'Show');});
     if(!n){link.textContent='';hRow.style.cursor='default';}
-    /* print on ended prepaid in history */
-    svcs.filter(function(s){return s.type==='prepaid'&&!s.isActive;}).forEach(function(s){
-      var dt='';try{dt=new Date(s.activationDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){}
-      [].slice.call(hist.children).some(function(h){
-        if(h.querySelector('[data-print-service]')||h.dataset.pfp)return false;
-        var tx=h.textContent;
-        if((s.number&&tx.indexOf(s.number)>-1)&&(!dt||tx.indexOf(dt)>-1)){
-          h.dataset.pfp='1';
-          var b=document.createElement('button');b.className='btn btn-sm btn-ghost';b.setAttribute('data-print-service',s.id);b.textContent='🖨 '+__T('Print');b.style.marginTop='8px';
-          b.addEventListener('click',function(){quickPrintService(cid,s.id);});h.appendChild(b);return true;}
-        return false;});
-    });
+    /* (history Print buttons are now part of historyItemHtml itself — no text matching) */
     /* customer */
     /* one merged "Plan info" card: key rows first, everything else under "Show all details" */
     var cCard=null;
@@ -8143,74 +8090,6 @@ applyStaticI18n();
   document.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('#sheetDateRangeClear');if(c)setTimeout(label,50);});
   window.addEventListener('resize',close);
   __uiJob(function(){try{setup();label();}catch(e){}});
-})();
-
-/* ===== Sheet View: "All ratings" becomes Carrier type (prepaid) / Partner company (postpaid) ===== */
-(function(){
-  var TX={en:{pre:'All carrier types',post:'All partner companies'},zh:{pre:'全部运营商类型',post:'全部合作公司'},ko:{pre:'전체 통신사 유형',post:'전체 제휴사'}};
-  var COL={prepaid:'svcCarrierType',postpaid:'partnerCompany'},vals={prepaid:'',postpaid:''}; // matched via td[data-col], not position
-  function lang(){try{return LANG;}catch(e){return 'en';}}
-  function tab(){try{return sheetTypeTab;}catch(e){return '';}}
-  function cellText(td){if(!td)return '';var i=td.querySelector('input,select');return ((i?i.value:td.textContent)||'').replace(/\s+/g,' ').trim();}
-  function options(tb){
-    var set={};(DB.services||[]).forEach(function(s){
-      if(s.type!==tb)return;var v=tb==='prepaid'?s.svcCarrierType:s.partnerCompany;if(v&&String(v).trim())set[String(v).trim()]=1;});
-    return Object.keys(set).sort(function(a,b){return a.localeCompare(b);});
-  }
-  function sync(){
-    var rs=document.getElementById('sheetRatingFilter');if(!rs)return;
-    var tb=tab(),on=tb==='prepaid'||tb==='postpaid',ex=document.getElementById('sheetExtraFilter');
-    if(!on){
-      if(ex)ex.style.display='none';rs.style.display='';
-      document.querySelectorAll('#sheetTable tbody tr[data-xf]').forEach(function(r){r.style.display='';r.removeAttribute('data-xf');});
-      return;
-    }
-    if(rs.value!==''){rs.value='';rs.dispatchEvent(new Event('change',{bubbles:true}));}
-    rs.style.display='none';
-    if(!ex){ex=document.createElement('select');ex.id='sheetExtraFilter';ex.className='select-input';rs.insertAdjacentElement('afterend',ex);
-      ex.addEventListener('change',function(){vals[ex.dataset.tab]=ex.value;apply();});}
-    ex.style.display='';
-    var sig=tb+'|'+lang()+'|'+options(tb).join('|');
-    if(ex.dataset.sig!==sig){
-      ex.dataset.sig=sig;ex.dataset.tab=tb;var T=TX[lang()]||TX.en;
-      ex.innerHTML='<option value="">'+(tb==='prepaid'?T.pre:T.post)+'</option>'+options(tb).map(function(o){return '<option value="'+o.replace(/"/g,'&quot;')+'">'+o+'</option>';}).join('');
-    }
-    ex.dataset.tab=tb;if(ex.value!==vals[tb])ex.value=vals[tb];
-    apply();
-  }
-  function apply(){
-    var tb=tab();if(tb!=='prepaid'&&tb!=='postpaid')return;
-    var v=vals[tb],rows=document.querySelectorAll('#sheetTable tbody tr'),n=0,idx=COL[tb];
-    rows.forEach(function(r){
-      var show=!v||cellText(r.querySelector('td[data-col="'+idx+'"]'))===v;
-      var hidden=r.getAttribute('data-xf')==='1';
-      if(!show&&!hidden){r.style.display='none';r.setAttribute('data-xf','1');}
-      else if(show&&hidden){r.style.display='';r.removeAttribute('data-xf');}
-      if(show)n++;
-    });
-    if(v||document.querySelector('#sheetTable tbody tr[data-xf]')){var c=document.getElementById('sheetCount');if(c){var m=c.textContent.replace(/^\d+/,n);if(c.textContent!==m)c.textContent=m;}}
-  }
-  var tbl=document.getElementById('sheetTable');
-  function bind(){tbl=document.getElementById('sheetTable');if(tbl&&!tbl.__xf){tbl.__xf=1;new MutationObserver(function(){try{sync();}catch(e){}}).observe(tbl,{childList:true});}}
-  __uiJob(function(){try{bind();sync();}catch(e){}});
-})();
-
-/* ===== Extra prepaid company option ===== */
-(function(){
-  try{if(typeof PREPAID_COMPANIES!=='undefined'&&PREPAID_COMPANIES.indexOf('벨류컨SMT')<0)PREPAID_COMPANIES.push('벨류컨SMT');}catch(e){}
-})();
-
-/* ===== Excel export: recharge plans are written as "Recharge" in PLAN TYPE (same rule as the CRM) ===== */
-(function(){
-  try{
-    if(typeof prepaidExportRow!=='function'||window.__rcExport)return;
-    var orig=prepaidExportRow;window.__rcExport=1;
-    window.prepaidExportRow=function(c,s){
-      var r=orig.apply(this,arguments);
-      try{var l=window.__planLab&&window.__planLab(s);if(l&&l[0]==='rc')r[9]='Recharge';}catch(e){}
-      return r;
-    };
-  }catch(e){}
 })();
 
 /* ===== New customer form: cards, dropdowns, plan rows, date-of-birth picker, ID-expiry rule ===== */

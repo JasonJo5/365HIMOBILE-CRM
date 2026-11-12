@@ -981,3 +981,19 @@ td.name-cell:has(> .copy-name-btn){position:relative;padding-right:46px;}
 #sheetTable td.sheet-name{padding-right:46px;}
 td.name-cell>.copy-name-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);margin:0;}
 #sheetTable td.sheet-name>.name-text{max-width:112px;}
+
+/* dashboard cards that open a list */
+.stat-card.stat-link{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.stat-card.stat-link:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg, 0 8px 24px rgba(15,23,42,.08));}
+
+/* plan-length tag (moved here from script) */
+.plan-tag{display:inline-flex;align-items:center;margin-left:6px;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;vertical-align:middle}
+.plan-tag.m3{background:#e3f6ec;color:#12804a}.plan-tag.m2{background:#e6eefc;color:#1f5bd8}.plan-tag.m1{background:#f1e8ff;color:#6d3fd1}.plan-tag.rc{background:#fff1e0;color:#b45f06}
+html[data-theme="dark"] .plan-tag.m3{background:#12382a;color:#5fd69b}html[data-theme="dark"] .plan-tag.m2{background:#14284d;color:#7fa8ff}html[data-theme="dark"] .plan-tag.m1{background:#2b1d4d;color:#bfa0ff}html[data-theme="dark"] .plan-tag.rc{background:#3d2a12;color:#ffb561}
+
+/* dashboard banner (moved here from script) */
+#page-dashboard>.card:first-child .dash-hero-txt{position:relative;z-index:1;margin-bottom:14px;color:#fff}
+.dash-hero-txt .dh-h{margin:0;font-size:24px;line-height:1.25;font-weight:700;color:#fff}
+.dash-hero-txt .dh-count{font-weight:500;opacity:.8;font-size:18px}
+.dash-hero-row{display:flex;gap:10px;align-items:center;position:relative;z-index:1}
+.dash-hero-row .search-input{flex:1 1 auto;min-width:0}
