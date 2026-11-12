@@ -3891,11 +3891,11 @@ function deleteCustomerById(id){
   const svcCount = customerServices(id).length;
   const warning = svcCount
     ? (LANG==='zh'
-        ? `确定要删除客户「${c.name}」吗？其名下的 ${svcCount} 条业务记录也会一并删除。删除后 ${UNDO_SECONDS} 秒内可撤销。`
-        : `Delete customer "${c.name}"? This will also delete their ${svcCount} order/service record(s). You can undo it for ${UNDO_SECONDS} seconds.`)
+        ? `确定要删除客户「${c.name}」吗？其名下的 ${svcCount} 条业务记录也会一并删除。删除后可点击「撤销」恢复。`
+        : `Delete customer "${c.name}"? This will also delete their ${svcCount} order/service record(s). You can undo it right after with the Undo button.`)
     : (LANG==='zh'
-        ? `确定要删除客户「${c.name}」吗？删除后 ${UNDO_SECONDS} 秒内可撤销。`
-        : `Delete customer "${c.name}"? You can undo it for ${UNDO_SECONDS} seconds.`);
+        ? `确定要删除客户「${c.name}」吗？删除后可点击「撤销」恢复。`
+        : `Delete customer "${c.name}"? You can undo it right after with the Undo button.`);
   if(!confirm(warning)) return;
   const snap = undoSnapshot([id]);
   DB.customers = DB.customers.filter(x=>x.id!==id);
@@ -4157,8 +4157,11 @@ function openCustomerDetail(id){
     // customers ended up that way because their plan simply ran out, and staff need to be
     // able to bring them back just as easily as reversing an accidental cancellation.
     const mostRecent = [...customerServices(id)].filter(s=>isSubscriptionType(s.type)).sort((a,b)=> (b.endedSeq||0)-(a.endedSeq||0))[0];
-    actionButtons = `<button class="btn btn-primary" id="btnStartNewSub">${pfBtnIcon('btnStartNewSub')}${t('btn.startNewSubscription').replace(/^[＋+]\s*/,'')}</button>`
-      + (mostRecent ? ` <button class="btn btn-ghost" id="btnUndoCancel">${pfBtnIcon('btnUndoCancel')}${t('btn.undoCancel')}</button>` : '');
+    // cancelled from this browser and untouched since → exact undo; otherwise "Reactivate"
+    const exactUndo = cancelUndoFor(id);
+    actionButtons = (exactUndo ? `<button class="btn btn-primary" id="btnUndoCancelExact" title="${LANG==='zh'?'把被取消的套餐原样恢复':'Put the cancelled plan back exactly as it was'}">${pfBtnIcon('btnUndoCancel')}${LANG==='zh'?'撤销取消':'Undo cancellation'}</button> ` : '')
+      + `<button class="btn ${exactUndo?'btn-ghost':'btn-primary'}" id="btnStartNewSub">${pfBtnIcon('btnStartNewSub')}${t('btn.startNewSubscription').replace(/^[＋+]\s*/,'')}</button>`
+      + (mostRecent && !exactUndo ? ` <button class="btn btn-ghost" id="btnUndoCancel">${pfBtnIcon('btnUndoCancel')}${t('btn.undoCancel')}</button>` : '');
   }
 
   // Surfaces a pending Passport → Resident Card (ARC) change request right on the profile,
@@ -4304,6 +4307,8 @@ function openCustomerDetail(id){
   if(btnStartNew) btnStartNew.addEventListener('click', ()=>{ closeAllModals(); openOrderModal(null, id); });
   const btnUndoCancel = document.getElementById('btnUndoCancel');
   if(btnUndoCancel) btnUndoCancel.addEventListener('click', ()=> undoCancellation(id));
+  const btnUndoCancelExact = document.getElementById('btnUndoCancelExact');
+  if(btnUndoCancelExact) btnUndoCancelExact.addEventListener('click', ()=>{ const e = cancelUndoFor(id); if(e) runUndo(e); });
   const btnFreezeSim = document.getElementById('btnFreezeSim');
   if(btnFreezeSim) btnFreezeSim.addEventListener('click', ()=> openFreezeSimModal(id));
   const btnUnfreezeSim = document.getElementById('btnUnfreezeSim');
@@ -5139,6 +5144,7 @@ document.getElementById('confirmCancelSubBtn').addEventListener('click', ()=>{
   saveDB(DB);
   closeAllModals();
   const cn = (getCustomer(cancelSubCustomerId)||{}).name||'';
+  rememberCancelUndo(cancelSubCustomerId, snap);
   offerUndo((LANG==='zh' ? '已取消订阅 — ' : 'Subscription cancelled — ')+cn, snap);
   openCustomerDetail(cancelSubCustomerId);
   renderPage(currentPage);
@@ -7227,10 +7233,13 @@ document.querySelectorAll('.overlay').forEach(o=> o.addEventListener('click', e=
 
 /* ---------------- Undo for risky actions ----------------
    Cancel subscription, Delete customer and Merge take a snapshot of the customers they touch
-   (profile + every plan). For 30 seconds an Undo bar puts that snapshot back exactly as it
-   was, locally and on the server. */
-const UNDO_SECONDS = 30;
-let undoState = null, undoTimer = null;
+   (profile + every plan). The Undo bar stays until it is closed or the next such action, and
+   puts that snapshot back exactly — locally and on the server.
+   Cancellations are also remembered in this browser, so the customer's profile keeps an
+   "Undo cancellation" button for as long as that plan is still cancelled. */
+let undoState = null;
+const CANCEL_UNDO_KEY = 'himobile_cancel_undo';
+const CANCEL_UNDO_KEEP_DAYS = 90;
 function undoSnapshot(customerIds){
   const ids = new Set(customerIds);
   return {
@@ -7239,49 +7248,68 @@ function undoSnapshot(customerIds){
     services: DB.services.filter(x=>ids.has(x.customerId)).map(x=>JSON.parse(JSON.stringify(x)))
   };
 }
-// what the touched records look like right now — used to notice later edits before undoing
+/* The state of the touched records that matters (which customers exist, which plans are
+   active / ended and how). Only these fields, blanks normalised, so a routine sync with the
+   server (which fills in empty fields its own way) is not mistaken for a later edit. */
 function undoFingerprint(snap){
-  const ids = new Set(snap.ids), svcIds = new Set(snap.services.map(x=>x.id));
+  const ids = new Set(snap.ids), svcIds = new Set(snap.services.map(x=>x.id)), v = x=> (x===undefined||x===null)?'':String(x);
+  // a date may come back from the server as a full timestamp — compare the calendar day only
+  const dv = x=>{ const t = v(x); if(/^\d{4}-\d{2}-\d{2}T/.test(t)){ const d = new Date(t); if(!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } return t.slice(0,10); };
   return JSON.stringify([
-    DB.customers.filter(c=>ids.has(c.id)).map(c=>JSON.stringify(c)).sort(),
-    DB.services.filter(x=>ids.has(x.customerId)||svcIds.has(x.id)).map(x=>JSON.stringify(x)).sort()
+    DB.customers.filter(c=>ids.has(c.id)).map(c=>c.id).sort(),
+    DB.services.filter(x=>ids.has(x.customerId)||svcIds.has(x.id))
+      .map(x=>[x.id, x.customerId, !!x.isActive, dv(x.endedAt), v(x.endedSeq), v(x.changeReason), v(x.type), v(x.plan), dv(x.activationDate), dv(x.expiryDate)].join('|')).sort()
   ]);
 }
+function getCancelUndos(){ try{ const o = JSON.parse(localStorage.getItem(CANCEL_UNDO_KEY)||'{}'); return (o && typeof o==='object') ? o : {}; }catch(e){ return {}; } }
+function setCancelUndos(o){
+  const cutoff = Date.now() - CANCEL_UNDO_KEEP_DAYS*86400000;
+  Object.keys(o).forEach(k=>{ if(!o[k] || o[k].at < cutoff) delete o[k]; });
+  try{ localStorage.setItem(CANCEL_UNDO_KEY, JSON.stringify(o)); }catch(e){}
+}
+function rememberCancelUndo(customerId, snap){
+  const o = getCancelUndos(); o[customerId] = {at: Date.now(), snap, after: undoFingerprint(snap)}; setCancelUndos(o);
+}
+/* the remembered cancellation for this customer, if the plan is still exactly as cancelled */
+function cancelUndoFor(customerId){
+  const e = getCancelUndos()[customerId];
+  if(!e || !e.snap) return null;
+  return undoFingerprint(e.snap) === e.after ? e : null;
+}
+function forgetCancelUndo(customerId){ const o = getCancelUndos(); if(o[customerId]){ delete o[customerId]; setCancelUndos(o); } }
 function offerUndo(message, snap, serverDeletes){
   undoState = {snap, after: undoFingerprint(snap), serverDeletes: serverDeletes||[]};
   let bar = document.getElementById('undoBar');
   if(!bar){
     bar = document.createElement('div'); bar.id = 'undoBar'; bar.className = 'undo-bar'; bar.setAttribute('role','status');
-    bar.innerHTML = '<span class="undo-msg"></span><button type="button" class="undo-btn"></button><button type="button" class="undo-x" aria-label="Close">×</button><i class="undo-time"></i>';
+    bar.innerHTML = '<span class="undo-msg"></span><button type="button" class="undo-btn"></button><button type="button" class="undo-x" aria-label="Close">×</button>';
     document.body.appendChild(bar);
-    bar.querySelector('.undo-btn').addEventListener('click', runUndo);
+    bar.querySelector('.undo-btn').addEventListener('click', ()=> runUndo());
     bar.querySelector('.undo-x').addEventListener('click', hideUndo);
   }
   bar.querySelector('.undo-msg').textContent = message;
   bar.querySelector('.undo-btn').textContent = LANG==='zh' ? '撤销' : 'Undo';
-  const tm = bar.querySelector('.undo-time');
-  tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = `undoTime ${UNDO_SECONDS}s linear forwards`;
   bar.classList.add('show');
-  clearTimeout(undoTimer); undoTimer = setTimeout(hideUndo, UNDO_SECONDS*1000);
 }
 function hideUndo(){
-  clearTimeout(undoTimer); undoState = null;
+  undoState = null;
   const bar = document.getElementById('undoBar'); if(bar) bar.classList.remove('show');
 }
-async function runUndo(){
-  const st = undoState; if(!st) return;
+async function runUndo(entry){
+  const st = entry || undoState; if(!st) return;
   if(undoFingerprint(st.snap) !== st.after &&
      !confirm(LANG==='zh' ? '这些客户在此之后又有修改，撤销会把这些修改也一并取消。是否继续？'
                           : 'These customers were changed again since then — undoing also removes those later changes. Continue?')) return;
-  hideUndo();
+  if(st === undoState || (undoState && undoState.snap.ids.join()===st.snap.ids.join())) hideUndo();
   const {snap} = st, ids = new Set(snap.ids), svcIds = new Set(snap.services.map(x=>x.id));
   // a server delete must finish before the restored records are sent back, or it could win
-  await Promise.all(st.serverDeletes.map(p=> Promise.resolve(p).catch(()=>{})));
+  await Promise.all((st.serverDeletes||[]).map(p=> Promise.resolve(p).catch(()=>{})));
   setPendingDeletes(getPendingDeletes().filter(id=> !ids.has(id)));
   DB.customers = DB.customers.filter(c=> !ids.has(c.id)).concat(snap.customers.map(c=>JSON.parse(JSON.stringify(c))));
   DB.services = DB.services.filter(x=> !ids.has(x.customerId) && !svcIds.has(x.id)).concat(snap.services.map(x=>JSON.parse(JSON.stringify(x))));
   // make the next sync send every restored record (they may be gone from the server)
   if(syncBaseline){ ids.forEach(id=> syncBaseline.customers.delete(id)); svcIds.forEach(id=> syncBaseline.services.delete(id)); }
+  ids.forEach(forgetCancelUndo);
   saveDB(DB);
   toast(LANG==='zh' ? '已撤销' : 'Undone — restored as it was');
   const overlay = document.getElementById('detailModalOverlay');
