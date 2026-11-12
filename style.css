@@ -1010,3 +1010,17 @@ html[data-theme="dark"] .plan-tag.m3{background:#12382a;color:#5fd69b}html[data-
 .ans-fill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
 .ans-val{text-align:right;font-family:var(--mono,ui-monospace,monospace);color:var(--text-soft,#6b7685);font-size:12px}
 @media(max-width:600px){.ans-row{grid-template-columns:90px 1fr 70px}}
+
+/* Undo bar (Cancel subscription / Delete customer / Merge) */
+.undo-bar{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:210;display:none;align-items:center;gap:14px;
+  background:var(--navy);color:#fff;padding:10px 10px 10px 20px;border-radius:14px;box-shadow:0 14px 36px rgba(0,0,0,.28);
+  font-size:14px;font-weight:600;overflow:hidden;max-width:min(640px,calc(100vw - 48px));}
+.undo-bar.show{display:flex;animation:fadein .25s var(--ease);}
+.undo-bar .undo-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.undo-bar .undo-btn{background:#fff;color:var(--navy);border:0;border-radius:10px;padding:8px 18px;font-weight:800;font-size:14px;cursor:pointer;flex:none;}
+.undo-bar .undo-btn:hover{background:#E8EEFF;}
+.undo-bar .undo-x{background:transparent;border:0;color:rgba(255,255,255,.7);font-size:20px;line-height:1;cursor:pointer;padding:4px 6px;flex:none;}
+.undo-bar .undo-x:hover{color:#fff;}
+.undo-bar .undo-time{position:absolute;left:0;bottom:0;height:3px;width:100%;background:rgba(255,255,255,.55);transform-origin:left;}
+@keyframes undoTime{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+html[data-theme="dark"] .undo-bar{background:#2a3a55;}

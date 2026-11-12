@@ -3290,7 +3290,6 @@ function renderCustomers(){
         : `This will move all service records from "${otherNames}" into "${primary.name}" (the newest record), then delete the other duplicate profiles — leaving just one customer with everything visible in their Plan History. Continue?`;
       if(!confirm(msg)) return;
       mergeDuplicateGroup(group.map(c=>c.id));
-      toast(LANG==='zh' ? '已合并重复客户' : 'Duplicate customers merged');
       renderCustomers();
       renderNav();
     });
@@ -3304,6 +3303,7 @@ function mergeDuplicateGroup(customerIds){
   const primary = getCustomer(primaryId);
   if(!primary) return;
   const others = customerIds.slice(1);
+  const snap = undoSnapshot(customerIds), serverDeletes = [];
   const fillGapFields = ['idNumber','idType','idExpiry','dob','nationality','occupation','years','address','notes','workType','handlerName','referralFriendName','branchOffice','carrierType','planType','phone'];
   others.forEach(otherId=>{
     const otherCust = getCustomer(otherId);
@@ -3313,7 +3313,7 @@ function mergeDuplicateGroup(customerIds){
     });
     DB.services.filter(s=>s.customerId===otherId).forEach(s=>{ s.customerId = primaryId; });
     DB.customers = DB.customers.filter(c=>c.id!==otherId);
-    deleteCustomerOnServer(otherId);
+    serverDeletes.push(deleteCustomerOnServer(otherId));
   });
   // moving records over can leave the primary with more than one "active" subscription at
   // once (e.g. two of the merged duplicates each had their own active plan) — enforce the
@@ -3330,6 +3330,7 @@ function mergeDuplicateGroup(customerIds){
     });
   }
   saveDB(DB);
+  setTimeout(()=> offerUndo((LANG==='zh' ? '已合并重复客户 — ' : 'Duplicates merged — ')+primary.name, snap, serverDeletes), 0); // after the caller's own message
 }
 function emptyStateDupes(){
   return `<div class="empty-state"><b>${LANG==='zh'?'没有发现重复客户 👍':'No duplicate customers found 👍'}</b>${LANG==='zh'?'按姓名或电话号码匹配，未发现重复记录':'Checked by matching name and phone number — nothing to clean up'}</div>`;
@@ -3890,18 +3891,19 @@ function deleteCustomerById(id){
   const svcCount = customerServices(id).length;
   const warning = svcCount
     ? (LANG==='zh'
-        ? `确定要删除客户「${c.name}」吗？其名下的 ${svcCount} 条业务记录也会一并删除。此操作无法撤销。`
-        : `Delete customer "${c.name}"? This will also delete their ${svcCount} order/service record(s). This cannot be undone.`)
+        ? `确定要删除客户「${c.name}」吗？其名下的 ${svcCount} 条业务记录也会一并删除。删除后 ${UNDO_SECONDS} 秒内可撤销。`
+        : `Delete customer "${c.name}"? This will also delete their ${svcCount} order/service record(s). You can undo it for ${UNDO_SECONDS} seconds.`)
     : (LANG==='zh'
-        ? `确定要删除客户「${c.name}」吗？此操作无法撤销。`
-        : `Delete customer "${c.name}"? This cannot be undone.`);
+        ? `确定要删除客户「${c.name}」吗？删除后 ${UNDO_SECONDS} 秒内可撤销。`
+        : `Delete customer "${c.name}"? You can undo it for ${UNDO_SECONDS} seconds.`);
   if(!confirm(warning)) return;
+  const snap = undoSnapshot([id]);
   DB.customers = DB.customers.filter(x=>x.id!==id);
   DB.services = DB.services.filter(s=>s.customerId!==id);
   saveDB(DB);
-  deleteCustomerOnServer(id);
+  const del = deleteCustomerOnServer(id);
   closeAllModals();
-  toast(t('toast.deleted'));
+  offerUndo((LANG==='zh' ? '已删除客户 — ' : 'Customer deleted — ')+c.name, snap, [del]);
   renderPage(currentPage==='dashboard' ? 'customers' : currentPage);
   renderNav();
 }
@@ -4325,7 +4327,6 @@ function openCustomerDetail(id){
       : `This will move all service records from "${others.map(c=>c.name).join(', ')}" into "${sortedGroup[0].name}" (the newest record), then delete the other duplicate profiles — leaving just one customer with everything visible in their Plan History. Continue?`;
     if(!confirm(msg)) return;
     mergeDuplicateGroup(sortedGroup.map(c=>c.id));
-    toast(LANG==='zh' ? '已合并重复客户' : 'Duplicate customers merged');
     openCustomerDetail(id);
     renderNav();
   });
@@ -5132,11 +5133,13 @@ document.getElementById('confirmCancelSubBtn').addEventListener('click', ()=>{
   if(!cancelSubCustomerId) return;
   const reason = document.getElementById('cs_cancelReason').value;
   const notes = document.getElementById('cs_cancelNotes').value.trim();
+  const snap = undoSnapshot([cancelSubCustomerId]);
   const ended = endActiveSubscription(cancelSubCustomerId, reason);
   if(notes) ended.forEach(s=> s.notes = (s.notes ? s.notes+' — ' : '')+notes);
   saveDB(DB);
   closeAllModals();
-  toast(t('toast.subscriptionCancelled'));
+  const cn = (getCustomer(cancelSubCustomerId)||{}).name||'';
+  offerUndo((LANG==='zh' ? '已取消订阅 — ' : 'Subscription cancelled — ')+cn, snap);
   openCustomerDetail(cancelSubCustomerId);
   renderPage(currentPage);
   renderNav();
@@ -7221,6 +7224,71 @@ document.getElementById('idChangePrintPickerPrint').addEventListener('click', ()
 function closeAllModals(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); if(window.refreshCustomerForms) refreshCustomerForms(); }
 document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', closeAllModals));
 document.querySelectorAll('.overlay').forEach(o=> o.addEventListener('click', e=>{ if(e.target===o) closeAllModals(); }));
+
+/* ---------------- Undo for risky actions ----------------
+   Cancel subscription, Delete customer and Merge take a snapshot of the customers they touch
+   (profile + every plan). For 30 seconds an Undo bar puts that snapshot back exactly as it
+   was, locally and on the server. */
+const UNDO_SECONDS = 30;
+let undoState = null, undoTimer = null;
+function undoSnapshot(customerIds){
+  const ids = new Set(customerIds);
+  return {
+    ids: [...ids],
+    customers: DB.customers.filter(c=>ids.has(c.id)).map(c=>JSON.parse(JSON.stringify(c))),
+    services: DB.services.filter(x=>ids.has(x.customerId)).map(x=>JSON.parse(JSON.stringify(x)))
+  };
+}
+// what the touched records look like right now — used to notice later edits before undoing
+function undoFingerprint(snap){
+  const ids = new Set(snap.ids), svcIds = new Set(snap.services.map(x=>x.id));
+  return JSON.stringify([
+    DB.customers.filter(c=>ids.has(c.id)).map(c=>JSON.stringify(c)).sort(),
+    DB.services.filter(x=>ids.has(x.customerId)||svcIds.has(x.id)).map(x=>JSON.stringify(x)).sort()
+  ]);
+}
+function offerUndo(message, snap, serverDeletes){
+  undoState = {snap, after: undoFingerprint(snap), serverDeletes: serverDeletes||[]};
+  let bar = document.getElementById('undoBar');
+  if(!bar){
+    bar = document.createElement('div'); bar.id = 'undoBar'; bar.className = 'undo-bar'; bar.setAttribute('role','status');
+    bar.innerHTML = '<span class="undo-msg"></span><button type="button" class="undo-btn"></button><button type="button" class="undo-x" aria-label="Close">×</button><i class="undo-time"></i>';
+    document.body.appendChild(bar);
+    bar.querySelector('.undo-btn').addEventListener('click', runUndo);
+    bar.querySelector('.undo-x').addEventListener('click', hideUndo);
+  }
+  bar.querySelector('.undo-msg').textContent = message;
+  bar.querySelector('.undo-btn').textContent = LANG==='zh' ? '撤销' : 'Undo';
+  const tm = bar.querySelector('.undo-time');
+  tm.style.animation = 'none'; void tm.offsetWidth; tm.style.animation = `undoTime ${UNDO_SECONDS}s linear forwards`;
+  bar.classList.add('show');
+  clearTimeout(undoTimer); undoTimer = setTimeout(hideUndo, UNDO_SECONDS*1000);
+}
+function hideUndo(){
+  clearTimeout(undoTimer); undoState = null;
+  const bar = document.getElementById('undoBar'); if(bar) bar.classList.remove('show');
+}
+async function runUndo(){
+  const st = undoState; if(!st) return;
+  if(undoFingerprint(st.snap) !== st.after &&
+     !confirm(LANG==='zh' ? '这些客户在此之后又有修改，撤销会把这些修改也一并取消。是否继续？'
+                          : 'These customers were changed again since then — undoing also removes those later changes. Continue?')) return;
+  hideUndo();
+  const {snap} = st, ids = new Set(snap.ids), svcIds = new Set(snap.services.map(x=>x.id));
+  // a server delete must finish before the restored records are sent back, or it could win
+  await Promise.all(st.serverDeletes.map(p=> Promise.resolve(p).catch(()=>{})));
+  setPendingDeletes(getPendingDeletes().filter(id=> !ids.has(id)));
+  DB.customers = DB.customers.filter(c=> !ids.has(c.id)).concat(snap.customers.map(c=>JSON.parse(JSON.stringify(c))));
+  DB.services = DB.services.filter(x=> !ids.has(x.customerId) && !svcIds.has(x.id)).concat(snap.services.map(x=>JSON.parse(JSON.stringify(x))));
+  // make the next sync send every restored record (they may be gone from the server)
+  if(syncBaseline){ ids.forEach(id=> syncBaseline.customers.delete(id)); svcIds.forEach(id=> syncBaseline.services.delete(id)); }
+  saveDB(DB);
+  toast(LANG==='zh' ? '已撤销' : 'Undone — restored as it was');
+  const overlay = document.getElementById('detailModalOverlay');
+  const show = (overlay && overlay.classList.contains('show') && ids.has(detailCustomerId)) ? detailCustomerId : (snap.ids.length===1 ? snap.ids[0] : null);
+  renderPage(currentPage); renderNav();
+  if(show && getCustomer(show)) openCustomerDetail(show);
+}
 
 /* ---------------- toast ---------------- */
 let toastTimer;

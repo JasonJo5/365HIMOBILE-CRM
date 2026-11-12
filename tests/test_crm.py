@@ -202,6 +202,42 @@ def run(b):
     check("blank payment methods stay blank on the server", not blank_pay, blank_pay[:5])
     pg.evaluate("pullFromServer()"); pg.wait_for_timeout(1500)
     check("deleted customer does not come back after a refresh", pg.evaluate("!getCustomer('c3')"))
+
+    print("Undo")
+    snap = lambda cid: pg.evaluate(f"JSON.stringify([getCustomer('{cid}'), customerServices('{cid}').map(x=>JSON.stringify(x)).sort()])")
+    def srv_snap(cid):
+        st = api_state(); c = next((x for x in st["customers"] if x["id"] == cid), None)
+        return [c, sorted(json.dumps(x, sort_keys=True) for x in st["services"] if x["customerId"] == cid)]
+    # cancel subscription -> undo
+    b4, sb4 = snap("c4"), srv_snap("c4")
+    pg.evaluate("closeAllModals(); openCustomerDetail('c4')"); pg.wait_for_timeout(200)
+    if not pg.is_visible("#btnCancelSub"): pg.click("#detailBody .pf-more")   # postpaid: under "More"
+    pg.click("#btnCancelSub"); pg.wait_for_timeout(200); pg.click("#confirmCancelSubBtn"); pg.wait_for_timeout(400)
+    check("cancelling a subscription shows an Undo button", pg.evaluate("document.getElementById('undoBar')?.classList.contains('show')"))
+    check("cancel really ended the plan", pg.evaluate("!activeSubscriptionFor('c4')"))
+    pg.evaluate("pushToServer()"); pg.wait_for_timeout(1200)
+    pg.click("#undoBar .undo-btn"); pg.wait_for_timeout(500)
+    check("Undo puts the cancelled plan back exactly", snap("c4") == b4)
+    pg.evaluate("pushToServer()"); pg.wait_for_timeout(1500)
+    check("...and on the server too", srv_snap("c4") == sb4)
+    # delete customer -> undo
+    b8, sb8 = snap("c8"), srv_snap("c8")
+    pg.evaluate("closeAllModals(); deleteCustomerById('c8')"); pg.wait_for_timeout(1200)
+    check("delete removed the customer on the server", srv_snap("c8")[0] is None)
+    pg.click("#undoBar .undo-btn"); pg.wait_for_timeout(500)
+    check("Undo brings a deleted customer back with all plans", snap("c8") == b8)
+    pg.evaluate("pushToServer()"); pg.wait_for_timeout(1500)
+    check("...and on the server too", srv_snap("c8") == sb8)
+    pg.evaluate("pullFromServer()"); pg.wait_for_timeout(1500)
+    check("...and it stays after a refresh", snap("c8") == b8)
+    # merge -> undo
+    b6, bd = snap("c6"), snap("c_dup")
+    pg.evaluate("closeAllModals(); mergeDuplicateGroup(['c_dup','c6'])"); pg.wait_for_timeout(1200)
+    check("merge folded the duplicate", pg.evaluate("!getCustomer('c6')"))
+    pg.click("#undoBar .undo-btn"); pg.wait_for_timeout(500)
+    check("Undo splits a merge back into both customers", snap("c6") == b6 and snap("c_dup") == bd)
+    pg.evaluate("pushToServer()"); pg.wait_for_timeout(1500)
+    check("...and on the server too", srv_snap("c6")[0] is not None and len(srv_snap("c6")[1]) == len(json.loads(b6)[1]))
     check("no script errors while syncing", not errs, errs[:3])
     ctx.close()
 
