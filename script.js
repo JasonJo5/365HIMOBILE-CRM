@@ -46,14 +46,14 @@ const I18N = {
     'sidebar.sub':'客户管理系统 · 고객 관리','sidebar.store':'韩国手机店','sidebar.staffSub':'点击切换办理人',
     'nav.dashboard':'工作台','nav.customers':'客户档案','nav.sheet':'表格视图','nav.ai':'AI 商业洞察','nav.reminders':'到期跟进','nav.orders':'业务订单','nav.reports':'报表分析','nav.templates':'打印模板','nav.io':'导入导出',
     'sub.sheet':'像表格一样直接编辑客户与套餐信息',
-    'sheet.hint':'💡 点击彩色标签可直接选择新值；点击文字/数字/日期可直接编辑，回车或点击其他地方即保存',
+    'sheet.hint':'点击彩色标签可直接选择新值；点击文字/数字/日期可直接编辑，回车或点击其他地方即保存',
     'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份',
     'btn.newCustomer':'新建客户','btn.exportExcel':'导出 Excel','btn.exportMonthExcel':'导出 Excel','btn.addFollowup':'＋ 添加跟进','btn.newOrder':'＋ 新增业务','btn.cancel':'取消','btn.saveCustomer':'保存客户','btn.saveOrder':'保存业务','btn.edit':'编辑资料','btn.addService':'＋ 新增业务','btn.confirmImport':'确认导入','btn.view':'查看','btn.complete':'完成','btn.followUpAgain':'再次跟进','btn.delete':'删除','btn.deleteCustomer':'删除客户','btn.saveTemplate':'保存模板','btn.print':'打印','btn.savePrint':'保存并打印申请表','btn.merge':'合并','btn.copyName':'复制姓名','btn.save':'保存','btn.requestIdChange':'信息变更','btn.markComplete':'标记已完成','btn.freezeSim':'暂停卡号','btn.unfreezeSim':'解除暂停',
     'freeze.modalTitle':'暂停卡号（Freeze SIM）','freeze.modalDesc':'暂停期间不计入合约期限，合约到期日将顺延相应天数。仅限后付卡客户使用。','freeze.byDays':'按天数','freeze.byRange':'按日期范围','freeze.startDate':'开始日期','freeze.endDate':'结束日期','freeze.days':'暂停天数','freeze.frozen':'暂停中','freeze.colHeader':'暂停状态','freeze.clickToUnfreeze':'点击解除暂停',
     'btn.changeToPostpaid':'转为后付卡','btn.changePlan':'变更套餐','btn.cancelSubscription':'取消订阅','btn.startNewSubscription':'开通新订阅','btn.confirmChange':'确认变更','btn.confirmCancel':'确认取消订阅','btn.back':'返回','btn.undoCancel':'恢复订阅 Reactivate',
     'btn.recharge':'充值续约','btn.changeToPrepaid':'转为先付卡','btn.confirmRecharge':'确认充值',
     'dash.greeting':'早上好，店长','dash.followup.title':'今天要跟进','dash.followup.desc':'优先联系即将到期的客户','dash.viewall':'查看全部 →','dash.overview.title':'业务概览','dash.overview.desc':'本月开通类型','dash.recent.title':'最近新增客户','dash.recent.desc':'快速确认新开的号码与套餐','dash.customerlist':'客户列表 →','dash.nationality.title':'客户国籍分布','dash.referral.title':'客户来源分布','dash.paymentToday.title':'今日付款方式汇总（先付）','dash.paymentToday.desc':'今日各付款方式的客户数与收入合计',
-    'dash.quickSearch':'快速搜索客户姓名、号码或证件号...','dash.noMatches':'没有找到匹配的客户','dash.dupeBanner':'发现 {groups} 组重复客户（共 {n} 位），建议检查并合并','dash.dupeBannerBtn':'立即查看','dash.renewals.title':'合约即将到期（30天内）','dash.renewals.desc':'后付卡合约即将到期，建议提前联系续约','dash.renewals.emptyTitle':'近期没有合约到期 👍','dash.renewals.emptyDesc':'未来30天内没有后付卡合约到期','dash.winback.title':'流失客户 / 待挽回','dash.winback.desc':'已取消订阅、尚未重新开通的客户','dash.winback.emptyTitle':'暂无流失客户','dash.winback.emptyDesc':'所有曾经订阅过的客户目前都有有效订阅','dash.revenueTrend.title':'营收趋势（近6个月）','dash.cancelReasons.title':'取消原因分布','dash.noCancellations':'近6个月内没有取消记录 👍',
+    'dash.quickSearch':'快速搜索客户姓名、号码或证件号...','dash.noMatches':'没有找到匹配的客户','dash.dupeBanner':'发现 {groups} 组重复客户（共 {n} 位），建议检查并合并','dash.dupeBannerBtn':'立即查看','dash.renewals.title':'合约即将到期（30天内）','dash.renewals.desc':'后付卡合约即将到期，建议提前联系续约','dash.renewals.emptyTitle':'近期没有合约到期','dash.renewals.emptyDesc':'未来30天内没有后付卡合约到期','dash.winback.title':'流失客户 / 待挽回','dash.winback.desc':'已取消订阅、尚未重新开通的客户','dash.winback.emptyTitle':'暂无流失客户','dash.winback.emptyDesc':'所有曾经订阅过的客户目前都有有效订阅','dash.revenueTrend.title':'营收趋势（近6个月）','dash.cancelReasons.title':'取消原因分布','dash.noCancellations':'近6个月内没有取消记录',
     'stat.totalCustomers':'客户总数','stat.newThisMonth':'本月新开通','stat.followup7':'7天内需跟进','stat.revenueMonth':'本月实收','stat.fromRecords':'来自现有先付 / 后付记录','stat.vsLastMonth':'较上月','stat.includesExpiry':'包含到期与首月入账','stat.expiringSoon':'即将到期客户','stat.infoChangeNeeded':'需信息变更客户',
     'stat.activePrepaid':'当前先付卡客户','stat.activePostpaid':'当前后付卡客户','stat.activeBook':'目前有效订阅','stat.outstanding':'未收总额','stat.outstandingSub':'所有有效及近期订单','stat.renewalsSoon':'即将到期合约','stat.renewalsSub':'30天内到期（后付卡）','stat.newActivity':'较上月新增',
     'col.customer':'客户','col.number':'号码','col.service':'业务','col.carrier':'通信社','col.activated':'开通日期','col.status':'状态','col.contact':'联系方式','col.phoneNumber':'电话号码','col.nationality':'国籍','col.id':'证件','col.subType':'开通方式','col.currentNumber':'当前号码','col.recentActivity':'最近业务','col.rating':'评分','col.serviceType':'业务类型','col.plan':'套餐','col.amount':'金额','col.outstanding':'欠款','col.month':'月份','col.orders':'订单数','col.revenue':'营收','col.cost':'成本','col.profit':'利润','col.outstandingTotal':'未收合计','col.dupeReason':'重复原因','col.contractStatus':'合约状态',
@@ -69,7 +69,7 @@ const I18N = {
     'cs.autofillHint':'姓名 / 电话 / 国籍 / 职业 / 证件号码已根据现有客户资料自动填写，可直接修改','cs.idNumberArc':'证件号码 (ARC)',
     'modal.chooseType':'新建客户','modal.chooseTypeDesc':'先选择客户类型，两种表单的字段不同','modal.prepaidDesc':'固定3个月充值套餐','modal.postpaidDesc':'按月合约，可选运营商与套餐','modal.newPostpaidCustomer':'新建后付卡客户',
     'f.contactHandle':'联系账号 / ID','f.workType':'业务向','f.handlerName':'办理人','f.referralFriend':'介绍人（朋友姓名）','f.date':'日期',
-    'f.profitSection':'公司价格与折扣','f.expectedProfit':'公司价格','f.actualProfit':'公司实际结算价','f.usimFee':'USIM 费用','f.discountPerMonth':'每月折扣','f.discountMonths':'折扣月数','f.netExpectedProfit':'预期收入','f.expectedIncome':'预期收入','f.actualIncome':'实际收入','f.discountTotal':'折扣总额','f.actualProfitHint':'💡「公司实际结算价」会在月底运营商结算后填写，用于计算实际收入并与预期收入核对 — 可在保存客户后于「表格视图」中随时补填。',
+    'f.profitSection':'公司价格与折扣','f.expectedProfit':'公司价格','f.actualProfit':'公司实际结算价','f.usimFee':'USIM 费用','f.discountPerMonth':'每月折扣','f.discountMonths':'折扣月数','f.netExpectedProfit':'预期收入','f.expectedIncome':'预期收入','f.actualIncome':'实际收入','f.discountTotal':'折扣总额','f.actualProfitHint':'「公司实际结算价」会在月底运营商结算后填写，用于计算实际收入并与预期收入核对 — 可在保存客户后于「表格视图」中随时补填。',
     'f.name':'客户姓名','f.phone':'联系电话','f.nationality':'国籍','f.nationalityPh':'例如：CHINA / VIETNAM','f.dob':'出生日期','f.kakao':'KakaoTalk ID','f.wechat':'微信 WeChat','f.idType':'证件类型','f.idNumber':'证件号码','f.idExpiry':'证件有效期至','f.occupation':'职业','f.workplace':'工作单位','f.years':'在韩年数','f.referral':'客户来源','f.carrierType':'通信网','f.planType':'业务类型','f.branchOffice':'接收处管理编码','f.subType':'开通方式','f.address':'地址','f.addressPh':'韩国地址（用于打印申请表）','f.rating':'客户评分','f.notes':'备注','f.notesPh':'职业、客户来源等',
     'opt.prepaid':'先付卡（3个月充值）','opt.postpaid':'后付卡','opt.prepaidShort':'先付卡','opt.postpaidShort':'后付卡','prepaid3m.hint':'先付卡按充值月数计算，选择3个月时会自动套用프리티电信申请表；1/2个月请另外选择对应模板','prepaid3m.editHint':'修改该客户当前套餐的完整信息（不会新增历史记录，仅更正当前记录）','postpaidEdit.hint':'编辑该客户当前后付套餐的完整信息','postpaid.hint':'后付卡为按月合约，保存时会用下方选择的模板生成申请表（请先在「打印模板」页面上传后付卡运营商表格）',
     'plantype.new':'신규가입 新申请','plantype.mnp':'번호이동 携号转网','plantype.transfer':'명의변경 过户/名义变更','plantype.extend':'기간연장 有效期延长','plantype.convert':'선불전환 转为先付',
@@ -98,11 +98,11 @@ const I18N = {
     'io.import.modeTitle':'导入方式','io.import.modeMerge':'与现有客户合并','io.import.modeMergeDesc':'保留现有客户档案，仅新增导入文件中不重复的客户','io.import.modeReplace':'清空现有客户，改用此文件的数据','io.import.modeReplaceDesc':'导入前会先自动导出当前客户数据备份（Excel），再清空并载入新文件','io.import.skipDupes':'自动跳过重复客户（按姓名或电话匹配）',
     'io.import.sheet':'选择表格 Sheet','io.import.sheets':'选择要导入的表格 Sheets to import（可多选，例如同时导入先付卡与后付卡）','io.import.headerRow':'标题行 Header row','io.import.subType':'这批客户属于','io.import.subTypeAuto':'自动判断（根据表格名称）','io.import.subTypePrepaid':'先付卡','io.import.subTypePostpaid':'后付卡',
     'io.export.title':'导出数据','io.export.desc':'导出全部客户与业务数据为一个 Excel 文件（先付/后付各一个分页），结构与「表格视图」完全一致','io.export.all':'导出全部数据',
-    'io.yearExport.title':'按类型与年份导出','io.yearExport.desc':'按先付/后付与年份导出，格式为一个年份一个分页，月份之间用一行分隔 — 适合整理归档或未来导入数据库','io.yearExport.typeLabel':'业务类型','io.yearExport.yearLabel':'年份','io.yearExport.btn':'📅 导出该年份数据',
+    'io.yearExport.title':'按类型与年份导出','io.yearExport.desc':'按先付/后付与年份导出，格式为一个年份一个分页，月份之间用一行分隔 — 适合整理归档或未来导入数据库','io.yearExport.typeLabel':'业务类型','io.yearExport.yearLabel':'年份','io.yearExport.btn':'导出该年份数据',
     'io.format.title':'清空数据，重新开始','io.format.desc':'清空全部客户与业务记录，方便导入全新的数据。此操作无法撤销 — 建议先导出备份。','io.format.btn':'清空全部数据',
     'sync.title':'服务器同步（多台电脑共享数据）','sync.desc':'连接店内共享服务器后，本电脑与其他电脑可以使用同一份客户数据。未连接前，数据仅保存在本电脑。','sync.urlLabel':'服务器地址','sync.keyLabel':'密钥 API Key（在服务器 .env 文件中设置）','sync.test':'测试连接','sync.pushNow':'立即推送本机数据到服务器','sync.pullNow':'从服务器拉取最新数据','sync.enable':'启用自动同步（保存时自动推送，打开页面时自动拉取）',
-    'lock.title':'365Himobile 客户管理系统','lock.desc':'请输入服务器地址与密钥以载入客户数据','lock.passwordLabel':'密钥 / 密码','lock.unlock':'解锁并载入数据','lock.skip':'跳过 — 仅在本机使用（空白，不含任何客户数据）','lock.logout':'🔒 退出登录 Log out',
-    'io.issues.title':'数据完整性检查','io.issues.desc':'缺失联系方式、有效期、证件信息或付款信息的客户','io.issues.none':'没有发现数据问题，档案很完整 👍','io.bulkClearPayment.title':'批量清空付款方式','io.bulkClearPayment.desc':'用于一次性清空某个月份所有客户的付款方式，方便之后逐一核实填写','io.bulkClearPayment.btn':'清空该月份付款方式','io.bulkClearPayment.byActivation':'按开通日期匹配','io.bulkClearPayment.byAdded':'按添加日期匹配',
+    'lock.title':'365Himobile 客户管理系统','lock.desc':'请输入服务器地址与密钥以载入客户数据','lock.passwordLabel':'密钥 / 密码','lock.unlock':'解锁并载入数据','lock.skip':'跳过 — 仅在本机使用（空白，不含任何客户数据）','lock.logout':'退出登录 Log out',
+    'io.issues.title':'数据完整性检查','io.issues.desc':'缺失联系方式、有效期、证件信息或付款信息的客户','io.issues.none':'没有发现数据问题，档案很完整','io.bulkClearPayment.title':'批量清空付款方式','io.bulkClearPayment.desc':'用于一次性清空某个月份所有客户的付款方式，方便之后逐一核实填写','io.bulkClearPayment.btn':'清空该月份付款方式','io.bulkClearPayment.byActivation':'按开通日期匹配','io.bulkClearPayment.byAdded':'按添加日期匹配',
     'issue.noContact':'缺少联系电话','issue.noIdExpiry':'缺少证件有效期','issue.noIdNumber':'缺少证件号码','issue.noActiveService':'没有任何业务记录','issue.unpaid':'存在未结清欠款',
     'toast.customerSaved':'客户已保存','toast.orderSaved':'业务已保存','toast.reminderDone':'已标记完成','toast.reminderFollowup':'已设为再次跟进','toast.imported':'导入完成','toast.exported':'已导出','toast.deleted':'已删除','toast.langChanged':'语言已切换为中文','toast.cancellationUndone':'客户已恢复为活跃状态',
     'age.years':'岁','years.suffix':'年',
@@ -116,15 +116,15 @@ const I18N = {
     'ai.churn.noActive':'已 {days} 天没有有效订阅','ai.churn.expired':'订阅已到期尚未续约','ai.churn.overContract':'已超过合约期，尚未续约或更换套餐','ai.churn.expiringSoon':'订阅即将到期','ai.churn.outstanding':'账单有未收余额','ai.churn.stable':'订阅状态稳定',
     'ai.reason.postpaidReady':'先付卡客户，已符合转后付卡资格','ai.reason.noAction':'暂无需要处理的事项',
     'ai.action.postpaidConversion':'联系客户，推荐转为后付卡','ai.action.waitEligibility':'暂缓联系，待资格达成后再跟进','ai.action.planReview':'合约已到期，建议协助办理续约或更换套餐','ai.action.renewalFollowup':'合约即将到期，提前联系提醒续约','ai.action.idVerification':'联系客户补充或更新证件信息','ai.action.winback':'客户已流失，建议主动联系挽回','ai.action.none':'暂无建议操作',
-    'ai.disclaimer':'💡 优先级评分与商机建议由规则引擎与透明的加权评分计算得出，并非黑箱机器学习模型 — 每一项数字均可追溯到真实客户数据。',
-    'ai.topActions.title':'🔥 今日建议优先处理','ai.topActions.desc':'点击每一类查看对应客户名单','ai.topActions.emptyTitle':'目前没有需要优先处理的事项 👍','ai.topActions.emptyDesc':'所有客户目前都没有紧急商机或风险',
+    'ai.disclaimer':'优先级评分与商机建议由规则引擎与透明的加权评分计算得出，并非黑箱机器学习模型 — 每一项数字均可追溯到真实客户数据。',
+    'ai.topActions.title':'今日建议优先处理','ai.topActions.desc':'点击每一类查看对应客户名单','ai.topActions.emptyTitle':'目前没有需要优先处理的事项','ai.topActions.emptyDesc':'所有客户目前都没有紧急商机或风险',
     'ai.stay.title':'按预计在韩时长的商机','ai.stay.desc':'点击每一类查看对应客户名单','ai.stay.category':'类别','ai.stay.count':'客户数','ai.stay.action':'建议操作','ai.stay.pageDesc':'找出适合转后付、需要续费、或适合升级合约的客户 — 点击任意卡片查看名单与明细',
     'ai.stay.readyForPostpaid':'可转后付','ai.stay.readyForPostpaidAction':'联系转后付事宜','ai.stay.readyForPostpaidDesc':'先付卡客户——已满19岁、持护照或外国人登记证（ARC）、预计在韩停留8个月以上的视为符合资格，即使目前套餐尚未用完也会列出（并显示当前套餐剩余天数）；未满19岁的也会列出，并显示距离19岁生日还有多少天','ai.stay.underage':'未满19岁','ai.stay.missing.summary':'位客户因资料不全，未能纳入上方统计','ai.stay.missing.both':'缺少证件类型与在韩年数','ai.stay.missing.idType':'证件类型非护照/ARC或未填写','ai.stay.missing.years':'缺少在韩年数','ai.stay.missing.dob':'缺少出生日期，无法判断年龄','btn.hide':'收起','btn.show':'展开',
     'ai.stay.prepaidRecharge':'先付续费','ai.stay.prepaidRechargeAction':'联系续费事宜','ai.stay.prepaidRechargeDesc':'1/2/3个月套餐即将到期，且仍有剩余在韩时间的先付客户',
     'ai.stay.postpaidUpgrade':'后付续约','ai.stay.postpaidUpgradeAction':'提供新合约','ai.stay.postpaidUpgradeDesc':'合约已到期，且预计还将在韩停留8个月以上的后付客户',
     'ai.stay.finishedNeedsRecharge':'仅可续费','ai.stay.finishedNeedsRechargeAction':'发送续费提醒短信','ai.stay.finishedNeedsRechargeDesc':'先付套餐已到期，但因未满19岁或在韩停留不足8个月而无法转后付的客户——建议发送短信提醒其续费','btn.openSms':'发送短信','btn.copySms':'复制短信文字','toast.smsCopied':'短信文字已复制',
     'ai.stay.noYearsNote':'（结果基于客户档案中的「在韩年数」字段，代表预计剩余停留时长；未填写该字段的客户不会出现在此处）',
-    'ai.ask.title':'💬 向 AI 商业分析师提问','ai.ask.desc':'用真实客户数据回答，并展示计算依据（点击下方问题试试看）','ai.ask.placeholder':'例如：本月有多少客户可以升级？','ai.ask.btn':'提问',
+    'ai.ask.title':'向 AI 商业分析师提问','ai.ask.desc':'用真实客户数据回答，并展示计算依据（点击下方问题试试看）','ai.ask.placeholder':'例如：本月有多少客户可以升级？','ai.ask.btn':'提问',
     'ai.opps.title':'客户商机列表','ai.opps.desc':'按优先级排序，点击客户可查看详细的 AI 洞察',
     'ai.filter.allPriority':'全部优先级','ai.filter.allTypes':'全部商机类型',
     'ai.priority.high':'高优先级','ai.priority.medium':'中优先级','ai.priority.low':'低优先级','ai.priority.none':'无需处理',
@@ -146,14 +146,14 @@ const I18N = {
     'sidebar.sub':'Customer Management · CRM','sidebar.store':'Korea SIM Store','sidebar.staffSub':'Click to switch staff',
     'nav.dashboard':'Dashboard','nav.customers':'Customers','nav.sheet':'Sheet View','nav.ai':'AI Insights','nav.reminders':'Reminders','nav.orders':'Orders','nav.reports':'Reports','nav.templates':'Print Templates','nav.io':'Import / Export',
     'sub.sheet':'Edit customer & plan info directly, like a spreadsheet',
-    'sheet.hint':'💡 Click a colored tag to pick a new value; click text/numbers/dates to edit directly — press Enter or click away to save',
+    'sheet.hint':'Click a colored tag to pick a new value; click text/numbers/dates to edit directly — press Enter or click away to save',
     'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup',
     'btn.newCustomer':'New customer','btn.exportExcel':'Export Excel','btn.exportMonthExcel':'Export to Excel','btn.addFollowup':'＋ Add reminder','btn.newOrder':'＋ New order','btn.cancel':'Cancel','btn.saveCustomer':'Save customer','btn.saveOrder':'Save order','btn.edit':'Edit profile','btn.addService':'＋ Add service','btn.confirmImport':'Confirm import','btn.view':'View','btn.complete':'Complete','btn.followUpAgain':'Follow up again','btn.delete':'Delete','btn.deleteCustomer':'Delete customer','btn.saveTemplate':'Save template','btn.print':'Print','btn.savePrint':'Save & print application form','btn.merge':'Merge','btn.copyName':'Copy name','btn.save':'Save','btn.requestIdChange':'Information change','btn.markComplete':'Mark complete','btn.freezeSim':'Freeze SIM','btn.unfreezeSim':'Unfreeze SIM',
     'freeze.modalTitle':'Freeze SIM','freeze.modalDesc':'Frozen time doesn\'t count toward the contract — the end date pushes back by however many days are frozen. Postpaid only.','freeze.byDays':'By days','freeze.byRange':'By date range','freeze.startDate':'Start date','freeze.endDate':'End date','freeze.days':'Days to freeze','freeze.frozen':'Frozen','freeze.colHeader':'Freeze status','freeze.clickToUnfreeze':'Click to unfreeze',
     'btn.changeToPostpaid':'Change to Postpaid','btn.changePlan':'Change Plan','btn.cancelSubscription':'Cancel Subscription','btn.startNewSubscription':'＋ Start New Subscription','btn.confirmChange':'Confirm Change','btn.confirmCancel':'Confirm Cancellation','btn.back':'Back','btn.undoCancel':'Reactivate',
     'btn.recharge':'Recharge','btn.changeToPrepaid':'Change to Prepaid','btn.confirmRecharge':'Confirm Recharge',
     'dash.greeting':'Good morning, Manager','dash.followup.title':"Today's follow-ups",'dash.followup.desc':'Reach out to customers expiring soon','dash.viewall':'View all →','dash.overview.title':'Service overview','dash.overview.desc':'Activations this month','dash.recent.title':'Recently added customers','dash.recent.desc':'Confirm newly activated numbers and plans','dash.customerlist':'Customer list →','dash.nationality.title':'Customers by nationality','dash.referral.title':'Customers by referral source','dash.paymentToday.title':"Today's payment method breakdown (prepaid)",'dash.paymentToday.desc':'Customer count and income total per payment method today',
-    'dash.quickSearch':'Quick search by name, phone, or ID...','dash.noMatches':'No matching customers found','dash.dupeBanner':'Found {groups} duplicate groups ({n} customers total) — worth reviewing and merging','dash.dupeBannerBtn':'Review now','dash.renewals.title':'Contracts ending soon (30 days)','dash.renewals.desc':'Postpaid contracts nearing renewal — reach out ahead of time','dash.renewals.emptyTitle':'No contracts ending soon 👍','dash.renewals.emptyDesc':'No postpaid contracts due for renewal in the next 30 days','dash.winback.title':'Cancelled / win-back opportunities','dash.winback.desc':'Customers who cancelled and haven\'t restarted','dash.winback.emptyTitle':'No lapsed customers','dash.winback.emptyDesc':'Everyone who ever subscribed currently has an active plan','dash.revenueTrend.title':'Revenue trend (last 6 months)','dash.cancelReasons.title':'Cancellation reasons','dash.noCancellations':'No cancellations in the last 6 months 👍',
+    'dash.quickSearch':'Quick search by name, phone, or ID...','dash.noMatches':'No matching customers found','dash.dupeBanner':'Found {groups} duplicate groups ({n} customers total) — worth reviewing and merging','dash.dupeBannerBtn':'Review now','dash.renewals.title':'Contracts ending soon (30 days)','dash.renewals.desc':'Postpaid contracts nearing renewal — reach out ahead of time','dash.renewals.emptyTitle':'No contracts ending soon','dash.renewals.emptyDesc':'No postpaid contracts due for renewal in the next 30 days','dash.winback.title':'Cancelled / win-back opportunities','dash.winback.desc':'Customers who cancelled and haven\'t restarted','dash.winback.emptyTitle':'No lapsed customers','dash.winback.emptyDesc':'Everyone who ever subscribed currently has an active plan','dash.revenueTrend.title':'Revenue trend (last 6 months)','dash.cancelReasons.title':'Cancellation reasons','dash.noCancellations':'No cancellations in the last 6 months',
     'stat.totalCustomers':'Total customers','stat.newThisMonth':'New this month','stat.followup7':'Due within 7 days','stat.revenueMonth':'Revenue this month','stat.fromRecords':'From existing prepaid / postpaid records','stat.vsLastMonth':'vs last month','stat.includesExpiry':'Includes expiries & first-month payments','stat.expiringSoon':'Expiring soon','stat.infoChangeNeeded':'Need info change',
     'stat.activePrepaid':'Active prepaid','stat.activePostpaid':'Active postpaid','stat.activeBook':'Currently active','stat.outstanding':'Outstanding total','stat.outstandingSub':'Across active & recent orders','stat.renewalsSoon':'Contracts renewing soon','stat.renewalsSub':'Postpaid, due within 30 days','stat.newActivity':'New vs last month',
     'col.customer':'Customer','col.number':'Number','col.service':'Service','col.carrier':'Carrier','col.activated':'Activated','col.status':'Status','col.contact':'Contact','col.phoneNumber':'Phone number','col.nationality':'Nationality','col.id':'ID','col.subType':'Subscription','col.currentNumber':'Current number','col.recentActivity':'Recent activity','col.rating':'Rating','col.serviceType':'Service type','col.plan':'Plan','col.amount':'Amount','col.outstanding':'Outstanding','col.month':'Month','col.orders':'Orders','col.revenue':'Revenue','col.cost':'Cost','col.profit':'Profit','col.outstandingTotal':'Total outstanding','col.dupeReason':'Match reason','col.contractStatus':'Contract status',
@@ -169,7 +169,7 @@ const I18N = {
     'cs.autofillHint':'Name / phone / nationality / occupation / ID number are auto-filled from the existing customer record — edit directly if needed','cs.idNumberArc':'ID number (ARC)',
     'modal.chooseType':'New customer','modal.chooseTypeDesc':'Choose the customer type first — the two forms have different fields','modal.prepaidDesc':'Fixed 3-month recharge plan','modal.postpaidDesc':'Monthly contract, pick carrier & plan','modal.newPostpaidCustomer':'New postpaid customer',
     'f.contactHandle':'Contact account / ID','f.workType':'Work type','f.handlerName':'Handled by','f.referralFriend':'Referred by (friend\'s name)','f.date':'Date',
-    'f.profitSection':'Company price & discount','f.expectedProfit':'Company price','f.actualProfit':'Real company price','f.usimFee':'USIM fee','f.discountPerMonth':'Discount / month','f.discountMonths':'Discount months','f.netExpectedProfit':'Expected income','f.expectedIncome':'Expected income','f.actualIncome':'Actual income','f.discountTotal':'Total discount','f.actualProfitHint':'💡 "Real company price" gets filled in later once the carrier settles at month-end, used to calculate actual income and compare it against your estimate — you can fill it in anytime from Sheet View after saving.',
+    'f.profitSection':'Company price & discount','f.expectedProfit':'Company price','f.actualProfit':'Real company price','f.usimFee':'USIM fee','f.discountPerMonth':'Discount / month','f.discountMonths':'Discount months','f.netExpectedProfit':'Expected income','f.expectedIncome':'Expected income','f.actualIncome':'Actual income','f.discountTotal':'Total discount','f.actualProfitHint':'"Real company price" gets filled in later once the carrier settles at month-end, used to calculate actual income and compare it against your estimate — you can fill it in anytime from Sheet View after saving.',
     'f.name':'Customer name','f.phone':'Phone number','f.nationality':'Nationality / Country','f.nationalityPh':'e.g. CHINA / VIETNAM','f.dob':'Date of birth','f.kakao':'KakaoTalk ID','f.wechat':'WeChat ID','f.idType':'ID type','f.idNumber':'ID number (ARC/Passport)','f.idExpiry':'ID expiry date','f.occupation':'Occupation','f.workplace':'Workplace','f.years':'Years in Korea','f.referral':'Referral source','f.carrierType':'Carrier network','f.planType':'Plan type','f.branchOffice':'Branch office code','f.subType':'Subscription type','f.address':'Address','f.addressPh':'Korean address (used for printing application forms)','f.rating':'Customer rating','f.notes':'Notes','f.notesPh':'Occupation, referral source, etc.',
     'opt.prepaid':'Prepaid (3-month recharge, fixed)','opt.postpaid':'Postpaid','opt.prepaidShort':'Prepaid','opt.postpaidShort':'Postpaid','prepaid3m.hint':'Prepaid is billed by recharge months — choosing 3 months auto-applies the Preeti Telecom form; 1/2-month plans use whichever other template you select','prepaid3m.editHint':'Editing this customer\'s current plan in full (this corrects the existing record — it does not add a new history entry)','postpaidEdit.hint':'Editing this customer\'s current postpaid plan in full','postpaid.hint':'Postpaid is a monthly contract — saving will generate the application form using the template selected below (upload your postpaid carrier form in Print Templates first)',
     'plantype.new':'신규가입 New sign-up','plantype.mnp':'번호이동 Number port (MNP)','plantype.transfer':'명의변경 Ownership/name change','plantype.extend':'기간연장 Period extension','plantype.convert':'선불전환 Convert to prepaid',
@@ -198,11 +198,11 @@ const I18N = {
     'io.import.modeTitle':'Import mode','io.import.modeMerge':'Merge with existing customers','io.import.modeMergeDesc':'Keeps existing customer records; only adds new customers that aren\'t already in the list','io.import.modeReplace':'Clear existing customers and use this file instead','io.import.modeReplaceDesc':'Automatically exports a backup of current customer data (Excel) first, then clears and loads the new file','io.import.skipDupes':'Automatically skip duplicate customers (matched by name or phone)',
     'io.import.sheet':'Sheet','io.import.sheets':'Sheets to import (select multiple — e.g. prepaid and postpaid together)','io.import.headerRow':'Header row','io.import.subType':'Customer type for this sheet','io.import.subTypeAuto':'Auto-detect from sheet name','io.import.subTypePrepaid':'Prepaid','io.import.subTypePostpaid':'Postpaid',
     'io.export.title':'Export data','io.export.desc':'Export all customer and business data as one Excel file (Prepaid and Postpaid on separate sheets) — matches Sheet View exactly','io.export.all':'Export all data',
-    'io.yearExport.title':'Export by type & year','io.yearExport.desc':'Export by prepaid/postpaid and year, formatted as one sheet per year with months separated by a divider row — good for archiving or a future database import','io.yearExport.typeLabel':'Subscription type','io.yearExport.yearLabel':'Year','io.yearExport.btn':'📅 Export this year',
+    'io.yearExport.title':'Export by type & year','io.yearExport.desc':'Export by prepaid/postpaid and year, formatted as one sheet per year with months separated by a divider row — good for archiving or a future database import','io.yearExport.typeLabel':'Subscription type','io.yearExport.yearLabel':'Year','io.yearExport.btn':'Export this year',
     'io.format.title':'Clear data and start fresh','io.format.desc':'Clears all customers and service records so you can import a brand new file. This cannot be undone — exporting a backup first is recommended.','io.format.btn':'Delete all data',
     'sync.title':'Server sync (share data across computers)','sync.desc':'Once connected to your store\'s shared server, this computer and others can use the same customer data. Until connected, data stays on this computer only.','sync.urlLabel':'Server address','sync.keyLabel':'API Key (set in the server\'s .env file)','sync.test':'Test connection','sync.pushNow':'Push this computer\'s data to the server now','sync.pullNow':'Pull latest data from the server','sync.enable':'Enable automatic sync (push on save, pull on page load)',
-    'lock.title':'365Himobile Customer Management','lock.desc':'Enter the server address and password to load customer data','lock.passwordLabel':'Password / Key','lock.unlock':'Unlock & Load Data','lock.skip':'Skip — use this computer only (blank, no customer data)','lock.logout':'🔒 Log out',
-    'io.issues.title':'Data health check','io.issues.desc':'Customers missing contact info, expiry dates, ID details or payment info','io.issues.none':'No data issues found — records look complete 👍','io.bulkClearPayment.title':'Bulk clear payment method','io.bulkClearPayment.desc':'Clears the payment method for every customer in a given month at once, so you can go back and fill each one in accurately','io.bulkClearPayment.btn':'Clear payment method for this month','io.bulkClearPayment.byActivation':'Match by activation date','io.bulkClearPayment.byAdded':'Match by date added',
+    'lock.title':'365Himobile Customer Management','lock.desc':'Enter the server address and password to load customer data','lock.passwordLabel':'Password / Key','lock.unlock':'Unlock & Load Data','lock.skip':'Skip — use this computer only (blank, no customer data)','lock.logout':'Log out',
+    'io.issues.title':'Data health check','io.issues.desc':'Customers missing contact info, expiry dates, ID details or payment info','io.issues.none':'No data issues found — records look complete','io.bulkClearPayment.title':'Bulk clear payment method','io.bulkClearPayment.desc':'Clears the payment method for every customer in a given month at once, so you can go back and fill each one in accurately','io.bulkClearPayment.btn':'Clear payment method for this month','io.bulkClearPayment.byActivation':'Match by activation date','io.bulkClearPayment.byAdded':'Match by date added',
     'issue.noContact':'Missing phone number','issue.noIdExpiry':'Missing ID expiry date','issue.noIdNumber':'Missing ID number','issue.noActiveService':'No service records','issue.unpaid':'Has outstanding balance',
     'toast.customerSaved':'Customer saved','toast.orderSaved':'Order saved','toast.reminderDone':'Marked as completed','toast.reminderFollowup':'Set to follow up again','toast.imported':'Import complete','toast.exported':'Exported','toast.deleted':'Deleted','toast.langChanged':'Language switched to English','toast.cancellationUndone':'Customer reactivated',
     'age.years':'yrs','years.suffix':'yrs',
@@ -216,15 +216,15 @@ const I18N = {
     'ai.churn.noActive':'No active subscription for {days} days','ai.churn.expired':'Subscription expired and not renewed','ai.churn.overContract':'Past the contract term — hasn\'t renewed or changed plans yet','ai.churn.expiringSoon':'Subscription expiring soon','ai.churn.outstanding':'Unpaid balance on this account','ai.churn.stable':'Subscription is stable',
     'ai.reason.postpaidReady':'Prepaid customer who now meets postpaid eligibility','ai.reason.noAction':'No action needed right now',
     'ai.action.postpaidConversion':'Contact customer about postpaid conversion','ai.action.waitEligibility':'Hold off — follow up once eligible','ai.action.planReview':'Contract completed — help arrange renewal or plan change','ai.action.renewalFollowup':'Contract ending soon — send a renewal reminder','ai.action.idVerification':'Contact customer to update or complete ID info','ai.action.winback':'Customer has lapsed — worth a win-back outreach','ai.action.none':'No recommended action',
-    'ai.disclaimer':'💡 Priority scores and opportunities come from a rule engine and a transparent weighted formula — not a black-box ML model. Every number traces back to real customer data.',
-    'ai.topActions.title':'🔥 Top actions today','ai.topActions.desc':'Click a category to see the matching customers','ai.topActions.emptyTitle':'Nothing urgent right now 👍','ai.topActions.emptyDesc':'No customers currently have pressing opportunities or risks',
+    'ai.disclaimer':'Priority scores and opportunities come from a rule engine and a transparent weighted formula — not a black-box ML model. Every number traces back to real customer data.',
+    'ai.topActions.title':'Top actions today','ai.topActions.desc':'Click a category to see the matching customers','ai.topActions.emptyTitle':'Nothing urgent right now','ai.topActions.emptyDesc':'No customers currently have pressing opportunities or risks',
     'ai.stay.title':'Opportunities by expected time remaining in Korea','ai.stay.desc':'Click a category to see the matching customers','ai.stay.category':'Category','ai.stay.count':'Customers','ai.stay.action':'Suggested action','ai.stay.pageDesc':'Find customers ready to move to postpaid, due for a recharge, or worth offering a longer contract — click any card to see the list and details',
     'ai.stay.readyForPostpaid':'Ready for postpaid','ai.stay.readyForPostpaidAction':'Contact about postpaid','ai.stay.readyForPostpaidDesc':'Prepaid customers who are 19+, hold a Passport or Resident Card (ARC), and are staying 8+ more months — listed even if their current plan hasn\'t finished yet (shows days left on the current plan); under-19 customers are listed too, showing days until their 19th birthday','ai.stay.underage':'Under 19','ai.stay.missing.summary':'customers are missing data and aren\'t included in the counts above','ai.stay.missing.both':'Missing both ID type and Years in Korea','ai.stay.missing.idType':'ID type isn\'t Passport or ARC, or is blank','ai.stay.missing.years':'Missing Years in Korea','ai.stay.missing.dob':'Missing date of birth, so age can\'t be determined','btn.hide':'Hide','btn.show':'Show',
     'ai.stay.prepaidRecharge':'Prepaid recharge','ai.stay.prepaidRechargeAction':'Contact about recharge','ai.stay.prepaidRechargeDesc':'Prepaid customers on a 1/2/3-month plan ending soon who still have remaining stay time',
     'ai.stay.postpaidUpgrade':'Postpaid upgrade','ai.stay.postpaidUpgradeAction':'Offer new contract','ai.stay.postpaidUpgradeDesc':'Postpaid customers whose contract has ended, staying 8+ more months',
     'ai.stay.finishedNeedsRecharge':'Recharge only','ai.stay.finishedNeedsRechargeAction':'Send recharge reminder SMS','ai.stay.finishedNeedsRechargeDesc':'Prepaid customers whose plan has ended but can\'t move to postpaid yet (under 19, or staying under 8 more months) — send a text reminding them to recharge','btn.openSms':'Open SMS','btn.copySms':'Copy SMS text','toast.smsCopied':'SMS text copied',
     'ai.stay.noYearsNote':'(based on the "Years in Korea" field on each customer profile, read as expected remaining stay — customers with that field left blank won\'t appear here)',
-    'ai.ask.title':'💬 Ask the AI business analyst','ai.ask.desc':'Answered from real customer data, with the calculation shown (try a suggestion below)','ai.ask.placeholder':'e.g. How many customers can upgrade this month?','ai.ask.btn':'Ask',
+    'ai.ask.title':'Ask the AI business analyst','ai.ask.desc':'Answered from real customer data, with the calculation shown (try a suggestion below)','ai.ask.placeholder':'e.g. How many customers can upgrade this month?','ai.ask.btn':'Ask',
     'ai.opps.title':'Customer opportunities','ai.opps.desc':'Sorted by priority — click a customer to see their full AI insight',
     'ai.filter.allPriority':'All priorities','ai.filter.allTypes':'All opportunity types',
     'ai.priority.high':'High priority','ai.priority.medium':'Medium priority','ai.priority.low':'Low priority','ai.priority.none':'No action needed',
@@ -961,7 +961,7 @@ function renderSheetPage(){
     const cls = rem < 0 ? (svc.type==='postpaid' ? 'pill-blue' : 'pill-red') : rem <= 7 ? 'pill-orange' : 'pill-green';
     return `<span class="pill ${cls} sheet-status">${escapeHtml(txt)}</span>`;
   };
-  const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>`;
+  const nameCell = c => `<td class="name-cell sheet-name" title="${escapeHtml(c.name)}" style="cursor:pointer;" data-open-customer="${c.id}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}" aria-label=\"${t('btn.copyName')}\"></button></td>`;
   const u19Head = u19 ? `<th>${t('col.u19')}</th>` : unpaid ? `<th>${t('col.outstanding')}</th>` : '';
   const prepaidHead = `<th class="sheet-name-th">${t('col.customer')}</th>${u19Head}<th>${t('f.phone')}</th><th>${t('f.company')}</th><th>${t('f.svcCarrierType')}</th><th>${LANG==='zh'?'套餐':'Plan'}</th>
     <th>${t('f.activationDate')}</th><th>${t('f.expiryDate')}</th><th>${t('col.contractStatus')}</th><th>${t('f.usedDays')}</th><th>${t('f.durationDays')}</th>
@@ -1014,7 +1014,7 @@ function renderSheetPage(){
         <td>${statusCell(svc)}</td>
         <td>${usedCell(svc)}</td>
         <td>${sheetPillCell('service',svc.id,'durationDays',svc.durationDays?String(svc.durationDays):'',POSTPAID_CONTRACT_DAYS.map(String), t('f.contractLength'))}</td>
-        <td>${frozenNow ? `<button class="btn btn-sm" style="background:#2563EB;color:#fff;border:none;" data-freeze-toggle="${svc.customerId}">🧊 ${t('btn.unfreezeSim')}</button>` : sheetReadonlyCell('—')}</td>
+        <td>${frozenNow ? `<button class="btn btn-sm" style="background:#2563EB;color:#fff;border:none;" data-freeze-toggle="${svc.customerId}">${uiIcon('freeze')}${t('btn.unfreezeSim')}</button>` : sheetReadonlyCell('—')}</td>
         <td>${sheetTextCell('service',svc.id,'monthlyFee',svc.monthlyFee,'number')}</td>
         <td>${sheetTextCell('service',svc.id,'expectedProfit',svc.expectedProfit,'number')}</td>
         <td>${sheetTextCell('service',svc.id,'actualProfit',svc.actualProfit,'number')}</td>
@@ -1151,7 +1151,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       const samePhone = c.phone && group.filter(x=>x.id!==c.id).some(x=>x.phone===c.phone);
       const reasons = [sameName?t('dupe.reasonName'):null, samePhone?t('dupe.reasonPhone'):null].filter(Boolean).join(' + ');
       statusCell = `<td><span class="pill pill-red">${reasons||t('dupe.reasonName')}</span></td>`;
-      var mergeBtn = isNewestInGroup ? `<button class="btn btn-sm btn-primary" data-merge-group="${groupIndexById[c.id]}" title="${LANG==='zh'?'将本组其他重复客户合并到这条最新记录中':'Merge the other duplicates in this group into this newest record'}">🔀 ${t('btn.merge')}</button> ` : '';
+      var mergeBtn = isNewestInGroup ? `<button class="btn btn-sm btn-primary" data-merge-group="${groupIndexById[c.id]}" title="${LANG==='zh'?'将本组其他重复客户合并到这条最新记录中':'Merge the other duplicates in this group into this newest record'}">${uiIcon('merge')}${t('btn.merge')}</button> ` : '';
     } else if(isAllView){
       statusCell = active
         ? `<td><span class="pill ${active.type==='prepaid'?'pill-orange':'pill-blue'}">${t('opt.'+active.type+'Short')}</span></td>`
@@ -1165,7 +1165,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       var mergeBtn = '';
     }
     return `<tr class="row-click ${groupBand}" data-open-customer="${c.id}">
-      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></td>${u19 ? u19Cell(c) : unpaid ? unpaidCell(customerUnpaid(c)) : ''}
+      <td class="name-cell" title="${escapeHtml(c.name)}"><span class="avatar">${initials(c.name)}</span><span class="name-text">${escapeHtml(c.name)}</span><button class="copy-name-btn" data-copy-name="${c.id}" title="${t('btn.copyName')}" aria-label=\"${t('btn.copyName')}\"></button></td>${u19 ? u19Cell(c) : unpaid ? unpaidCell(customerUnpaid(c)) : ''}
       <td>${escapeHtml(c.phone||'—')}</td>
       <td><span class="cell-ellipsis">${escapeHtml(c.nationality)}</span></td>
       <td>${c.idType?t('idtype.'+c.idType):'—'}</td>
@@ -1573,8 +1573,8 @@ async function checkServerSchema(){
     const el = document.getElementById('offlineBanner');
     if(data.schemaOk === false){
       document.getElementById('offlineBannerText').textContent = LANG==='zh'
-        ? `⚠️ 服务器数据库需要更新（缺少字段：${data.missingColumns.join(', ')}）— 请在服务器电脑上重新运行 schema.sql，部分功能可能无法正常保存`
-        : `⚠️ Server database needs an update (missing: ${data.missingColumns.join(', ')}) — re-run schema.sql on the server computer, some data may not save correctly until then`;
+        ? `服务器数据库需要更新（缺少字段：${data.missingColumns.join(', ')}）— 请在服务器电脑上重新运行 schema.sql，部分功能可能无法正常保存`
+        : `Server database needs an update (missing: ${data.missingColumns.join(', ')}) — re-run schema.sql on the server computer, some data may not save correctly until then`;
       el.style.display = '';
     }
     // if schema IS ok, deliberately don't touch the banner here — it may already correctly
@@ -2920,7 +2920,7 @@ function renderDupeWarning(inputId, kind, form){
   if(!box){ box = document.createElement('div'); box.className = 'dupe-warn'; field.appendChild(box); }
   const zh = LANG==='zh';
   const title = kind==='phone' ? (zh?'这个电话号码已在系统中':'This phone number is already in the CRM') : (zh?'这个证件号码已在系统中':'This ID number is already in the CRM');
-  box.innerHTML = `<div class="dupe-warn-title">⚠ ${title}</div>` + matches.slice(0,3).map(c=>
+  box.innerHTML = `<div class="dupe-warn-title ic-title">${uiIcon('warn')}${title}</div>` + matches.slice(0,3).map(c=>
     `<div class="dupe-warn-row"><span><b>${escapeHtml(c.name)}</b>${c.phone?' · '+escapeHtml(c.phone):''} · ${escapeHtml(dupePlanText(c))}</span>`+
     `<button type="button" class="btn btn-sm btn-ghost" data-dupe-open="${escapeHtml(c.id)}">${zh?'查看':'Open'}</button></div>`).join('') +
     (matches.length>3 ? `<div class="dupe-warn-row">+${matches.length-3} ${zh?'位':'more'}</div>` : '');
@@ -2953,7 +2953,6 @@ function confirmNoDuplicates(form){
 }
 /* ---------------- AI BUSINESS INTELLIGENCE PAGE ---------------- */
 const AI_PRIORITY_PILL = {high:'pill-red', medium:'pill-orange', low:'pill-blue', none:'pill-gray'};
-const AI_PRIORITY_ICON = {high:'🔥', medium:'🟠', low:'🟢', none:'⚪'};
 function renderAIPage(){
   renderAIOpportunities();
   if(window.renderNatStay) renderNatStay();
@@ -3354,7 +3353,7 @@ function renderCustomers(){
       ${showDuration ? `<td>${durTxt}</td>` : ''}
       ${isDupeView ? dupeReasonCell : ''}
       <td>${'★'.repeat(c.rating||0)}<span style="color:#DADEEA">${'★'.repeat(5-(c.rating||0))}</span></td>
-      <td style="white-space:nowrap;">${isNewestInGroup ? `<button class="btn btn-sm btn-primary" data-merge-group="${groupIndexById[c.id]}" title="${LANG==='zh'?'将本组其他重复客户合并到这条最新记录中':'Merge the other duplicates in this group into this newest record'}">🔀 ${t('btn.merge')}</button> ` : ''}<button class="btn btn-sm btn-ghost" data-open-customer="${c.id}">${t('btn.view')}</button></td>
+      <td style="white-space:nowrap;">${isNewestInGroup ? `<button class="btn btn-sm btn-primary" data-merge-group="${groupIndexById[c.id]}" title="${LANG==='zh'?'将本组其他重复客户合并到这条最新记录中':'Merge the other duplicates in this group into this newest record'}">${uiIcon('merge')}${t('btn.merge')}</button> ` : ''}<button class="btn btn-sm btn-ghost" data-open-customer="${c.id}">${t('btn.view')}</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="10">${isDupeView ? emptyStateDupes() : emptyState()}</td></tr>`;
   bindRowOpens();
@@ -3413,7 +3412,7 @@ function mergeDuplicateGroup(customerIds){
   setTimeout(()=> offerUndo((LANG==='zh' ? '已合并重复客户 — ' : 'Duplicates merged — ')+primary.name, snap, serverDeletes), 0); // after the caller's own message
 }
 function emptyStateDupes(){
-  return `<div class="empty-state"><b>${LANG==='zh'?'没有发现重复客户 👍':'No duplicate customers found 👍'}</b>${LANG==='zh'?'按姓名或电话号码匹配，未发现重复记录':'Checked by matching name and phone number — nothing to clean up'}</div>`;
+  return `<div class="empty-state"><b>${LANG==='zh'?'没有发现重复客户':'No duplicate customers found'}</b>${LANG==='zh'?'按姓名或电话号码匹配，未发现重复记录':'Checked by matching name and phone number — nothing to clean up'}</div>`;
 }
 
 /* ---------------- NEW CUSTOMER: type chooser + dedicated postpaid form ---------------- */
@@ -4139,7 +4138,7 @@ function profileActivePlanHtml(s, c){
       </div>
       <div style="text-align:right;">
         <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>${len ? `<span class="plan-tag ${len[0]}">${escapeHtml(len[1])}</span>` : ''}
-        ${isServiceCurrentlyFrozen(s) ? `<span class="pill" style="background:#DBEAFE;color:#1D4ED8;margin-left:4px;">🧊 ${t('freeze.frozen')}</span>` : ''}
+        ${isServiceCurrentlyFrozen(s) ? `<span class="pill pill-frozen">${uiIcon('freeze')}${t('freeze.frozen')}</span>` : ''}
         <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}" style="margin-left:6px;" title="${LANG==='zh'?'编辑套餐详情（价格、已收款、日期…）':'Edit plan details (price, received, dates…)'}">${t('btn.editRecord')}</button>${(s.type==='prepaid' && s.durationDays!==90) ? printBtn('', 'margin-left:8px') : ''}
         <div style="margin-top:6px;display:flex;gap:6px;justify-content:flex-end;">
           ${(s.type==='prepaid' && s.durationDays===90) ? printBtn('', 'color:var(--orange);') : ''}
@@ -4161,6 +4160,16 @@ function profileActivePlanHtml(s, c){
     <div class="muted" style="font-size:11.5px;margin-top:6px;">${status}</div>` : ''}
   </div>`;
 }
+/* Small line icons for markup built in JS (same style as the rest of the app) */
+const UI_ICON = {
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+  freeze:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M9 4.5l3 2 3-2M9 19.5l3-2 3 2"/>',
+  merge:'<path d="M6 4v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v2M18 4v6"/>',
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+  warn:'<path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'
+};
+function uiIcon(name, cls){ return `<span class="ui-ic${cls?' '+cls:''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI_ICON[name]}</svg></span>`; }
 function copyTextToClipboard(text, msg){
   const done = ()=> toast(msg || (LANG==='zh'?'已复制':'Copied'));
   const fallback = ()=>{ const a = document.createElement('textarea'); a.value = text; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
@@ -4256,7 +4265,7 @@ function openCustomerDetail(id){
     idChangeBannerHtml = `<div class="service-card" style="background:#EFF6FF;border-color:#BFDBFE;margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div>
-          <div style="font-weight:800;color:#1D4ED8;">📄 ${t('rem.idChange.pendingTitle')}</div>
+          <div style="font-weight:800;color:#1D4ED8;" class="ic-title">${uiIcon('doc')}${t('rem.idChange.pendingTitle')}</div>
           <div class="section-desc" style="margin-top:4px;">${t('rem.idChange.requestedOn')} ${fmtDate(req.requestedDate)} (${daysPending} ${LANG==='zh'?'天前':'days ago'}) · ${t('rem.idChange.handledBy')} ${escapeHtml(req.handledBy||'—')}</div>
         </div>
         <button class="btn btn-ghost" id="btnPrintIdChange" style="flex:none;">${pfBtnIcon('print')}${t('btn.print')}</button>
@@ -4277,7 +4286,7 @@ function openCustomerDetail(id){
       dupeBannerHtml = `<div class="service-card" style="background:#FEF2F2;border-color:#FCA5A5;margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
           <div>
-            <div style="font-weight:800;color:#C0392B;">⚠ ${LANG==='zh'?'检测到重复档案':'Duplicate profiles detected'}</div>
+            <div style="font-weight:800;color:#C0392B;" class="ic-title">${uiIcon('warn')}${LANG==='zh'?'检测到重复档案':'Duplicate profiles detected'}</div>
             <div class="section-desc" style="margin-top:4px;">${LANG==='zh'?`与 ${others.length} 个其他档案重复（按姓名或电话匹配）。合并会将它们的历史记录并入本档案，并删除多余档案。`:`Matches ${others.length} other profile${others.length>1?'s':''} by name or phone. Merging moves their history into this one and removes the extras.`}</div>
           </div>
           <button class="btn btn-primary" id="btnMergeFromProfile" style="flex:none;">${pfBtnIcon('btnMergeFromProfile')}${t('btn.merge')}</button>
@@ -4286,7 +4295,7 @@ function openCustomerDetail(id){
     } else {
       const newest = sortedGroup[0];
       dupeBannerHtml = `<div class="service-card" style="background:var(--gray-light);margin-bottom:16px;">
-        <div style="font-weight:800;">ℹ ${LANG==='zh'?'这可能是重复档案':'This looks like a duplicate profile'}</div>
+        <div style="font-weight:800;" class="ic-title">${uiIcon('info')}${LANG==='zh'?'这可能是重复档案':'This looks like a duplicate profile'}</div>
         <div class="section-desc" style="margin-top:4px;">${LANG==='zh'?'较新的档案':'The newer profile is'} <b>${escapeHtml(newest.name)}</b>（${fmtDate(customerJoinDate(newest))}）。${LANG==='zh'?'请到该档案进行合并。':'Merge from there instead.'}</div>
         <button class="btn btn-sm btn-ghost" style="margin-top:8px;" data-open-customer="${newest.id}">${LANG==='zh'?'前往该档案':'Go to that profile'} →</button>
       </div>`;
@@ -4296,7 +4305,7 @@ function openCustomerDetail(id){
     <div class="service-card" style="background:var(--blue-light);border-color:var(--blue);margin-bottom:16px;">
       <div class="service-card-head">
         ${pfTitle(t('ai.insight.title'), 'ai', 'o', 'font-weight:800;')}
-        <span class="pill ${AI_PRIORITY_PILL[intel.priority]}">${AI_PRIORITY_ICON[intel.priority]} ${intel.score}/100</span>
+        <span class="pill ${AI_PRIORITY_PILL[intel.priority]}"><span class="prio-dot"></span>${intel.score}/100</span>
       </div>
       <div class="kv-grid" style="margin-top:10px;">
         <div><div class="k">${t('ai.col.opportunity')}</div><div class="v">${intel.opportunityType==='none'?'—':t('ai.opp.'+intel.opportunityType)}</div></div>
@@ -4334,7 +4343,7 @@ function openCustomerDetail(id){
     <div class="profile-head">
       <div class="profile-avatar">${initials(c.name)}</div>
       <div>
-        <div class="profile-name">${escapeHtml(c.name)}<button class="copy-name-btn copy-name-btn-lg" data-copy-name="${c.id}" title="${t('btn.copyName')}">📋</button></div>
+        <div class="profile-name">${escapeHtml(c.name)}<button class="copy-name-btn copy-name-btn-lg" data-copy-name="${c.id}" title="${t('btn.copyName')}" aria-label=\"${t('btn.copyName')}\"></button></div>
         <div class="profile-tags">
           <span class="pill pill-blue">${escapeHtml(c.nationality)}</span>
           <span class="pill pill-gray">${(c.idType?t('idtype.'+c.idType):'—')} · ${escapeHtml(c.idNumber||'—')}</span>
@@ -4513,7 +4522,7 @@ function serviceCardHtml(s, customer){
       </div>
       <div style="text-align:right;">
         <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>${(()=>{ const l = planLengthLabel(s); return l ? `<span class="plan-tag ${l[0]}">${escapeHtml(l[1])}</span>` : ''; })()}
-        ${isServiceCurrentlyFrozen(s) ? `<span class="pill" style="background:#DBEAFE;color:#1D4ED8;margin-left:4px;">🧊 ${t('freeze.frozen')}</span>` : ''}
+        ${isServiceCurrentlyFrozen(s) ? `<span class="pill pill-frozen">${uiIcon('freeze')}${t('freeze.frozen')}</span>` : ''}
         <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}" style="margin-left:6px;" title="${LANG==='zh'?'编辑套餐详情（价格、已收款、日期…）':'Edit plan details (price, received, dates…)'}">${t('btn.editRecord')}</button>
         <div style="margin-top:6px;display:flex;gap:6px;justify-content:flex-end;">
           ${(s.type==='prepaid' && s.durationDays===90) ? `<button class="btn btn-sm btn-ghost" data-print-service="${s.id}" style="color:var(--orange);">${pfBtnIcon('print')}${t('btn.print')}</button>` : ''}
@@ -4569,7 +4578,7 @@ function idChangeHistoryItemHtml(req){
   return `<div class="service-card" style="opacity:.88;">
     <div class="service-card-head">
       <div>
-        <div style="font-weight:800;">📄 ${t('rem.idChange.completedTitle')}</div>
+        <div style="font-weight:800;" class="ic-title">${uiIcon('doc')}${t('rem.idChange.completedTitle')}</div>
         <div class="muted" style="font-size:12px;margin-top:2px;">${t('rem.idChange.handledBy')} ${escapeHtml(req.handledBy||'—')}</div>
       </div>
       <div style="text-align:right;">
@@ -6254,7 +6263,7 @@ function updateImportSheetSelectionUI(){
         <span class="pill ${detectedType==='postpaid'?'pill-blue':'pill-orange'}">${typeLabel}</span>
       </div>
       <div class="muted" style="font-size:12px;margin-top:4px;">${rows.length} ${t('io.rows')} · ${LANG==='zh'?'第':'row'} ${headerIdx+1} ${LANG==='zh'?'行为标题行':'used as header row'}</div>
-      ${!sampleHasName ? `<div style="color:#C0392B;font-size:12px;margin-top:4px;">⚠ ${LANG==='zh'?'未找到姓名列，此表格可能不会新增客户':"Couldn't find a name column — this sheet may add nothing"}</div>` : ''}
+      ${!sampleHasName ? `<div style="color:#C0392B;font-size:12px;margin-top:4px;" class="ic-title">${uiIcon('warn')}${LANG==='zh'?'未找到姓名列，此表格可能不会新增客户':"Couldn't find a name column — this sheet may add nothing"}</div>` : ''}
     </div>`;
   }).join('');
   document.getElementById('importModalOverlay').classList.add('show');
@@ -6333,8 +6342,8 @@ function showImportPreview(rows){
   if(!sampleHasName){
     warnEl.style.display = '';
     warnEl.textContent = LANG==='zh'
-      ? '⚠ 未能在此标题行中找到客户姓名列，导入可能不会新增任何客户。请检查上方「标题行」是否正确，或换一个表格 (Sheet)。'
-      : "⚠ Couldn't find a customer-name column using this header row — import may add nothing. Check the header row number above, or try a different sheet.";
+      ? '未能在此标题行中找到客户姓名列，导入可能不会新增任何客户。请检查上方「标题行」是否正确，或换一个表格 (Sheet)。'
+      : "Couldn't find a customer-name column using this header row — import may add nothing. Check the header row number above, or try a different sheet.";
   } else {
     warnEl.style.display = 'none';
   }
@@ -6438,8 +6447,8 @@ function updateImportSkipDupesUI(){
       : 'Rows matching an existing customer (by name or phone) are skipped, not added — but their prepaid/postpaid tag will still be corrected if wrong';
   } else {
     hint.textContent = LANG==='zh'
-      ? '⚠ 不会检查重复，文件中每一行都会作为新客户导入，即使姓名或电话已存在'
-      : '⚠ No duplicate check — every row will be imported as a new customer, even if the name or phone already exists';
+      ? '不会检查重复，文件中每一行都会作为新客户导入，即使姓名或电话已存在'
+      : 'No duplicate check — every row will be imported as a new customer, even if the name or phone already exists';
   }
 }
 document.querySelectorAll('input[name="importMode"]').forEach(el=> el.addEventListener('change', updateImportSkipDupesUI));
@@ -6695,6 +6704,7 @@ function toYYMMDD(isoDate){
   return m[1].slice(2)+m[2]+m[3];
 }
 function resolveMergeValue(key, customer, service, customText){
+  if(!key) return ''; // a field with no data chosen yet prints blank instead of breaking the preview
   if(key==='custom.text') return customText || '';
   if(key==='store.name') return '365Himobile';
   if(key==='today.date') return todayISO();

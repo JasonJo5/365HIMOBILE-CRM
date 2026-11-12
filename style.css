@@ -1254,3 +1254,21 @@ html[data-theme="dark"] .io-sync-pill.ok{background:rgba(11,122,94,.2)}
 .danger-input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(180,35,24,.15)}
 .danger-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .danger-actions .btn-danger[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ================= Line icons that replaced the emoji ================= */
+.ui-ic{display:inline-flex;align-items:center;justify-content:center;width:1.1em;height:1.1em;vertical-align:-.17em;margin-right:.35em;flex:none}
+.ui-ic svg,.ui-ic-svg{width:100%;height:100%}
+.btn .ui-ic-svg{width:15px;height:15px;margin-right:6px;vertical-align:-3px}
+.copy-name-btn .ui-ic{margin:0;width:14px;height:14px}
+.copy-name-btn-lg .ui-ic{width:17px;height:17px}
+.ic-title{display:flex;align-items:center;gap:0}
+.ic-title .ui-ic{width:16px;height:16px;margin-right:8px}
+.pill-frozen{background:#DBEAFE;color:#1D4ED8;margin-left:4px;display:inline-flex;align-items:center}
+.pill-frozen .ui-ic{width:12px;height:12px;margin-right:4px}
+html[data-theme="dark"] .pill-frozen{background:rgba(37,99,235,.2);color:#93C5FD}
+.prio-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.menu-btn svg{width:22px;height:22px;display:block}
+#offlineBanner .ui-ic-svg{width:16px;height:16px;flex:none;vertical-align:-3px;margin-right:6px}
+.type-choice-icon .ui-ic-svg{width:34px;height:34px}
+#btnLogout{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+#btnLogout::before{content:"";width:15px;height:15px;background:currentColor;flex:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'/%3E%3C/svg%3E") center/contain no-repeat}
