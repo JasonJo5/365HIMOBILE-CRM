@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261112d">
+<link rel="stylesheet" href="style.css?v=20261112e">
 </head>
 <body>
 
@@ -82,28 +82,17 @@
     <div class="content">
       <!-- DASHBOARD -->
       <section class="page" id="page-dashboard">
-        <div class="card" style="margin-bottom:16px;">
+        <div class="card">
           <div class="dash-hero-txt"><h1 class="dh-h" id="dashHeroTitle"></h1></div>
           <div class="dash-hero-row">
-            <input class="search-input" id="dashQuickSearch" data-i18n-ph="dash.quickSearch" placeholder="🔍 快速搜索客户姓名、号码或证件号..." style="width:100%;" autocomplete="off">
+            <input class="search-input" id="dashQuickSearch" data-i18n-ph="dash.quickSearch" placeholder="快速搜索客户姓名、号码或证件号..." style="width:100%;" autocomplete="off">
           </div>
           <div id="dashQuickSearchResults"></div>
           <div id="dashTodayStrip" class="dash-today"></div>
         </div>
-        <div id="dashDupeBanner" style="display:none;margin-bottom:16px;"></div>
-        <div class="grid-4" id="dashStats" style="margin-bottom:16px;"></div>
-        <div class="grid-4" id="dashStats2" style="margin-bottom:16px;"></div>
-        <div class="card" style="margin-bottom:16px;">
-          <div class="section-head">
-            <div>
-              <div class="section-title" data-i18n="dash.paymentToday.title">今日付款方式汇总（先付）</div>
-              <div class="section-desc" data-i18n="dash.paymentToday.desc">今日各付款方式的客户数与收入合计</div>
-            </div>
-            <a class="link" data-nav="reports" data-i18n="dash.viewall">查看全部 →</a>
-          </div>
-          <div id="dashPaymentToday" style="margin-top:10px;"></div>
-        </div>
-        <div class="grid-2">
+        <div id="dashDupeBanner" style="display:none;"></div>
+        <div class="dash-kpis" id="dashStats"></div>
+        <div class="dash-row dash-row-wide">
           <div class="card">
             <div class="section-head">
               <div>
@@ -117,18 +106,36 @@
           <div class="card">
             <div class="section-head">
               <div>
-                <div class="section-title" data-i18n="dash.overview.title">业务概览</div>
-                <div class="section-desc" data-i18n="dash.overview.desc">本月开通类型</div>
+                <div class="section-title" id="dashOppTitle"></div>
+                <div class="section-desc" id="dashOppDesc"></div>
               </div>
+              <a class="link" data-nav="ai" data-i18n="dash.viewall">查看全部 →</a>
             </div>
-            <div class="donut-wrap">
-              <svg class="donut" viewBox="0 0 42 42" id="donutSvg"></svg>
-              <div class="legend" id="donutLegend"></div>
-            </div>
+            <div id="dashOpportunities"></div>
           </div>
         </div>
-
-        <div class="grid-2" style="margin-top:16px;">
+        <div class="dash-row dash-row-wide">
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <div class="section-title" id="dashTrendTitle"></div>
+                <div class="section-desc" id="dashTrendDesc"></div>
+              </div>
+              <a class="link" data-nav="reports" data-i18n="dash.viewall">查看全部 →</a>
+            </div>
+            <div id="dashRevenueTrend" style="margin-top:6px;"></div>
+          </div>
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <div class="section-title" data-i18n="dash.paymentToday.title">今日付款方式汇总（先付）</div>
+                <div class="section-desc" data-i18n="dash.paymentToday.desc">今日各付款方式的客户数与收入合计</div>
+              </div>
+            </div>
+            <div id="dashPaymentToday" style="margin-top:10px;"></div>
+          </div>
+        </div>
+        <div class="dash-row">
           <div class="card">
             <div class="section-head">
               <div>
@@ -150,19 +157,7 @@
             <div id="dashWinback"></div>
           </div>
         </div>
-
-        <div class="grid-2" style="margin-top:16px;">
-          <div class="card">
-            <div class="section-title" data-i18n="dash.revenueTrend.title">营收趋势（近6个月）</div>
-            <div id="dashRevenueTrend" style="margin-top:14px;"></div>
-          </div>
-          <div class="card">
-            <div class="section-title" data-i18n="dash.cancelReasons.title">取消原因分布</div>
-            <div id="dashCancelReasons" style="margin-top:14px;"></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
+        <div class="card dash-block">
           <div class="section-head">
             <div>
               <div class="section-title" data-i18n="dash.recent.title">最近新增客户</div>
@@ -180,8 +175,11 @@
             </table>
           </div>
         </div>
-
-        <div class="grid-2" style="margin-top:16px;">
+        <div class="dash-row dash-row-3">
+          <div class="card">
+            <div class="section-title" data-i18n="dash.cancelReasons.title">取消原因分布</div>
+            <div id="dashCancelReasons" style="margin-top:14px;"></div>
+          </div>
           <div class="card">
             <div class="section-title" data-i18n="dash.nationality.title">客户国籍分布</div>
             <div id="chartNationality" style="margin-top:14px;"></div>
@@ -319,7 +317,7 @@
             </div>
             
           </div>
-          <div class="chip-tabs" id="reminderTabs" style="margin:14px 0 16px;"></div>
+          <div class="rem-nav" id="reminderTabs"></div>
           <div id="reminderExpiringFilter" style="display:none;flex-direction:column;gap:10px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <label class="muted" style="font-size:12.5px;" data-i18n="rem.expiring.signedUpIn">签约月份</label>
@@ -1091,6 +1089,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261112d"></script>
+<script src="script.js?v=20261112e"></script>
 </body>
 </html>

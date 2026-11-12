@@ -53,7 +53,7 @@ const I18N = {
     'btn.changeToPostpaid':'转为后付卡','btn.changePlan':'变更套餐','btn.cancelSubscription':'取消订阅','btn.startNewSubscription':'开通新订阅','btn.confirmChange':'确认变更','btn.confirmCancel':'确认取消订阅','btn.back':'返回','btn.undoCancel':'恢复订阅 Reactivate',
     'btn.recharge':'充值续约','btn.changeToPrepaid':'转为先付卡','btn.confirmRecharge':'确认充值',
     'dash.greeting':'早上好，店长','dash.followup.title':'今天要跟进','dash.followup.desc':'优先联系即将到期的客户','dash.viewall':'查看全部 →','dash.overview.title':'业务概览','dash.overview.desc':'本月开通类型','dash.recent.title':'最近新增客户','dash.recent.desc':'快速确认新开的号码与套餐','dash.customerlist':'客户列表 →','dash.nationality.title':'客户国籍分布','dash.referral.title':'客户来源分布','dash.paymentToday.title':'今日付款方式汇总（先付）','dash.paymentToday.desc':'今日各付款方式的客户数与收入合计',
-    'dash.quickSearch':'🔍 快速搜索客户姓名、号码或证件号...','dash.noMatches':'没有找到匹配的客户','dash.dupeBanner':'发现 {groups} 组重复客户（共 {n} 位），建议检查并合并','dash.dupeBannerBtn':'立即查看','dash.renewals.title':'合约即将到期（30天内）','dash.renewals.desc':'后付卡合约即将到期，建议提前联系续约','dash.renewals.emptyTitle':'近期没有合约到期 👍','dash.renewals.emptyDesc':'未来30天内没有后付卡合约到期','dash.winback.title':'流失客户 / 待挽回','dash.winback.desc':'已取消订阅、尚未重新开通的客户','dash.winback.emptyTitle':'暂无流失客户','dash.winback.emptyDesc':'所有曾经订阅过的客户目前都有有效订阅','dash.revenueTrend.title':'营收趋势（近6个月）','dash.cancelReasons.title':'取消原因分布','dash.noCancellations':'近6个月内没有取消记录 👍',
+    'dash.quickSearch':'快速搜索客户姓名、号码或证件号...','dash.noMatches':'没有找到匹配的客户','dash.dupeBanner':'发现 {groups} 组重复客户（共 {n} 位），建议检查并合并','dash.dupeBannerBtn':'立即查看','dash.renewals.title':'合约即将到期（30天内）','dash.renewals.desc':'后付卡合约即将到期，建议提前联系续约','dash.renewals.emptyTitle':'近期没有合约到期 👍','dash.renewals.emptyDesc':'未来30天内没有后付卡合约到期','dash.winback.title':'流失客户 / 待挽回','dash.winback.desc':'已取消订阅、尚未重新开通的客户','dash.winback.emptyTitle':'暂无流失客户','dash.winback.emptyDesc':'所有曾经订阅过的客户目前都有有效订阅','dash.revenueTrend.title':'营收趋势（近6个月）','dash.cancelReasons.title':'取消原因分布','dash.noCancellations':'近6个月内没有取消记录 👍',
     'stat.totalCustomers':'客户总数','stat.newThisMonth':'本月新开通','stat.followup7':'7天内需跟进','stat.revenueMonth':'本月实收','stat.fromRecords':'来自现有先付 / 后付记录','stat.vsLastMonth':'较上月','stat.includesExpiry':'包含到期与首月入账','stat.expiringSoon':'即将到期客户','stat.infoChangeNeeded':'需信息变更客户',
     'stat.activePrepaid':'当前先付卡客户','stat.activePostpaid':'当前后付卡客户','stat.activeBook':'目前有效订阅','stat.outstanding':'未收总额','stat.outstandingSub':'所有有效及近期订单','stat.renewalsSoon':'即将到期合约','stat.renewalsSub':'30天内到期（后付卡）','stat.newActivity':'较上月新增',
     'col.customer':'客户','col.number':'号码','col.service':'业务','col.carrier':'通信社','col.activated':'开通日期','col.status':'状态','col.contact':'联系方式','col.phoneNumber':'电话号码','col.nationality':'国籍','col.id':'证件','col.subType':'开通方式','col.currentNumber':'当前号码','col.recentActivity':'最近业务','col.rating':'评分','col.serviceType':'业务类型','col.plan':'套餐','col.amount':'金额','col.outstanding':'欠款','col.month':'月份','col.orders':'订单数','col.revenue':'营收','col.cost':'成本','col.profit':'利润','col.outstandingTotal':'未收合计','col.dupeReason':'重复原因','col.contractStatus':'合约状态',
@@ -153,7 +153,7 @@ const I18N = {
     'btn.changeToPostpaid':'Change to Postpaid','btn.changePlan':'Change Plan','btn.cancelSubscription':'Cancel Subscription','btn.startNewSubscription':'＋ Start New Subscription','btn.confirmChange':'Confirm Change','btn.confirmCancel':'Confirm Cancellation','btn.back':'Back','btn.undoCancel':'Reactivate',
     'btn.recharge':'Recharge','btn.changeToPrepaid':'Change to Prepaid','btn.confirmRecharge':'Confirm Recharge',
     'dash.greeting':'Good morning, Manager','dash.followup.title':"Today's follow-ups",'dash.followup.desc':'Reach out to customers expiring soon','dash.viewall':'View all →','dash.overview.title':'Service overview','dash.overview.desc':'Activations this month','dash.recent.title':'Recently added customers','dash.recent.desc':'Confirm newly activated numbers and plans','dash.customerlist':'Customer list →','dash.nationality.title':'Customers by nationality','dash.referral.title':'Customers by referral source','dash.paymentToday.title':"Today's payment method breakdown (prepaid)",'dash.paymentToday.desc':'Customer count and income total per payment method today',
-    'dash.quickSearch':'🔍 Quick search by name, phone, or ID...','dash.noMatches':'No matching customers found','dash.dupeBanner':'Found {groups} duplicate groups ({n} customers total) — worth reviewing and merging','dash.dupeBannerBtn':'Review now','dash.renewals.title':'Contracts ending soon (30 days)','dash.renewals.desc':'Postpaid contracts nearing renewal — reach out ahead of time','dash.renewals.emptyTitle':'No contracts ending soon 👍','dash.renewals.emptyDesc':'No postpaid contracts due for renewal in the next 30 days','dash.winback.title':'Cancelled / win-back opportunities','dash.winback.desc':'Customers who cancelled and haven\'t restarted','dash.winback.emptyTitle':'No lapsed customers','dash.winback.emptyDesc':'Everyone who ever subscribed currently has an active plan','dash.revenueTrend.title':'Revenue trend (last 6 months)','dash.cancelReasons.title':'Cancellation reasons','dash.noCancellations':'No cancellations in the last 6 months 👍',
+    'dash.quickSearch':'Quick search by name, phone, or ID...','dash.noMatches':'No matching customers found','dash.dupeBanner':'Found {groups} duplicate groups ({n} customers total) — worth reviewing and merging','dash.dupeBannerBtn':'Review now','dash.renewals.title':'Contracts ending soon (30 days)','dash.renewals.desc':'Postpaid contracts nearing renewal — reach out ahead of time','dash.renewals.emptyTitle':'No contracts ending soon 👍','dash.renewals.emptyDesc':'No postpaid contracts due for renewal in the next 30 days','dash.winback.title':'Cancelled / win-back opportunities','dash.winback.desc':'Customers who cancelled and haven\'t restarted','dash.winback.emptyTitle':'No lapsed customers','dash.winback.emptyDesc':'Everyone who ever subscribed currently has an active plan','dash.revenueTrend.title':'Revenue trend (last 6 months)','dash.cancelReasons.title':'Cancellation reasons','dash.noCancellations':'No cancellations in the last 6 months 👍',
     'stat.totalCustomers':'Total customers','stat.newThisMonth':'New this month','stat.followup7':'Due within 7 days','stat.revenueMonth':'Revenue this month','stat.fromRecords':'From existing prepaid / postpaid records','stat.vsLastMonth':'vs last month','stat.includesExpiry':'Includes expiries & first-month payments','stat.expiringSoon':'Expiring soon','stat.infoChangeNeeded':'Need info change',
     'stat.activePrepaid':'Active prepaid','stat.activePostpaid':'Active postpaid','stat.activeBook':'Currently active','stat.outstanding':'Outstanding total','stat.outstandingSub':'Across active & recent orders','stat.renewalsSoon':'Contracts renewing soon','stat.renewalsSub':'Postpaid, due within 30 days','stat.newActivity':'New vs last month',
     'col.customer':'Customer','col.number':'Number','col.service':'Service','col.carrier':'Carrier','col.activated':'Activated','col.status':'Status','col.contact':'Contact','col.phoneNumber':'Phone number','col.nationality':'Nationality','col.id':'ID','col.subType':'Subscription','col.currentNumber':'Current number','col.recentActivity':'Recent activity','col.rating':'Rating','col.serviceType':'Service type','col.plan':'Plan','col.amount':'Amount','col.outstanding':'Outstanding','col.month':'Month','col.orders':'Orders','col.revenue':'Revenue','col.cost':'Cost','col.profit':'Profit','col.outstandingTotal':'Total outstanding','col.dupeReason':'Match reason','col.contractStatus':'Contract status',
@@ -2493,142 +2493,103 @@ function populateStaticSelects(){
 function renderDashboard(){
   const custs = DB.customers;
   const svcs = DB.services;
-  const now = new Date();
-  const monthStr = localMonthKey(0);
-  const lastMonthStr = localMonthKey(-1);
+  const zh = LANG==='zh';
 
   // postpaid over-contract has its own calm tab and must never count as "due" here
   const reminders = buildReminders().filter(r=>r.uiStatus==='pending' && r.type!=='contract_end');
-  const due7 = reminders.filter(r=>{ const b = remBucket(r); return b==='today' || b==='week'; });
-  const overdue30 = reminders.filter(r=>remBucket(r)==='overdue');
 
-  // "New this month" — counts customers with ANY service activated this month, not just
-  // customers whose record was first created this month. A recharge or a plan-type change
-  // (prepaid<->postpaid) creates a genuinely new service that day just as much as a brand
-  // new signup does, and should count as "new business today/this month" the same way.
-  const custsActivatedInMonth = (monthStr, type) => {
-    const ids = new Set(svcs.filter(s=> s.activationDate && s.activationDate.slice(0,7)===monthStr && (!type || s.type===type)).map(s=>s.customerId));
-    return custs.filter(c=> ids.has(c.id)).length;
-  };
-  const newThisMonth = custsActivatedInMonth(monthStr);
-  const newLastMonth = custsActivatedInMonth(lastMonthStr);
-  const newDelta = computeDelta(newThisMonth, newLastMonth);
+  // ---- fair month comparison: this month so far vs the SAME days of last month
+  // (comparing a half-finished month against a whole one always looked like a big drop)
+  const today = todayISO(), dayOfMonth = Number(today.slice(8,10));
+  const monthStr = localMonthKey(0), lastMonthStr = localMonthKey(-1);
+  const lastMonthDays = new Date(Number(lastMonthStr.slice(0,4)), Number(lastMonthStr.slice(5,7)), 0).getDate();
+  const lastMonthCut = lastMonthStr+'-'+pad2(Math.min(dayOfMonth, lastMonthDays));
+  const inThisMonth = s=> s.activationDate && s.activationDate.slice(0,7)===monthStr && s.activationDate<=today;
+  const inLastMonthSoFar = s=> s.activationDate && s.activationDate.slice(0,7)===lastMonthStr && s.activationDate<=lastMonthCut;
+  const revOf = list=> list.reduce((a,s)=>a+totalRevenueFor(s),0);
+  const thisSvcs = svcs.filter(inThisMonth), lastSvcs = svcs.filter(inLastMonthSoFar);
+  const monthRevenue = revOf(thisSvcs), lastRevenue = revOf(lastSvcs);
+  const revPre = revOf(thisSvcs.filter(s=>s.type!=='postpaid')), revPost = revOf(thisSvcs.filter(s=>s.type==='postpaid'));
+  // "new this month" = customers with any plan activated this month (signups, recharges, switches)
+  const custIds = list=> new Set(list.map(s=>s.customerId).filter(id=>getCustomer(id)));
+  const newIds = custIds(thisSvcs), newLastIds = custIds(lastSvcs);
+  const newPre = [...newIds].filter(id=>(getCustomer(id).subType||'prepaid')==='prepaid').length;
+  const vsLabel = zh ? '较上月同期' : 'vs same days last month';
+  const deltaHtml = d => d.na ? `<span class="muted">${zh?'上月同期无数据':'no data for last month yet'}</span>`
+    : (d.isNew ? `<span class="up">${t('stat.newActivity')}</span>` : `<span class="${d.up?'up':'down'}">${d.up?'↑':'↓'} ${d.pct}%</span> ${vsLabel}`);
 
-  // real revenue this month vs last month
-  const monthRevenue = svcs.filter(s=>s.activationDate && s.activationDate.slice(0,7)===monthStr).reduce((a,s)=>a+totalRevenueFor(s),0);
-  const lastMonthRevenue = svcs.filter(s=>s.activationDate && s.activationDate.slice(0,7)===lastMonthStr).reduce((a,s)=>a+totalRevenueFor(s),0);
-  const revDelta = computeDelta(monthRevenue, lastMonthRevenue);
-
-  // the greeting itself lives in the banner below — the header just names the page
-  document.getElementById('pageTitle').textContent = LANG==='zh' ? '仪表盘' : 'Dashboard';
+  document.getElementById('pageTitle').textContent = zh ? '仪表盘' : 'Dashboard';
   const heroTitle = document.getElementById('dashHeroTitle');
-  if(heroTitle) heroTitle.innerHTML = `${escapeHtml(dashGreetingText())} <span class="dh-count">· ${LANG==='zh' ? '共 '+DB.customers.length+' 位客户' : DB.customers.length+' customers'}</span>`;
-  document.getElementById('pageSub').textContent = new Date().toLocaleDateString(LANG==='zh'?'zh-CN':'en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  if(heroTitle) heroTitle.innerHTML = `${escapeHtml(dashGreetingText())} <span class="dh-count">· ${zh ? '共 '+custs.length+' 位客户' : custs.length+' customers'}</span>`;
+  document.getElementById('pageSub').textContent = new Date().toLocaleDateString(zh?'zh-CN':'en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
-  const deltaHtml = d => d.na ? '' : (d.isNew ? `<span class="up">${t('stat.newActivity')}</span>` : `<span class="${d.up?'up':'down'}">${d.up?'↑':'↓'} ${d.pct}%</span> ${t('stat.vsLastMonth')}`);
-  // total + new-this-month are clickable — show a prepaid/postpaid breakdown popover
-  const totalPrepaid = custs.filter(c=>(c.subType||'prepaid')==='prepaid').length;
-  const totalPostpaid = custs.filter(c=>c.subType==='postpaid').length;
-  const newThisMonthCustomerIds = new Set(svcs.filter(s=> s.activationDate && s.activationDate.slice(0,7)===monthStr).map(s=>s.customerId));
-  // Partition by each customer's CURRENT type, not "did they have any service of this type
-  // activated this month" — a customer who both recharged prepaid and converted to postpaid
-  // in the same month would otherwise get counted in both categories, making the breakdown
-  // sum to more than the actual total shown above it (found via a real report: a customer
-  // with both a prepaid and postpaid transaction the same month showed as 87 + 15 = 102 in
-  // the breakdown while the total correctly read 101 unique customers).
-  const newThisMonthPrepaid = custs.filter(c=> newThisMonthCustomerIds.has(c.id) && (c.subType||'prepaid')==='prepaid').length;
-  const newThisMonthPostpaid = custs.filter(c=> newThisMonthCustomerIds.has(c.id) && c.subType==='postpaid').length;
-  const stats = [
-    {label:t('stat.totalCustomers'), value:custs.length, sub:t('stat.fromRecords'), deltaHtml:null, breakdown:{prepaid:totalPrepaid, postpaid:totalPostpaid}},
-    {label:t('stat.newThisMonth'), value:newThisMonth, deltaHtml:deltaHtml(newDelta), breakdown:{prepaid:newThisMonthPrepaid, postpaid:newThisMonthPostpaid}},
-    {label:LANG==='zh'?'今天和本周到期':'Due today & this week', value:due7.length, sub:(LANG==='zh'?`另有 ${overdue30.length} 个已逾期（30天内）`:`plus ${overdue30.length} overdue (last 30 days)`), deltaHtml:null, orange:true},
-    {label:t('stat.revenueMonth'), value:fmtWon(monthRevenue), deltaHtml:deltaHtml(revDelta)},
-  ];
-  document.getElementById('dashStats').innerHTML = stats.map((s,i)=>`
-    <div class="card stat-card" ${s.breakdown?`style="cursor:pointer;" data-stat-breakdown="${i}"`:''}>
-      <div class="stat-label">${s.label}</div>
-      <div class="stat-value" style="${s.orange?'color:var(--orange)':''}">${s.value}</div>
-      <div class="stat-delta">${s.deltaHtml || s.sub || ''}</div>
-    </div>`).join('');
-  document.querySelectorAll('[data-stat-breakdown]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const s = stats[Number(el.dataset.statBreakdown)];
-      const pop = document.getElementById('statBreakdownPopover');
-      document.getElementById('statBreakdownTitle').textContent = s.label;
-      document.getElementById('statBreakdownBody').innerHTML = `
-        <div style="display:flex;justify-content:space-between;gap:20px;padding:6px 4px;">
-          <span class="pill pill-orange">${t('opt.prepaidShort')}</span><b>${s.breakdown.prepaid}</b>
-        </div>
-        <div style="display:flex;justify-content:space-between;gap:20px;padding:6px 4px;">
-          <span class="pill pill-blue">${t('opt.postpaidShort')}</span><b>${s.breakdown.postpaid}</b>
-        </div>`;
-      const rect = el.getBoundingClientRect();
-      pop.style.left = rect.left+'px';
-      pop.style.top = (rect.bottom+6)+'px';
-      pop.style.display = 'block';
-    });
-  });
-
-  // second stats row: active book composition, money at risk, renewals coming up
-  const activePrepaid = custs.filter(c=>{ const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid'; }).length;
-  const activePostpaid = custs.filter(c=>{ const a=activeSubscriptionFor(c.id); return a && a.type==='postpaid'; }).length;
+  // ---- 4 key figures
+  let activePre = 0, activePost = 0;
+  custs.forEach(c=>{ const a = activeSubscriptionFor(c.id); if(a && a.type==='prepaid') activePre++; else if(a && a.type==='postpaid') activePost++; });
+  const unpaidCusts = new Set(svcs.filter(s=>unpaidOf(s)>0).map(s=>s.customerId));
   const outstandingTotal = svcs.reduce((a,s)=>a+unpaidOf(s),0);
-  const renewalsSoon = getUpcomingRenewals(30);
-  const stats2 = [
-    {label:t('stat.activePrepaid'), value:activePrepaid, sub:t('stat.activeBook'), color:'var(--orange)', go:'sheet:prepaid'},
-    {label:t('stat.activePostpaid'), value:activePostpaid, sub:t('stat.activeBook'), color:'var(--blue)', go:'sheet:postpaid'},
-    {label:t('stat.outstanding'), value:fmtWon(outstandingTotal), sub:t('stat.outstandingSub'), color: outstandingTotal>0?'var(--red)':'inherit', go:'sheet:all:unpaid'},
-    {label:t('stat.renewalsSoon'), value:renewalsSoon.length, sub:t('stat.renewalsSub'), color:'var(--orange)', go:'rem:postpaidContract'},
+  const kpis = [
+    {label:t('stat.revenueMonth'), value:fmtWon(monthRevenue), sub:deltaHtml(computeDelta(monthRevenue, lastRevenue)),
+     foot: `${t('opt.prepaidShort')} ${fmtWonShort(revPre)} · ${t('opt.postpaidShort')} ${fmtWonShort(revPost)}`, go:'reports', icon:'<path d="M12 6v12M9 9.5c0-1 1-1.8 3-1.8s3 .8 3 1.8-1 1.5-3 2-3 1-3 2 1 1.8 3 1.8 3-.8 3-1.8M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>', tone:'green'},
+    {label:t('stat.newThisMonth'), value:newIds.size, sub:deltaHtml(computeDelta(newIds.size, newLastIds.size)),
+     foot: `${newPre} ${t('opt.prepaidShort')} · ${newIds.size-newPre} ${t('opt.postpaidShort')}`, go:'sheet:all', icon:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6"/>', tone:'blue'},
+    {label: zh?'在用客户':'Active customers', value: activePre+activePost, sub:`<span class="muted">${zh?'当前有有效套餐':'with a plan running now'}</span>`,
+     foot: `${activePre} ${t('opt.prepaidShort')} · ${activePost} ${t('opt.postpaidShort')}`, go:'sheet:all', icon:'<path d="M5 12l5 5 9-10"/>', tone:'violet'},
+    {label:t('stat.outstanding'), value:fmtWon(outstandingTotal), sub:`<span class="muted">${zh?`${unpaidCusts.size} 位客户未付清`:`${unpaidCusts.size} customer${unpaidCusts.size===1?'':'s'} with a balance`}</span>`,
+     foot: zh?'点击查看名单':'Click to see who', go:'sheet:all:unpaid', icon:'<path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', tone: outstandingTotal>0?'red':'gray'},
   ];
-  document.getElementById('dashStats2').innerHTML = stats2.map(s=>`
-    <div class="card stat-card stat-link" data-dash-go="${s.go}" title="${LANG==='zh'?'点击查看列表':'Click to see the list'}">
-      <div class="stat-label">${s.label}</div>
-      <div class="stat-value" style="color:${s.color||'inherit'}">${s.value}</div>
-      <div class="stat-delta">${s.sub}</div>
-    </div>`).join('');
-  // today's prepaid payment method breakdown — same logic and layout as the Daily Report's
-  // version, kept right on the dashboard so it's something you glance at each morning
-  // instead of something you have to go looking for in Reports
-  const todayPrepaid = svcs.filter(s=>s.type==='prepaid' && s.activationDate===todayISO());
-  document.querySelectorAll('#dashStats2 [data-dash-go]').forEach(card=> card.addEventListener('click', ()=>{
+  const kSvg = p=> `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+  document.getElementById('dashStats').innerHTML = kpis.map(k=>`
+    <button type="button" class="card dash-kpi tone-${k.tone}" data-dash-go="${k.go}">
+      <span class="dash-kpi-top"><span class="dash-kpi-label">${k.label}</span><span class="dash-kpi-ic">${kSvg(k.icon)}</span></span>
+      <span class="dash-kpi-value">${k.value}</span>
+      <span class="dash-kpi-delta">${k.sub}</span>
+      <span class="dash-kpi-foot">${k.foot}</span>
+    </button>`).join('');
+  document.querySelectorAll('#dashStats [data-dash-go]').forEach(card=> card.addEventListener('click', ()=>{
     const [where, tab, sort] = card.dataset.dashGo.split(':');
-    if(where==='rem'){ reminderTab = tab; goTo('reminders'); return; }
-    sheetTypeTab = tab;
+    if(where==='reports'){ goTo('reports'); return; }
+    sheetTypeTab = tab || 'all';
     const so = document.getElementById('sheetSortOrder'); if(so) so.value = sort || '';
     goTo('sheet');
   }));
-  document.getElementById('dashPaymentToday').innerHTML = paymentBreakdownHtml(todayPrepaid,
-    LANG==='zh'?'今天还没有先付记录':'No prepaid signups yet today');
 
-  // duplicate customers nudge banner
+  // ---- duplicate customers: a calm notice, not an alarm
   const dupeGroups = getDuplicateGroups();
   const dupeBanner = document.getElementById('dashDupeBanner');
   if(dupeGroups.length){
     dupeBanner.style.display = '';
     const n = dupeGroups.reduce((a,g)=>a+g.length,0);
-    dupeBanner.innerHTML = `<div class="alert-banner">
-      <div class="alert-banner-text">⚠️ ${t('dash.dupeBanner').replace('{groups}',dupeGroups.length).replace('{n}',n)}</div>
-      <button class="btn btn-primary" id="dashDupeBannerBtn">${t('dash.dupeBannerBtn')}</button>
+    const txt = zh ? `发现 ${dupeGroups.length} 组可能重复的客户（共 ${n} 位）`
+                   : `${dupeGroups.length} possible duplicate${dupeGroups.length===1?'':'s'} found (${n} customer profiles) — worth a quick check`;
+    dupeBanner.innerHTML = `<div class="dash-notice">
+      <span class="dash-notice-ic">${kSvg('<circle cx="9" cy="8" r="3.5"/><circle cx="16" cy="9" r="3"/><path d="M3 20c.8-3.3 3.2-5 6-5s5.2 1.7 6 5M15 15c2.5 0 4.6 1.4 5.5 4"/>')}</span>
+      <span class="dash-notice-txt">${escapeHtml(txt)}</span>
+      <button class="btn btn-sm btn-ghost" id="dashDupeBannerBtn">${t('dash.dupeBannerBtn')}</button>
     </div>`;
     document.getElementById('dashDupeBannerBtn').addEventListener('click', ()=>{ sheetTypeTab='dupes'; goTo('sheet'); });
-  } else {
-    dupeBanner.style.display = 'none';
-  }
+  } else dupeBanner.style.display = 'none';
 
-  // followups list (top 4)
+  // ---- today's follow-ups (top 5) and the hero tiles
   const prio = {today:0, overdue:1, week:2};
-  const top = reminders.filter(r=> prio[remBucket(r)]!==undefined)
-    .sort((a,b)=> prio[remBucket(a)]-prio[remBucket(b)] || (remBucket(a)==='overdue' ? b.daysLeft-a.daysLeft : a.daysLeft-b.daysLeft))
-    .slice(0,4);
+  const due = reminders.filter(r=> prio[remBucket(r)]!==undefined)
+    .sort((a,b)=> prio[remBucket(a)]-prio[remBucket(b)] || (remBucket(a)==='overdue' ? b.daysLeft-a.daysLeft : a.daysLeft-b.daysLeft));
+  const renewalsSoon = getUpcomingRenewals(30);
   renderDashTodayStrip(reminders, renewalsSoon);
-  document.getElementById('dashFollowups').innerHTML = top.length? top.map(r=>renderFollowRow(r)).join('') : emptyState();
+  document.getElementById('dashFollowups').innerHTML = due.length
+    ? due.slice(0,5).map(r=>renderFollowRow(r)).join('') + (due.length>5 ? `<a class="dash-more" data-nav="reminders">${zh?`还有 ${due.length-5} 项 →`:`+ ${due.length-5} more →`}</a>` : '')
+    : emptyState();
 
-  // service overview: prepaid vs postpaid activations this month — kept to just these two
-  // categories (not every raw transaction type) since that's the actual question this widget
-  // should answer clearly, matching how the rest of the app is organized around this split
-  const byType = {};
-  svcs.filter(s=>s.activationDate && s.activationDate.slice(0,7)===monthStr && (s.type==='prepaid'||s.type==='postpaid')).forEach(s=>{ byType[s.type]=(byType[s.type]||0)+1; });
-  renderDonut(byType);
+  // ---- opportunities preview (AI Insights groups)
+  renderDashOpportunities();
+
+  // ---- revenue trend, prepaid + postpaid stacked
+  document.getElementById('dashTrendTitle').textContent = zh ? '营收趋势' : 'Revenue trend';
+  document.getElementById('dashTrendDesc').textContent = zh ? '近6个月 · 先付与后付' : 'Last 6 months · prepaid and postpaid';
+  renderRevenueTrend();
+
+  document.getElementById('dashPaymentToday').innerHTML = paymentBreakdownHtml(svcs.filter(s=>s.type==='prepaid' && s.activationDate===today),
+    zh?'今天还没有先付记录':'No prepaid signups yet today');
 
   // contract renewals (postpaid ending within 30 days)
   renderContractRenewals(renewalsSoon);
@@ -2664,6 +2625,20 @@ function renderDashboard(){
   bindRowOpens();
 }
 
+/* Dashboard: the AI Insights groups at a glance — click one to open that list */
+function renderDashOpportunities(){
+  const el = document.getElementById('dashOpportunities'); if(!el || typeof aiAllGroups!=='function') return;
+  document.getElementById('dashOppTitle').textContent = LANG==='zh' ? '商机' : 'Opportunities';
+  document.getElementById('dashOppDesc').textContent = LANG==='zh' ? '来自 AI 洞察 · 尚未联系的客户' : 'From AI Insights · not contacted yet';
+  const groups = aiAllGroups();
+  el.innerHTML = AI_GROUPS.map(g=>{
+    const n = groups[g.key].filter(x=>{ const ci = aiContactInfo(g.key, x.service); return !(ci && ci.quiet); }).length;
+    return `<button type="button" class="dash-opp${n?'':' zero'}" data-dash-opp="${g.key}" style="--ac:${g.color};--acbg:${g.bg};">
+      <span class="dash-opp-ic">${aiSvg(g.icon)}</span><span class="dash-opp-l">${escapeHtml(aiT('g_'+g.key))}</span><b>${n}</b><span class="dash-opp-go">→</span>
+    </button>`;
+  }).join('');
+  el.querySelectorAll('[data-dash-opp]').forEach(b=> b.addEventListener('click', ()=>{ aiGroup = b.dataset.dashOpp; goTo('ai'); }));
+}
 /* postpaid customers whose active subscription expires within `days` days */
 function getUpcomingRenewals(days){
   return DB.customers.map(c=>({c, svc:activeSubscriptionFor(c.id)}))
@@ -2681,7 +2656,7 @@ function renderContractRenewals(list){
         <div class="mini-row-name">${escapeHtml(c.name)}</div>
         <div class="mini-row-sub">${escapeHtml(svc.plan||svc.carrier||'')} · ${fmtDate(svc.expiryDate)}</div>
       </div>
-      <span class="pill ${daysLeft<=7?'pill-red':'pill-orange'}">${daysLeft} ${t('detail.days')}</span>
+      <span class="pill ${daysLeft<=7?'pill-red':'pill-orange'}">${oneDay(daysLeft+' '+t('detail.days'))}</span>
     </div>`).join('');
   bindRowOpens();
 }
@@ -2722,10 +2697,14 @@ function renderRevenueTrend(){
     months.push(localMonthKey(-i));
   }
   const cur = localMonthKey(0);
+  const pre = LANG==='zh'?'先付':'Prepaid', post = LANG==='zh'?'后付':'Postpaid';
   renderColumnChart('dashRevenueTrend', months.map(m=>{
-    const total = DB.services.filter(s=>s.activationDate && s.activationDate.slice(0,7)===m).reduce((a,s)=>a+totalRevenueFor(s),0);
-    return {label: shortMonthLabel(m), total, current: m===cur, segments:[{v:total, color: m===cur ? 'var(--orange)' : 'var(--blue)', name:''}]};
-  }));
+    const inM = DB.services.filter(s=>s.activationDate && s.activationDate.slice(0,7)===m);
+    const vPre = inM.filter(s=>s.type!=='postpaid').reduce((a,s)=>a+totalRevenueFor(s),0);
+    const vPost = inM.filter(s=>s.type==='postpaid').reduce((a,s)=>a+totalRevenueFor(s),0);
+    return {label: shortMonthLabel(m), total: vPre+vPost, current: m===cur,
+            segments:[{v:vPre, color:'var(--blue)', name:pre}, {v:vPost, color:'#8B5CF6', name:post}]};
+  }), {legend:[{name:pre, color:'var(--blue)'}, {name:post, color:'#8B5CF6'}]});
 }
 
 /* why customers have cancelled, last 6 months of ended subscriptions */
@@ -2770,6 +2749,8 @@ function renderDashQuickSearchResults(query){
   });
 }
 document.getElementById('dashQuickSearch').addEventListener('input', e=> renderDashQuickSearchResults(e.target.value.trim()));
+/* English "1 days" → "1 day" */
+function oneDay(txt){ return LANG==='zh' ? txt : String(txt).replace(/^(-?1) days\b/, '$1 day'); }
 function emptyState(){ return `<div class="empty-state"><b>${t('rem.empty.title')}</b>${t('rem.empty.desc')}</div>`; }
 
 function dateBadgeParts(dueDate){
@@ -2778,7 +2759,7 @@ function dateBadgeParts(dueDate){
 }
 function renderFollowRow(r){
   const c = getCustomer(r.customerId);
-  const dtxt = r.daysLeft<0 ? `${Math.abs(r.daysLeft)} ${t('rem.overdue')}` : (r.daysLeft===0? t('rem.today') : `${r.daysLeft} ${t('rem.dueIn')}`);
+  const dtxt = oneDay(r.daysLeft<0 ? `${Math.abs(r.daysLeft)} ${t('rem.overdue')}` : (r.daysLeft===0? t('rem.today') : `${r.daysLeft} ${t('rem.dueIn')}`));
   const {month, day} = dateBadgeParts(r.dueDate);
   return `<div class="service-card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" data-open-customer="${c?c.id:''}">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -2793,23 +2774,6 @@ function renderFollowRow(r){
     </div>
     <span class="pill pill-orange">${dtxt}</span>
   </div>`;
-}
-
-function renderDonut(byType){
-  const colors = {prepaid:'#2F6FED',postpaid:'#7C5CFC',porting:'#1FA971',transfer:'#E8833A',topup:'#3DC1D3',cancel:'#E5484D'};
-  const entries = Object.entries(byType);
-  const total = entries.reduce((a,[,v])=>a+v,0);
-  const svg = document.getElementById('donutSvg');
-  if(total===0){ svg.innerHTML=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="#EDEFF4" stroke-width="6"/>`; document.getElementById('donutLegend').innerHTML=`<div class="muted">—</div>`; return; }
-  let offset = 0;
-  let circles = '';
-  entries.forEach(([k,v])=>{
-    const pct = (v/total)*100;
-    circles += `<circle cx="21" cy="21" r="15.9" fill="none" stroke="${colors[k]||'#ccc'}" stroke-width="6" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="${-offset}" transform="rotate(-90 21 21)"/>`;
-    offset += pct;
-  });
-  svg.innerHTML = circles + `<text x="21" y="19" text-anchor="middle" font-size="7" font-weight="800" fill="#1B2340">${total}</text><text x="21" y="26" text-anchor="middle" font-size="3.6" fill="#8A93A6">${LANG==='zh'?'笔':'orders'}</text>`;
-  document.getElementById('donutLegend').innerHTML = entries.map(([k,v])=>`<div class="legend-item"><span class="dot" style="background:${colors[k]||'#ccc'}"></span>${t('type.'+k)}&nbsp;<b>${v}</b></div>`).join('');
 }
 
 function groupCount(arr, field, labelFn){
@@ -5285,26 +5249,68 @@ function renderDashTodayStrip(reminders, renewalsSoon){
     strip.querySelectorAll('[data-today-tab]').forEach(b=> b.addEventListener('click', ()=>{ reminderTab = b.dataset.todayTab; goTo('reminders'); }));
   }
 }
+/* Ready-to-send text for a reminder (Chinese for Chinese customers, English otherwise) */
+function reminderMessage(r, c){
+  const zh = /CHINA|中国|CHN/i.test(c.nationality||''), name = c.name||'';
+  const svc = DB.services.find(s=>s.id===r.serviceId) || {};
+  const date = r.dueDate ? fmtDateHuman(r.dueDate) : '';
+  if(r.type==='payment') return zh
+    ? `${name}您好，这里是365 Hi Mobile。提醒您，您的${svc.plan||''}套餐还有款项未付清。欢迎到店或回复此短信，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. A friendly reminder that the payment for your ${svc.plan||''} plan is still outstanding. Please visit us or reply to this message. Thank you!`;
+  if(r.type==='info_change'){
+    if(c.idType==='Passport') return zh
+      ? `${name}您好，这里是365 Hi Mobile。您的手机号目前以护照登记。拿到外国人登记证（ARC）后，请到店更新登记信息，谢谢！`
+      : `Hi ${name}, this is 365 Hi Mobile. Your number is registered with your passport. Once you have your Residence Card (ARC), please visit us to update your registration. Thank you!`;
+    return zh
+      ? `${name}您好，这里是365 Hi Mobile。请抽空到店更新您手机号的登记信息，谢谢！`
+      : `Hi ${name}, this is 365 Hi Mobile. Please visit us when you can to update the registration details on your number. Thank you!`;
+  }
+  if(r.daysLeft<0) return zh
+    ? `${name}您好，这里是365 Hi Mobile。您的套餐已于${date}到期，请尽快续费以保留号码。欢迎到店或回复此短信办理，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Your plan ended on ${date}. Recharge now to keep your number active. Please visit us or reply to renew. Thank you!`;
+  return zh
+    ? `${name}您好，这里是365 Hi Mobile。您的套餐将于${date}到期，请在到期前续费以保留号码。欢迎到店或回复此短信办理，谢谢！`
+    : `Hi ${name}, this is 365 Hi Mobile. Your plan ends on ${date}. Recharge before then to keep your number active. Please visit us or reply to renew. Thank you!`;
+}
+const REM_ICON = {
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+  msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  recharge:'<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2M10 10l-2 2h4l-2 2"/>',
+  check:'<path d="M5 12l5 5 9-10"/>',
+  reopen:'<path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  print:'<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z"/>'
+};
+function remSvg(k){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${REM_ICON[k]}</svg>`; }
 function renderReminders(){
-  const all = buildReminders().filter(r=>r.type!=='contract_end'); // postpaid contract status gets its own tab below — see why there
-  const cohortAll = getPrepaidCohortList(); // unfiltered — used only for the tab's count badge
+  const zh = LANG==='zh';
+  const all = buildReminders().filter(r=>r.type!=='contract_end'); // postpaid contract status gets its own list below
+  const cohortAll = getPrepaidCohortList(); // unfiltered — used only for the list's count
   const postpaidContractAll = getPostpaidContractList();
   const idChangeAll = getPendingIdChangeRequests();
   const nb = k => all.filter(r=>remBucket(r)===k).length;
-  const tabs = [
-    {key:'today', label:'rem.tab.today', n:nb('today')},
+  // two clearly separate groups: time-based follow-ups, and standing lists
+  const followTabs = [
+    {key:'today', label:'rem.tab.today', n:nb('today'), hot:true},
     {key:'week', label:'rem.tab.week', n:nb('week')},
-    {key:'overdue', label:'rem.tab.overdue', n:nb('overdue')},
+    {key:'overdue', label:'rem.tab.overdue', n:nb('overdue'), warn:true},
     {key:'all', label:'rem.tab.all', n:all.filter(r=>{ const b=remBucket(r); return b!=='done' && b!=='old'; }).length},
-    {key:'old', label:'rem.tab.old', n:nb('old')},
+  ];
+  const listTabs = [
     {key:'expiring', label:'rem.tab.expiring', n:cohortAll.length},
     {key:'postpaidContract', label:'rem.tab.postpaidContract', n:postpaidContractAll.length},
     {key:'idChange', label:'rem.tab.idChange', n:idChangeAll.length},
     {key:'infochange', label:'rem.tab.infochange', n:all.filter(r=>r.type==='info_change' && r.uiStatus!=='completed').length},
+  ];
+  const archTabs = [
+    {key:'old', label:'rem.tab.old', n:nb('old')},
     {key:'done', label:'rem.tab.done', n:all.filter(r=>r.uiStatus==='completed').length},
   ];
-  document.getElementById('reminderTabs').innerHTML = tabs.map(tb=>`<button class="chip-tab ${reminderTab===tb.key?'active':''}" data-tab="${tb.key}">${t(tb.label)} <span class="n">${tb.n}</span></button>`).join('');
-  document.querySelectorAll('[data-tab]').forEach(b=> b.addEventListener('click', ()=>{ reminderTab=b.dataset.tab; renderReminders(); }));
+  const chip = tb=> `<button class="rem-tab ${reminderTab===tb.key?'on':''} ${tb.hot&&tb.n?'hot':''} ${tb.warn&&tb.n?'warn':''}" data-tab="${tb.key}">${t(tb.label)} <span class="n">${tb.n}</span></button>`;
+  document.getElementById('reminderTabs').innerHTML = `
+    <div class="rem-nav-group"><span class="rem-nav-label">${zh?'跟进':'Follow-ups'}</span><div class="rem-seg">${followTabs.map(chip).join('')}</div></div>
+    <div class="rem-nav-group"><span class="rem-nav-label">${zh?'名单':'Lists'}</span><div class="rem-lists">${listTabs.map(chip).join('')}</div></div>
+    <div class="rem-nav-arch">${archTabs.map(tb=>`<button class="rem-arch ${reminderTab===tb.key?'on':''}" data-tab="${tb.key}">${t(tb.label)} · ${tb.n}</button>`).join('')}</div>`;
+  document.querySelectorAll('#reminderTabs [data-tab]').forEach(b=> b.addEventListener('click', ()=>{ reminderTab=b.dataset.tab; renderReminders(); }));
 
   const filterBox = document.getElementById('reminderExpiringFilter');
   filterBox.style.display = reminderTab==='expiring' ? 'flex' : 'none';
@@ -5321,39 +5327,40 @@ function renderReminders(){
   if(reminderTab==='overdue' || reminderTab==='old') list = [...list].sort((x,y)=> y.daysLeft - x.daysLeft);
 
   document.getElementById('reminderList').innerHTML = list.length ? list.map(r=>{
-    const c = getCustomer(r.customerId);
-    const dtxt = r.daysLeft<0 ? `${Math.abs(r.daysLeft)} ${t('rem.overdue')}` : (r.daysLeft===0? t('rem.today') : `${r.daysLeft} ${t('rem.dueIn')}`);
+    const c = getCustomer(r.customerId); if(!c) return '';
+    const dtxt = oneDay(r.daysLeft<0 ? `${Math.abs(r.daysLeft)} ${t('rem.overdue')}` : (r.daysLeft===0? t('rem.today') : `${r.daysLeft} ${t('rem.dueIn')}`));
     const {month, day} = dateBadgeParts(r.dueDate);
     const accent = r.daysLeft<=0 ? '#DC2626' : (r.daysLeft<=7 ? '#EA580C' : '#94A3B8');
-    return `<div class="rem-row" style="--accent:${accent};">
+    const done = r.uiStatus==='completed';
+    const canRecharge = !done && r.type==='expiry' && activeSubscriptionFor(c.id)?.type==='prepaid';
+    return `<div class="rem-row rem-item${done?' done':''}" style="--accent:${accent};" data-open-customer="${c.id}">
       <div class="rem-row-date">
-        <div class="rem-row-date-month">${month}${LANG==='zh'?'月':'/'}</div>
+        <div class="rem-row-date-month">${month}${zh?'月':'/'}</div>
         <div class="rem-row-date-day" style="color:${accent}">${day}</div>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:700;cursor:pointer;" data-open-customer="${c?c.id:''}">${c?escapeHtml(c.name):''} <span class="pill pill-blue" style="margin-left:4px;">${t('rem.type.'+r.type)}</span></div>
-        <div class="muted" style="font-size:12px;">${escapeHtml(r.sub||'')} · ${c?escapeHtml(c.phone||''):''}</div>
+      <div class="rem-main">
+        <div class="rem-name">${escapeHtml(c.name)} <span class="rem-type t-${r.type}">${t('rem.type.'+r.type)}</span></div>
+        <div class="rem-sub">${escapeHtml(r.sub||'')}${c.phone?` · ${escapeHtml(c.phone)}`:''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex:0 0 auto;">
-        <span class="pill ${r.daysLeft<=0?'pill-red':'pill-orange'}">${dtxt}</span>
-        ${c && c.phone ? `<button class="btn btn-sm btn-ghost rem-quick" data-rem-copy="${escapeHtml(c.phone)}" title="${t('rem.copyNumber')}">📋 ${t('rem.copyNumber')}</button>` : ''}
-        ${c && r.uiStatus!=='completed' && r.type==='expiry' && activeSubscriptionFor(c.id)?.type==='prepaid' ? `<button class="btn btn-sm btn-ghost rem-quick" data-rem-recharge="${c.id}">🔋 ${t('btn.recharge')}</button>` : ''}
-        ${c ? `<button class="btn btn-sm btn-ghost rem-quick" data-open-customer="${c.id}">${t('rem.profile')}</button>` : ''}
-        ${r.uiStatus==='completed'
-          ? `<span class="pill pill-green">${t('status.completed')}</span>`
-          : `<button class="btn btn-sm btn-ghost" data-rem-followup="${r.id}">${t('btn.followUpAgain')}</button><button class="btn btn-sm btn-primary" data-rem-done="${r.id}">${t('btn.complete')}</button>`
-        }
+      <span class="pill ${done?'pill-green':(r.daysLeft<=0?'pill-red':'pill-orange')} rem-when">${done ? t('status.completed') : dtxt}</span>
+      <div class="rem-act">
+        ${c.phone ? `<button class="btn btn-sm btn-ghost rem-ic" data-rem-copy="${escapeHtml(c.phone)}" title="${t('rem.copyNumber')}" aria-label="${t('rem.copyNumber')}">${remSvg('phone')}</button>` : ''}
+        <button class="btn btn-sm btn-ghost rem-ic" data-rem-msg="${r.id}" title="${escapeHtml((zh?'复制短信':'Copy message')+':\n\n'+reminderMessage(r, c))}" aria-label="${zh?'复制短信':'Copy message'}">${remSvg('msg')}</button>
+        ${canRecharge ? `<button class="btn btn-sm btn-ghost" data-rem-recharge="${c.id}">${remSvg('recharge')}<span>${t('btn.recharge')}</span></button>` : ''}
+        ${done
+          ? `<button class="btn btn-sm btn-ghost" data-rem-followup="${r.id}">${remSvg('reopen')}<span>${zh?'重新打开':'Reopen'}</span></button>`
+          : `<button class="btn btn-sm btn-primary" data-rem-done="${r.id}">${remSvg('check')}<span>${t('btn.complete')}</span></button>`}
       </div>
     </div>`;
   }).join('') : emptyState();
   bindRowOpens();
-  document.querySelectorAll('[data-rem-done]').forEach(b=> b.addEventListener('click', ()=>{ DB.reminderState[b.dataset.remDone]='completed'; saveDB(DB); toast(t('toast.reminderDone')); renderReminders(); renderNav(); }));
-  document.querySelectorAll('[data-rem-followup]').forEach(b=> b.addEventListener('click', ()=>{ DB.reminderState[b.dataset.remFollowup]='pending'; saveDB(DB); toast(t('toast.reminderFollowup')); renderReminders(); }));
-  document.querySelectorAll('[data-rem-copy]').forEach(b=> b.addEventListener('click', ()=>{
-    const v = b.dataset.remCopy;
-    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(()=>toast(t('rem.copied')+': '+v)).catch(()=>{ prompt(t('rem.copyNumber'), v); });
-  }));
-  document.querySelectorAll('[data-rem-recharge]').forEach(b=> b.addEventListener('click', ()=> openPrepaidAssignModal(b.dataset.remRecharge, 'recharge')));
+  const box = document.getElementById('reminderList'), byId = new Map(list.map(r=>[r.id, r]));
+  const stop = (sel, fn)=> box.querySelectorAll(sel).forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); fn(b); }));
+  stop('[data-rem-done]', b=>{ DB.reminderState[b.dataset.remDone]='completed'; saveDB(DB); toast(t('toast.reminderDone')); renderReminders(); renderNav(); });
+  stop('[data-rem-followup]', b=>{ DB.reminderState[b.dataset.remFollowup]='pending'; saveDB(DB); toast(t('toast.reminderFollowup')); renderReminders(); renderNav(); });
+  stop('[data-rem-copy]', b=> copyTextToClipboard(b.dataset.remCopy, t('rem.copied')+': '+b.dataset.remCopy));
+  stop('[data-rem-msg]', b=>{ const r = byId.get(b.dataset.remMsg), c = r && getCustomer(r.customerId); if(c) copyTextToClipboard(reminderMessage(r, c), zh?'短信已复制':'Message copied'); });
+  stop('[data-rem-recharge]', b=> openPrepaidAssignModal(b.dataset.remRecharge, 'recharge'));
 }
 /* The "Prepaid expiring" tab's own render path — deliberately separate from the generic
    reminder list above, since this works over every current prepaid subscription (not a
@@ -5480,8 +5487,8 @@ function renderIdChangeTab(list){
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex:0 0 auto;">
           <span class="pill ${daysPending>=7?'pill-red':(daysPending>=3?'pill-orange':'pill-blue')}">${daysPending} ${LANG==='zh'?'天':'days'}</span>
-          <button class="btn btn-sm btn-ghost" data-idchange-print="${c.id}">🖨 ${t('btn.print')}</button>
-          <button class="btn btn-sm btn-primary" data-idchange-complete="${c.id}">✓ ${t('btn.markComplete')}</button>
+          <button class="btn btn-sm btn-ghost rem-btn-ic" data-idchange-print="${c.id}">${remSvg('print')}<span>${t('btn.print')}</span></button>
+          <button class="btn btn-sm btn-primary rem-btn-ic" data-idchange-complete="${c.id}">${remSvg('check')}<span>${t('btn.markComplete')}</span></button>
         </div>
       </div>`;
     }).join('') : emptyState()}`;

@@ -164,6 +164,24 @@ def run(b):
     r = pg.evaluate("(()=>{const c=DB.customers.find(c=>c.name==='CI NEW POSTPAID'); const s=c&&activeSubscriptionFor(c.id); return s&&[s.plan,s.durationDays]})()")
     check("new postpaid customer is saved with its plan", r == ["5G EASY L", 365], r)
 
+    print("Dashboard and Reminders")
+    pg.evaluate("closeAllModals(); goTo('dashboard')"); pg.wait_for_timeout(400)
+    check("dashboard shows 4 key figures", pg.locator("#dashStats .dash-kpi").count() == 4)
+    check("revenue is compared with the same days last month", "same days last month" in pg.inner_text("#dashStats") or "no data" in pg.inner_text("#dashStats") or "New vs" in pg.inner_text("#dashStats"))
+    pg.click("[data-dash-opp=u19]"); pg.wait_for_timeout(400)
+    check("an opportunity on the dashboard opens that AI Insights list", pg.evaluate("currentPage==='ai' && aiGroup==='u19'"))
+    pg.evaluate("reminderTab='all'; goTo('reminders')"); pg.wait_for_timeout(300)
+    rid = pg.evaluate("document.querySelector('#reminderList [data-rem-done]')?.dataset.remDone")
+    if rid:
+        pg.click(f"#reminderList [data-rem-done='{rid}']"); pg.wait_for_timeout(200)
+        check("Complete marks a reminder done (and stays on the page)", pg.evaluate(f"DB.reminderState['{rid}']==='completed' && currentPage==='reminders'"))
+        pg.evaluate("reminderTab='done'; renderReminders()"); pg.wait_for_timeout(200)
+        pg.click(f"#reminderList [data-rem-followup='{rid}']"); pg.wait_for_timeout(200)
+        check("Reopen puts it back", pg.evaluate(f"DB.reminderState['{rid}']==='pending'"))
+    for tab in ("today", "week", "overdue", "all", "expiring", "postpaidContract", "idChange", "infochange", "old", "done"):
+        pg.evaluate(f"reminderTab='{tab}'; renderReminders()"); pg.wait_for_timeout(60)
+    check("every Reminders tab opens", not errs, errs[:3])
+
     print("AI Insights")
     pg.evaluate("closeAllModals(); goTo('ai')"); pg.wait_for_timeout(400)
     n_before = pg.evaluate("Number(document.getElementById('aiListCount').textContent)")
