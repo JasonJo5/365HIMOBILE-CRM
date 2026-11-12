@@ -7579,6 +7579,36 @@ document.getElementById('btnPushSync').addEventListener('click', async ()=>{
    on whatever default it was saved with when the actual method wasn't known yet at signup
    time. Requires typing the exact record count to confirm, since this touches many records
    at once and there's no per-record undo for a bulk change like this. */
+/* Danger zone: the action runs only after typing the confirmation word exactly. */
+const DANGER_WORD = '365HIMOBILE';
+function confirmDanger(opts){
+  return new Promise(resolve=>{
+    const zh = LANG==='zh';
+    const back = document.createElement('div'); back.className = 'danger-back';
+    back.innerHTML = `<div class="danger-box" role="dialog" aria-modal="true">
+      <div class="danger-box-head"><span class="io-danger-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span><b></b></div>
+      <p class="danger-msg"></p>
+      ${opts.details ? '<div class="danger-details"></div>' : ''}
+      <label class="danger-label">${zh ? '请输入 <code>'+DANGER_WORD+'</code> 以确认' : 'Type <code>'+DANGER_WORD+'</code> to confirm'}</label>
+      <input class="danger-input" autocomplete="off" spellcheck="false" placeholder="${DANGER_WORD}">
+      <div class="danger-actions"><button type="button" class="btn btn-ghost" data-x>${zh?'取消':'Cancel'}</button><button type="button" class="btn btn-danger" data-ok disabled></button></div>
+    </div>`;
+    back.querySelector('b').textContent = opts.title;
+    back.querySelector('.danger-msg').textContent = opts.message;
+    if(opts.details) back.querySelector('.danger-details').textContent = opts.details;
+    const ok = back.querySelector('[data-ok]'), inp = back.querySelector('.danger-input');
+    ok.textContent = opts.button || (zh?'确认':'Confirm');
+    const close = v=>{ document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); };
+    const onKey = e=>{ if(e.key==='Escape'){ e.stopPropagation(); close(false); } else if(e.key==='Enter' && !ok.disabled){ e.preventDefault(); close(true); } };
+    inp.addEventListener('input', ()=>{ ok.disabled = inp.value.trim() !== DANGER_WORD; });
+    back.querySelector('[data-x]').addEventListener('click', ()=> close(false));
+    back.addEventListener('click', e=>{ if(e.target===back) close(false); });
+    ok.addEventListener('click', ()=>{ if(!ok.disabled) close(true); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(back);
+    setTimeout(()=> inp.focus(), 30);
+  });
+}
 document.getElementById('btnBulkClearPayment').addEventListener('click', async ()=>{
   const monthVal = document.getElementById('bulkClearPaymentMonth').value; // "YYYY-MM"
   if(!monthVal){ toast(LANG==='zh'?'请先选择月份':'Please select a month first'); return; }
@@ -7597,15 +7627,13 @@ document.getElementById('btnBulkClearPayment').addEventListener('click', async (
   const monthLabel = new Date(monthVal+'-01').toLocaleDateString(LANG==='zh'?'zh-CN':'en-US', {year:'numeric', month:'long'});
   const names = affected.map(s=> getCustomer(s.customerId)?.name || '?');
   const namesPreview = names.length<=15 ? names.join(', ') : names.slice(0,15).join(', ')+(LANG==='zh'?` 等共${names.length}位`:` and ${names.length-15} more`);
-  const confirmMsg = LANG==='zh'
-    ? `将清空 ${monthLabel} 共 ${affected.length} 条记录的付款方式，此操作不可撤销。\n\n受影响客户：${namesPreview}\n\n请输入 ${affected.length} 以确认：`
-    : `This will clear the payment method on ${affected.length} record(s) from ${monthLabel}. This cannot be undone.\n\nAffected customers: ${namesPreview}\n\nType ${affected.length} to confirm:`;
-  const typed = prompt(confirmMsg);
-  if(typed === null) return; // cancelled
-  if(typed.trim() !== String(affected.length)){
-    toast(LANG==='zh'?'输入的数字不匹配，已取消操作':'Number didn\'t match — cancelled');
-    return;
-  }
+  const go = await confirmDanger({
+    title: LANG==='zh' ? '批量清空付款方式' : 'Clear payment methods',
+    message: LANG==='zh' ? `将清空 ${monthLabel} 共 ${affected.length} 条记录的付款方式，此操作不可撤销。` : `This clears the payment method on ${affected.length} record(s) from ${monthLabel}. This cannot be undone.`,
+    details: (LANG==='zh' ? '受影响客户：' : 'Affected customers: ') + namesPreview,
+    button: LANG==='zh' ? '清空付款方式' : 'Clear payment methods'
+  });
+  if(!go) return;
   affected.forEach(s=>{ s.paymentMethod = ''; });
   saveDB(DB);
   renderPage(currentPage);
@@ -7652,7 +7680,12 @@ document.getElementById('btnFormatData').addEventListener('click', async ()=>{
   const wipeMsg = LANG==='zh'
     ? `即将清空全部 ${DB.customers.length} 位客户及 ${DB.services.length} 条业务记录${syncOn?'，包括服务器上其他电脑共享的数据':''}。系统会先自动导出一份 Excel 备份，此操作无法撤销。是否继续？`
     : `This will permanently clear all ${DB.customers.length} customers and ${DB.services.length} service records${syncOn?', including the shared data on the server that other computers use':''}. A backup Excel file will be exported automatically first. This cannot be undone. Continue?`;
-  if(!confirm(wipeMsg)) return;
+  const go = await confirmDanger({
+    title: LANG==='zh' ? '清空全部数据' : 'Delete all data',
+    message: wipeMsg.replace(/ ?(是否继续？|Continue\?)$/, ''),
+    button: LANG==='zh' ? '清空全部数据' : 'Delete all data'
+  });
+  if(!go) return;
   // always back up first, no optional prompt — if the export itself fails, stop entirely
   // rather than risk wiping data with no copy of it anywhere
   try{
