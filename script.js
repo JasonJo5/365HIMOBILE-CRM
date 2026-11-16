@@ -109,7 +109,7 @@ const I18N = {
     'detail.contract':'合同 / 有效期','detail.remaining':'剩余','detail.days':'天','detail.usedOf':'已使用 / 总时长','detail.noServices':'该客户暂无业务记录','detail.services':'业务与号码记录','detail.profile':'客户资料',
     'detail.activeSubscription':'当前订阅','detail.noActiveSubscription':'暂无有效订阅','detail.planHistory':'套餐历史记录','detail.noHistory':'暂无历史记录','detail.otherRecords':'其他业务记录（携号转网 / 过户 / 充值等）','detail.currentPlan':'当前套餐',
     'f.cancelReason':'取消原因',
-    'reason.new':'新开通','reason.upgraded_to_postpaid':'升级为后付卡','reason.plan_change':'变更套餐','reason.cancelled':'客户不再续约','reason.switched_carrier':'转换其他通信社','reason.expired_natural':'自然到期','reason.other':'其他','reason.merged':'重复客户已合并','reason.recharge':'充值续约','reason.downgraded_to_prepaid':'转为先付卡',
+    'reason.new':'新开通','reason.upgraded_to_postpaid':'升级为后付卡','reason.plan_change':'变更套餐','reason.cancelled':'客户不再续约','reason.switched_carrier':'转换其他通信社','reason.expired_natural':'自然到期','reason.other':'其他','reason.merged':'重复客户已合并','reason.recharge':'充值续约','reason.extension':'三个月续期','reason.downgraded_to_prepaid':'转为先付卡',
     'ai.elig.noDob':'缺少出生日期，无法判断资格','ai.elig.ageOk':'已年满 {age} 岁，符合后付卡开通资格','ai.elig.turningAge':'{days} 天后年满19岁，即将符合资格','ai.elig.tooYoung':'目前 {age} 岁，未满19岁','ai.elig.alreadyPostpaid':'目前已是后付卡客户',
     'ai.elig.contractCompleted':'合约已到期 {days} 天，尚未处理','ai.elig.contractApproaching':'合约将在 {days} 天后到期','ai.elig.contractMid':'合约进行中，{days} 天后到期',
     'ai.elig.needsArc':'需持外国人登录证（ARC）才符合资格','ai.elig.missingIdNumber':'缺少证件号码，需核实','ai.elig.missingIdExpiry':'缺少证件有效期，需核实','ai.elig.idExpired':'证件已过期，需更新','ai.elig.idComplete':'证件信息完整有效',
@@ -209,7 +209,7 @@ const I18N = {
     'detail.contract':'Contract / validity','detail.remaining':'Remaining','detail.days':'days','detail.usedOf':'Used / total length','detail.noServices':'No service records yet','detail.services':'Services & numbers','detail.profile':'Profile',
     'detail.activeSubscription':'Active Subscription','detail.noActiveSubscription':'No active subscription','detail.planHistory':'Plan History','detail.noHistory':'No history yet','detail.otherRecords':'Other records (porting / ownership transfer / top-ups etc.)','detail.currentPlan':'Current plan',
     'f.cancelReason':'Cancellation reason',
-    'reason.new':'New subscription','reason.upgraded_to_postpaid':'Upgraded to postpaid','reason.plan_change':'Plan change','reason.cancelled':'Customer discontinued (not renewing)','reason.switched_carrier':'Switched carrier','reason.expired_natural':'Expired naturally','reason.other':'Other','reason.merged':'Merged duplicate record','reason.recharge':'Recharged','reason.downgraded_to_prepaid':'Changed to prepaid',
+    'reason.new':'New subscription','reason.upgraded_to_postpaid':'Upgraded to postpaid','reason.plan_change':'Plan change','reason.cancelled':'Customer discontinued (not renewing)','reason.switched_carrier':'Switched carrier','reason.expired_natural':'Expired naturally','reason.other':'Other','reason.merged':'Merged duplicate record','reason.recharge':'Recharged','reason.extension':'3-Month Extension','reason.downgraded_to_prepaid':'Changed to prepaid',
     'ai.elig.noDob':'Missing date of birth — can\'t determine eligibility','ai.elig.ageOk':'Already {age} years old — meets postpaid eligibility','ai.elig.turningAge':'Turns 19 in {days} days — approaching eligibility','ai.elig.tooYoung':'Currently {age} years old — under 19','ai.elig.alreadyPostpaid':'Already a postpaid customer',
     'ai.elig.contractCompleted':'Contract ended {days} days ago, not yet actioned','ai.elig.contractApproaching':'Contract ends in {days} days','ai.elig.contractMid':'Contract active, {days} days remaining',
     'ai.elig.needsArc':'Requires an Alien Registration Card (ARC) to be eligible','ai.elig.missingIdNumber':'Missing ID number — needs verification','ai.elig.missingIdExpiry':'Missing ID expiry date — needs verification','ai.elig.idExpired':'ID has expired — needs updating','ai.elig.idComplete':'ID information complete and valid',
@@ -4003,6 +4003,7 @@ const PF_ICON = {
 };
 const PF_BTN_ICON = {
   btnRecharge:'<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2M10 10l-2 2h4l-2 2"/>',
+  btnExtension:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>',
   swap:'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
   freeze:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>',
   btnCancelSub:'<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
@@ -4116,7 +4117,7 @@ function profileActivePlanHtml(s, c){
   const tile = (k,v,cls)=> `<div class="pf-tile${cls?' '+cls:''}"><b>${escapeHtml(__T(k))}</b><span>${escapeHtml(v)}</span></div>`;
   const tiles = (s.company||s.svcCarrierType||len) ? `<div class="pf-tiles">${
       (s.company?tile('Company', s.company):'') + (s.svcCarrierType?tile('Carrier type', s.svcCarrierType):'') +
-      (len?tile('Plan length', len[1], /^(m[123]|rc)$/.test(len[0])?len[0]:''):'')}</div>` : '';
+      (len?tile('Plan length', len[1], /^(m[123]|rc|ext)$/.test(len[0])?len[0]:''):'')}</div>` : '';
   // Recharge customers: which plan they had before
   let prev = '';
   if(tiles && len && len[0]==='rc'){
@@ -4228,6 +4229,11 @@ function openCustomerDetail(id){
   if(active && active.type==='prepaid'){
     actionButtons = `
       <button class="btn btn-primary" id="btnRecharge">${pfBtnIcon('btnRecharge')}${t('btn.recharge')}</button>
+      ${(()=>{ const ex = extensionInfo(c.id); if(!ex.show) return '';
+        const lab = LANG==='zh' ? '三个月续期' : '3-Month Extension';
+        return ex.eligible
+          ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?'同一号码再办一次3个月套餐（仅限一次）':'One more 3-month plan on the same number (one time only)'}">${pfBtnIcon('btnExtension')}${lab}</button>`
+          : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?'从第93天起可办理':'Available from day 93 of the 3-month plan'}">${pfBtnIcon('btnExtension')}${lab} · ${LANG==='zh'?fmtDateHuman(ex.from)+'起':'from '+fmtDateHuman(ex.from)}</button>`; })()}
       <button class="btn btn-ghost" id="btnChangeToPostpaid">${pfBtnIcon('swap')}${t('btn.changeToPostpaid')}</button>
       ${c.idType==='Passport' && !hasRealIdChangeRequest ? `<button class="btn btn-ghost" id="btnRequestIdChange">${pfBtnIcon('btnRequestIdChange')}${t('btn.requestIdChange')}</button>` : ''}
       <button class="btn btn-danger" id="btnCancelSub">${pfBtnIcon('btnCancelSub')}${t('btn.cancelSubscription')}</button>`;
@@ -4388,6 +4394,8 @@ function openCustomerDetail(id){
   if(btnChangePlan) btnChangePlan.addEventListener('click', ()=> openChangeSubModal(id, 'plan_change'));
   const btnRecharge = document.getElementById('btnRecharge');
   if(btnRecharge) btnRecharge.addEventListener('click', ()=> openPrepaidAssignModal(id, 'recharge'));
+  const btnExtension = document.getElementById('btnExtension');
+  if(btnExtension) btnExtension.addEventListener('click', ()=> openPrepaidAssignModal(id, 'extension'));
   const btnToPrepaid = document.getElementById('btnChangeToPrepaid');
   if(btnToPrepaid) btnToPrepaid.addEventListener('click', ()=> openPrepaidAssignModal(id, 'to_prepaid'));
   const btnCancelSub = document.getElementById('btnCancelSub');
@@ -4467,12 +4475,42 @@ function progressStateClass(s){
    bought with the Recharge button, or priced ₩36,000 / ₩36,300 (except SAFARBAYEV BERIK, who is a
    normal 1-month plan). Returns [cssClass, label] or null. Used by the profile, Sheet View and
    the Excel export, so all three always agree. */
+/* ---------------- 3-Month Extension ----------------
+   A customer on a 3-month (90-day) prepaid plan may take ONE more 3-month plan on the same
+   phone number, from day 93 of that plan (90 days + 3). Normally only monthly recharges are
+   possible after a plan ends. Worked out from the plan history itself (no extra field to
+   store or lose): a number that already has two 90-day prepaid plans has used its extension. */
+const EXTENSION_FROM_DAY = 93;
+const normNum = n=> String(n||'').replace(/[^0-9]/g,'');
+function is90(s){ return s && s.type==='prepaid' && Number(s.durationDays)>=85 && Number(s.durationDays)<=95; }
+function ninetyDayPlansOnNumber(customerId, number){
+  const cust = getCustomer(customerId), n = normNum(number || (cust && cust.phone));
+  return DB.services.filter(x=> x.customerId===customerId && is90(x) && x.changeReason!=='merged' &&
+    normNum(x.number || (cust && cust.phone))===n)
+    .sort((a,b)=> String(a.activationDate||'').localeCompare(String(b.activationDate||'')) || (a.endedSeq||0)-(b.endedSeq||0));
+}
+/* {show, eligible, from, used, plan} for the customer's current plan */
+function extensionInfo(customerId){
+  const cur = activeSubscriptionFor(customerId);
+  if(!is90(cur) || !cur.activationDate) return {show:false};
+  const plans = ninetyDayPlansOnNumber(customerId, cur.number);
+  if(plans.length >= 2) return {show:false, used:true};          // already extended once on this number
+  const from = addDaysISO(cur.activationDate, EXTENSION_FROM_DAY);
+  return {show:true, eligible: todayISO() >= from, from, plan:cur};
+}
+/* is this 90-day plan itself the extension (a later 90-day plan on the same number)? */
+function isExtensionPlan(s){
+  if(!is90(s)) return false;
+  const plans = ninetyDayPlansOnNumber(s.customerId, s.number);
+  return plans.length >= 2 && plans.indexOf(s) > 0;
+}
 function planLengthLabel(s){
   if(!s || s.type!=='prepaid') return null;
   const d = Number(s.durationDays); let n = null;
   if(d>=85&&d<=95) n=3; else if(d>=55&&d<=65) n=2; else if(d>=28&&d<=35) n=1;
   const zh = LANG==='zh';
   if(!n) return (d>=13&&d<=17) ? ['m0', zh?'15天':'15 days'] : null;
+  if(n===3 && isExtensionPlan(s)) return ['ext', zh?'三个月续期':'3-Month Extension'];
   const pr = Number(s.sellingPrice!=null ? s.sellingPrice : s.price);
   let cn = ''; try{ cn = ((getCustomer(s.customerId)||{}).name||'').toUpperCase(); }catch(e){}
   const rc = n===1 && (/recharge/i.test(s.changeReason||'') || ((pr===36000||pr===36300) && cn.indexOf('SAFARBAYEV BERIK')<0));
@@ -5136,13 +5174,21 @@ function openPrepaidAssignModal(customerId, mode){
   if(!cust) return;
   prepaidAssignCustomerId = customerId;
   prepaidAssignMode = mode;
-  document.getElementById('prepaidAssignModalTitle').textContent = mode==='recharge' ? t('btn.recharge') : t('btn.changeToPrepaid');
-  document.getElementById('savePrepaidAssignBtn').textContent = mode==='recharge' ? t('btn.confirmRecharge') : t('btn.confirmChange');
-  document.getElementById('prepaidAssignCurrentPlan').innerHTML = current
+  const zh = LANG==='zh', ext = mode==='extension';
+  if(ext){
+    const info = extensionInfo(customerId);
+    if(!info.show){ toast(zh?'该客户不符合三个月续期条件':'This customer can\'t take a 3-Month Extension'); return; }
+    if(!info.eligible){ toast(zh?`从 ${fmtDateHuman(info.from)} 起可办理`:`Available from ${fmtDateHuman(info.from)}`); return; }
+  }
+  document.getElementById('prepaidAssignModalTitle').textContent = ext ? (zh?'三个月续期':'3-Month Extension') : (mode==='recharge' ? t('btn.recharge') : t('btn.changeToPrepaid'));
+  document.getElementById('savePrepaidAssignBtn').textContent = ext ? (zh?'确认续期':'Confirm extension') : (mode==='recharge' ? t('btn.confirmRecharge') : t('btn.confirmChange'));
+  document.getElementById('prepaidAssignCurrentPlan').innerHTML = (current
     ? `${t('detail.currentPlan')}: <b>${planLabel(current)}</b>`
-    : `<i>${t('detail.noActiveSubscription')}</i>`;
+    : `<i>${t('detail.noActiveSubscription')}</i>`) + (ext ? `<div class="ext-note">${zh
+      ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码仅限一次，之后只能按月充值。`
+      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Allowed once per number — after this, only monthly recharges.`}</div>` : '');
 
-  const plansForMode = mode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS;
+  const plansForMode = ext ? PREPAID_PLANS.filter(p=>p.days===90) : (mode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS);
   renderPrepaidPlanTiles(String(plansForMode[0].days), 'pa_prepaidPlan_group', plansForMode);
   document.getElementById('pa_activationDate').value = todayISO();
   // carries over the same physical SIM by default (recharging usually means "keep using
@@ -5157,7 +5203,7 @@ function openPrepaidAssignModal(customerId, mode){
   document.getElementById('prepaidAssignModalOverlay').classList.add('show');
 }
 function updatePrepaidAssignPriceFromPlan(){
-  const plansForMode = prepaidAssignMode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS;
+  const plansForMode = prepaidAssignMode==='extension' ? PREPAID_PLANS.filter(p=>p.days===90) : (prepaidAssignMode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS);
   const days = Number(document.getElementById('pa_prepaidPlan_group').dataset.selected)||plansForMode[0].days;
   const plan = plansForMode.find(p=>p.days===days);
   document.getElementById('pa_price').value = plan ? plan.price : '';
@@ -5181,7 +5227,10 @@ document.getElementById('pa_prepaidPlan_group').addEventListener('click', ()=> s
 document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
   if(!prepaidAssignCustomerId) return;
   const cust = getCustomer(prepaidAssignCustomerId);
-  const durationDays = Number(document.getElementById('pa_prepaidPlan_group').dataset.selected)||90;
+  const ext = prepaidAssignMode==='extension';
+  const before = activeSubscriptionFor(prepaidAssignCustomerId);
+  if(ext){ const info = extensionInfo(prepaidAssignCustomerId); if(!info.show || !info.eligible){ toast(LANG==='zh'?'该客户不符合三个月续期条件':'This customer can\'t take a 3-Month Extension'); return; } }
+  const durationDays = ext ? 90 : (Number(document.getElementById('pa_prepaidPlan_group').dataset.selected)||90);
   const activationDate = document.getElementById('pa_activationDate').value || todayISO();
   const price = Number(document.getElementById('pa_price').value)||0;
   const discount = Number(document.getElementById('pa_discount').value)||0;
@@ -5192,8 +5241,9 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
     customerId: prepaidAssignCustomerId, type:'prepaid',
     carrier: document.getElementById('pa_svcCarrierType_group').dataset.selected || cust.carrierType,
     plan: durationDays===90 ? PREETI_FIXED_PLAN : (planInfo ? `${planInfo.days}일` : `${durationDays}일`),
-    number: cust.phone, usimNumber: document.getElementById('pa_usimNumber').value.trim(),
-    simType:'physical', activationDate, durationDays,
+    // an extension keeps the same number and the same kind of SIM (eSIM stays eSIM)
+    number: ext ? (before.number || cust.phone) : cust.phone, usimNumber: document.getElementById('pa_usimNumber').value.trim(),
+    simType: ext ? (before.simType || 'physical') : 'physical', activationDate, durationDays,
     expiryDate: d.toISOString().slice(0,10), status:'active',
     price, discount, sellingPrice:finalPrice, received:finalPrice, cost:0,
     monthlyFee:0, firstMonthPayment:0, activationFee:0, simFee:0, paymentMethod: document.getElementById('pa_paymentMethod_group').dataset.selected || '', commission:0,
@@ -5201,7 +5251,7 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
     company: document.getElementById('pa_company_group').dataset.selected || '',
     svcCarrierType: document.getElementById('pa_svcCarrierType_group').dataset.selected || '',
   };
-  const reason = prepaidAssignMode==='recharge' ? 'recharge' : 'downgraded_to_prepaid';
+  const reason = ext ? 'extension' : (prepaidAssignMode==='recharge' ? 'recharge' : 'downgraded_to_prepaid');
   setActiveSubscription(prepaidAssignCustomerId, svcData, reason);
   saveDB(DB);
   closeAllModals();
@@ -6030,7 +6080,7 @@ const POSTPAID_EXPORT_HEADERS = ['CUSTOMER','NATIONALITY','PHONE','DATE OF BIRTH
 function prepaidExportRow(c, s){
   const lab = planLengthLabel(s); // recharge plans are written as "Recharge" in PLAN TYPE (same rule as the CRM)
   return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', c.years||0,
-    c.handlerName||'', (lab && lab[0]==='rc') ? 'Recharge' : (c.planType||''), s.svcCarrierType||'', s.company||'',
+    c.handlerName||'', (lab && lab[0]==='rc') ? 'Recharge' : ((lab && lab[0]==='ext') ? '3-Month Extension' : (c.planType||'')), s.svcCarrierType||'', s.company||'',
     s.activationDate||'', s.expiryDate||'', s.durationDays||'', Number(s.price)||0, Number(s.discount)||0,
     Math.max(0,(Number(s.price)||0)-(Number(s.discount)||0)), s.paymentMethod||'', s.notes||''];
 }

@@ -229,6 +229,26 @@ def run(b):
         pg.click(f"[data-ai-group={g}]"); pg.wait_for_timeout(150)
     check("every AI group opens", not errs, errs[:3])
 
+    print("3-Month Extension")
+    pg.evaluate("closeAllModals()")
+    elig = pg.evaluate("DB.customers.map(c=>c.id).find(id=>extensionInfo(id).eligible)")
+    early = pg.evaluate("DB.customers.map(c=>c.id).find(id=>{const e=extensionInfo(id); return e.show && !e.eligible;})")
+    monthly = pg.evaluate("DB.customers.map(c=>c.id).find(id=>{const a=activeSubscriptionFor(id); return a && a.type==='prepaid' && a.durationDays===30;})")
+    check("test data has a customer on day 93+ of a 3-month plan", bool(elig))
+    if early:
+        pg.evaluate(f"openCustomerDetail('{early}')"); pg.wait_for_timeout(150)
+        check("before day 93 the extension button is shown but disabled", pg.is_disabled("#btnExtension"))
+    pg.evaluate(f"closeAllModals(); openCustomerDetail('{monthly}')"); pg.wait_for_timeout(150)
+    check("monthly-plan customers get no extension button", pg.locator("#btnExtension").count() == 0)
+    if elig:
+        before = pg.evaluate(f"(a=>({{num:a.number, sim:a.simType||'physical'}}))(activeSubscriptionFor('{elig}'))")
+        pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
+        pg.click("#btnExtension"); pg.wait_for_timeout(250); pg.click("#savePrepaidAssignBtn"); pg.wait_for_timeout(400)
+        after = pg.evaluate(f"(a=>({{num:a.number, sim:a.simType||'physical', days:a.durationDays, tag:(planLengthLabel(a)||[])[0]}}))(activeSubscriptionFor('{elig}'))")
+        check("the extension is a new 3-month plan on the same number and SIM type", after == {**before, "days":90, "tag":"ext"}, after)
+        pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
+        check("only one extension per number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
+
     print("Sheet View")
     pg.evaluate("closeAllModals(); goTo('sheet')"); pg.wait_for_timeout(300)
     total = pg.evaluate("document.querySelectorAll('#sheetTable tbody tr [data-open-customer]').length")
