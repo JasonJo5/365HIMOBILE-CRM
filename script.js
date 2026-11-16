@@ -5812,10 +5812,22 @@ function renderDailyReport(){
   const dayPostpaid = allSvcs.filter(s=>s.type==='postpaid' && s.activationDate===repSelectedDay)
     .sort((a,b)=> expectedIncomeFor(b)-expectedIncomeFor(a));
 
-  const custListHtml = (list, priceFn) => list.length ? list.map(s=>{
+  // which plan each sale was: prepaid → Recharge / 1-3 months / 3-Month Extension, postpaid → plan name
+  const planTagOf = s=>{
+    if(s.type==='prepaid'){ const l = planLengthLabel(s); return l ? `<span class="plan-tag ${l[0]}">${escapeHtml(l[1])}</span>` : (s.plan ? `<span class="plan-tag">${escapeHtml(s.plan)}</span>` : ''); }
+    return s.plan ? `<span class="plan-tag post">${escapeHtml(s.plan)}</span>` : '';
+  };
+  const planKeyOf = s=>{ if(s.type==='prepaid'){ const l = planLengthLabel(s); return l ? l[0]+'|'+l[1] : '|'+(s.plan||'—'); } return 'post|'+(s.plan||'—'); };
+  // a one-line count per plan above each list, e.g. "Recharge 1 month ×3 · 3 months ×2"
+  const planSummaryHtml = list=>{
+    if(!list.length) return '';
+    const m = new Map(); list.forEach(s=>{ const k = planKeyOf(s); m.set(k, (m.get(k)||0)+1); });
+    return `<div class="rep-plan-sum">${[...m.entries()].sort((a,b)=>b[1]-a[1]).map(([k,n])=>{ const [cls,txt] = k.split('|'); return `<span class="plan-tag ${cls}">${escapeHtml(txt)} <b>×${n}</b></span>`; }).join('')}</div>`;
+  };
+  const custListHtml = (list, priceFn) => list.length ? planSummaryHtml(list) + list.map(s=>{
     const c = getCustomer(s.customerId);
-    return `<div class="row-click" data-open-customer="${s.customerId}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);cursor:pointer;">
-      <div style="display:flex;align-items:center;gap:9px;"><span class="avatar" style="width:26px;height:26px;font-size:11px;">${initials(c?c.name:'?')}</span><span>${c?escapeHtml(c.name):'—'}</span></div>
+    return `<div class="row-click rep-day-row" data-open-customer="${s.customerId}">
+      <div class="rep-day-who"><span class="avatar" style="width:26px;height:26px;font-size:11px;">${initials(c?c.name:'?')}</span><span class="rep-day-name">${c?escapeHtml(c.name):'—'}</span>${planTagOf(s)}</div>
       <b>${fmtWon(priceFn(s))}</b>
     </div>`;
   }).join('') : `<div class="muted" style="padding:10px 4px;">${LANG==='zh'?'当天没有记录':'No signups this day'}</div>`;

@@ -203,6 +203,11 @@ def run(b):
     for v in opts[:4]:
         pg.select_option("#repMonthSelect", v); pg.wait_for_timeout(120)
     pg.click("[data-reportview=daily]"); pg.wait_for_timeout(200)
+    day = pg.evaluate("DB.services.find(s=>s.activationDate)?.activationDate")
+    pg.fill("#repDaySelect", day); pg.dispatch_event("#repDaySelect", "change"); pg.wait_for_timeout(200)
+    rows = pg.locator("#repDailyPrepaidList .rep-day-row, #repDailyPostpaidList .rep-day-row").count()
+    tagged = pg.locator("#repDailyPrepaidList .rep-day-row .plan-tag, #repDailyPostpaidList .rep-day-row .plan-tag").count()
+    check("daily report shows each sale's plan", rows > 0 and tagged == rows, (rows, tagged))
     check("Reports month and daily views work", not errs and pg.is_visible("#repDaySelect") and not pg.is_visible("#repMonthSelect"), errs[:3])
     pg.click("[data-reportview=monthly]"); pg.wait_for_timeout(100)
     pg.evaluate("goTo('io')"); pg.wait_for_timeout(300)
