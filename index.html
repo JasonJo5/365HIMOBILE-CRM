@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261116b">
+<link rel="stylesheet" href="style.css?v=20261116c">
 </head>
 <body>
 
@@ -638,6 +638,7 @@
               <div class="currency-input-wrap"><span class="currency-badge" id="p3_currencyBadge">₩</span><input id="p3_price" type="number" min="0"></div>
             </div>
             <div class="form-field"><label data-i18n="f.discount">折扣 Discount</label><input id="p3_discount" type="number" min="0" value="0"></div>
+            <div class="form-field"><label data-i18n="f.cardTax">税费（刷卡）Tax (card)</label><input id="p3_tax" type="number" min="0" value="0" placeholder="0"></div>
             <div class="form-field"><label data-i18n="f.finalPrice">最终价格 Final price</label><input id="p3_finalPricePreview" disabled></div>
             <div class="form-field"><label data-i18n="f.usimNumber">USIM 일련번호 USIM number</label><input id="p3_usimNumber" placeholder="USIM Serial Number"></div>
             <div class="form-field full"><label data-i18n="f.simType">SIM 类型</label><div class="tile-radio-group" id="p3_simType_group" data-field="simType"></div></div>
@@ -905,6 +906,7 @@
           <div class="currency-input-wrap"><span class="currency-badge" id="pa_currencyBadge">₩</span><input id="pa_price" type="number" min="0"></div>
         </div>
         <div class="form-field"><label data-i18n="f.discount">折扣 Discount</label><input id="pa_discount" type="number" min="0" value="0"></div>
+        <div class="form-field"><label data-i18n="f.cardTax">税费（刷卡）Tax (card)</label><input id="pa_tax" type="number" min="0" value="0" placeholder="0"></div>
         <div class="form-field"><label data-i18n="f.finalPrice">最终价格 Final price</label><input id="pa_finalPricePreview" disabled></div>
         <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pa_activationDate" type="date"></div>
         <div class="form-field"><label data-i18n="f.usimNumber">USIM 일련번호</label><input id="pa_usimNumber"></div>
@@ -1096,6 +1098,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261116b"></script>
+<script src="script.js?v=20261116c"></script>
 </body>
 </html>

@@ -74,7 +74,7 @@ const I18N = {
     'opt.prepaid':'先付卡（3个月充值）','opt.postpaid':'后付卡','opt.prepaidShort':'先付卡','opt.postpaidShort':'后付卡','prepaid3m.hint':'先付卡按充值月数计算，选择3个月时会自动套用프리티电信申请表；1/2个月请另外选择对应模板','prepaid3m.editHint':'修改该客户当前套餐的完整信息（不会新增历史记录，仅更正当前记录）','postpaidEdit.hint':'编辑该客户当前后付套餐的完整信息','postpaid.hint':'后付卡为按月合约，保存时会用下方选择的模板生成申请表（请先在「打印模板」页面上传后付卡运营商表格）',
     'plantype.new':'신규가입 新申请','plantype.mnp':'번호이동 携号转网','plantype.transfer':'명의변경 过户/名义变更','plantype.extend':'기간연장 有效期延长','plantype.convert':'선불전환 转为先付',
     'f.customer':'客户','f.serviceInfo':'业务信息','f.serviceType':'业务类型','f.planDuration':'套餐期限（月）','f.contractLength':'合约期限','f.carrier':'通信社 / MVNO','f.plan':'套餐名称','f.number':'电话号码','f.simType':'SIM 类型','f.activationDate':'开通日期','f.durationDays':'合同时长（天）','f.expiryDate':'到期日期','f.status':'办理状态','f.feeInfo':'费用信息','f.monthlyFee':'月租费','f.discount':'折扣','f.firstMonthPayment':'首月费用','f.activationFee':'开通费','f.simFee':'SIM 卡费','f.paymentInfo':'收款与利润','f.sellingPrice':'销售价','f.cost':'成本','f.received':'已收金额','f.paymentMethod':'付款方式','f.commission':'返点 / 提成',
-    'f.prepaidPlan':'充值套餐','f.price':'价格','f.discount':'折扣','f.finalPrice':'最终价格','f.usimNumber':'USIM 일련번호',
+    'f.prepaidPlan':'充值套餐','f.price':'价格','f.discount':'折扣','f.cardTax':'税费（刷卡）','f.finalPrice':'最终价格','f.usimNumber':'USIM 일련번호',
     'f.company':'가입회사 Company','f.partnerCompany':'파트너사 Partner company','f.svcCarrierType':'통신사 Carrier type','f.usedDays':'已使用天数 Used days','f.contactMethod':'联系方式','f.planOptions':'套餐选项',
     'f.monthlyPayment':'客户每月缴费 Monthly payment','f.monthlyPaymentHint':'客户支付给运营商的金额 · 仅作记录，不计入本店收入','detail.planInfo':'套餐信息','detail.storeIncome':'本店收入','detail.planStarted':'开通日期','detail.planEnds':'到期日期',
     'opt.physical':'实体卡',
@@ -174,7 +174,7 @@ const I18N = {
     'opt.prepaid':'Prepaid (3-month recharge, fixed)','opt.postpaid':'Postpaid','opt.prepaidShort':'Prepaid','opt.postpaidShort':'Postpaid','prepaid3m.hint':'Prepaid is billed by recharge months — choosing 3 months auto-applies the Preeti Telecom form; 1/2-month plans use whichever other template you select','prepaid3m.editHint':'Editing this customer\'s current plan in full (this corrects the existing record — it does not add a new history entry)','postpaidEdit.hint':'Editing this customer\'s current postpaid plan in full','postpaid.hint':'Postpaid is a monthly contract — saving will generate the application form using the template selected below (upload your postpaid carrier form in Print Templates first)',
     'plantype.new':'신규가입 New sign-up','plantype.mnp':'번호이동 Number port (MNP)','plantype.transfer':'명의변경 Ownership/name change','plantype.extend':'기간연장 Period extension','plantype.convert':'선불전환 Convert to prepaid',
     'f.customer':'Customer','f.serviceInfo':'Service details','f.serviceType':'Service type','f.planDuration':'Plan duration (months)','f.contractLength':'Contract length','f.carrier':'Carrier / MVNO','f.plan':'Plan name','f.number':'Phone number','f.simType':'SIM type','f.activationDate':'Activation date','f.durationDays':'Contract length (days)','f.expiryDate':'Expiry date','f.status':'Status','f.feeInfo':'Fee details','f.monthlyFee':'Monthly fee','f.discount':'Discount','f.firstMonthPayment':'First month payment','f.activationFee':'Activation fee','f.simFee':'SIM card fee','f.paymentInfo':'Payment & profit','f.sellingPrice':'Selling price','f.cost':'Cost','f.received':'Amount received','f.paymentMethod':'Payment method','f.commission':'Commission / rebate',
-    'f.prepaidPlan':'Plan','f.price':'Price','f.discount':'Discount','f.finalPrice':'Final price','f.usimNumber':'USIM serial number',
+    'f.prepaidPlan':'Plan','f.price':'Price','f.discount':'Discount','f.cardTax':'Tax (card)','f.finalPrice':'Final price','f.usimNumber':'USIM serial number',
     'f.company':'Company','f.partnerCompany':'Partner company','f.svcCarrierType':'Carrier type','f.usedDays':'Used days','f.contactMethod':'Contact method','f.planOptions':'Plan options',
     'f.monthlyPayment':'Monthly payment','f.monthlyPaymentHint':'What the customer pays the carrier · display only, not counted as store income','detail.planInfo':'Plan info','detail.storeIncome':'Store income','detail.planStarted':'Started','detail.planEnds':'Ends',
     'opt.physical':'Physical SIM',
@@ -3574,6 +3574,7 @@ function openCustomerModal(customer){
   document.getElementById('p3_activationDate').value = todayISO();
   document.getElementById('p3_usimNumber').value = '';
   document.getElementById('p3_discount').value = '0';
+  document.getElementById('p3_tax').value = '0';
   renderPrepaidPlanTiles('90');
   updatePrepaidPriceFromPlan();
   renderSimTypeTiles('p3_simType_group', 'physical');
@@ -3601,6 +3602,7 @@ function openCustomerModal(customer){
     renderPrepaidPlanTiles(String(currentSvc.durationDays||90), 'p3_prepaidPlan_group');
     document.getElementById('p3_price').value = currentSvc.price ?? '';
     document.getElementById('p3_discount').value = currentSvc.discount ?? 0;
+    document.getElementById('p3_tax').value = taxFromSaved(currentSvc);
     document.getElementById('p3_usimNumber').value = currentSvc.usimNumber || '';
     document.getElementById('p3_activationDate').value = currentSvc.activationDate || todayISO();
     renderSimTypeTiles('p3_simType_group', currentSvc.simType || 'physical');
@@ -3706,12 +3708,17 @@ function updatePrepaidPriceFromPlan(){
   updateP3FinalPricePreview();
 }
 document.getElementById('p3_prepaidPlan_group').addEventListener('click', ()=> setTimeout(updatePrepaidPriceFromPlan, 0));
-function updateP3FinalPricePreview(){
-  const price = Number(document.getElementById('p3_price').value)||0;
-  const discount = Number(document.getElementById('p3_discount').value)||0;
-  document.getElementById('p3_finalPricePreview').value = fmtWon(Math.max(0, price - discount));
+/* Card tax is typed by hand and only the total is saved (price − discount + tax). When a
+   saved plan is edited, the tax is read back out of that total so re-saving keeps it. */
+function taxFromSaved(svc){ if(!svc) return 0; const t = (Number(svc.sellingPrice)||0) - Math.max(0, (Number(svc.price)||0) - (Number(svc.discount)||0)); return t>0 ? t : 0; }
+function prepaidTotal(prefix){
+  const v = id=> Number(document.getElementById(prefix+id).value)||0;
+  return Math.max(0, v('_price') - v('_discount')) + Math.max(0, v('_tax'));
 }
-['p3_price','p3_discount'].forEach(id=>{
+function updateP3FinalPricePreview(){
+  document.getElementById('p3_finalPricePreview').value = fmtWon(prepaidTotal('p3'));
+}
+['p3_price','p3_discount','p3_tax'].forEach(id=>{
   document.getElementById(id).addEventListener('input', updateP3FinalPricePreview);
 });
 function updatePeNetExpectedPreview(){
@@ -3801,7 +3808,7 @@ function saveCustomerFromForm(){
       const durationDays = Number(document.getElementById('p3_prepaidPlan_group').dataset.selected)||currentSvc.durationDays||90;
       const price = Number(document.getElementById('p3_price').value)||0;
       const discount = Number(document.getElementById('p3_discount').value)||0;
-      const finalPrice = Math.max(0, price-discount);
+      const finalPrice = prepaidTotal('p3'); // price − discount + card tax
       Object.assign(currentSvc, {
         durationDays, price, discount, sellingPrice:finalPrice, received:finalPrice,
         usimNumber: document.getElementById('p3_usimNumber').value.trim(),
@@ -3912,7 +3919,7 @@ function buildPrepaidServiceFromForm(cust){
   const durationDays = Number(document.getElementById('p3_prepaidPlan_group').dataset.selected)||90;
   const price = Number(document.getElementById('p3_price').value)||0;
   const discount = Number(document.getElementById('p3_discount').value)||0;
-  const finalPrice = Math.max(0, price - discount);
+  const finalPrice = prepaidTotal('p3'); // price − discount + card tax
   const planInfo = PREPAID_PLANS.find(p=>p.days===durationDays);
   const d = new Date(activationDate); d.setDate(d.getDate()+durationDays);
   return {
@@ -4515,7 +4522,8 @@ function planLengthLabel(s){
   const zh = LANG==='zh';
   if(!n) return (d>=13&&d<=17) ? ['m0', zh?'15天':'15 days'] : null;
   if(n===3 && isExtensionPlan(s)) return ['ext', zh?'三个月续期':'3-Month Extension'];
-  const pr = Number(s.sellingPrice!=null ? s.sellingPrice : s.price);
+  // the plan price before discount / card tax (the total can include tax); older records may only have the total
+  const pr = Number(s.price)>0 ? Number(s.price) : Number(s.sellingPrice);
   let cn = ''; try{ cn = ((getCustomer(s.customerId)||{}).name||'').toUpperCase(); }catch(e){}
   const rc = n===1 && (/recharge/i.test(s.changeReason||'') || ((pr===36000||pr===36300) && cn.indexOf('SAFARBAYEV BERIK')<0));
   const txt = zh ? n+'个月' : n+(n>1?' months':' month');
@@ -5200,6 +5208,7 @@ function openPrepaidAssignModal(customerId, mode){
   // change either if this is actually a new SIM or a different deal
   document.getElementById('pa_usimNumber').value = current?.usimNumber || '';
   document.getElementById('pa_discount').value = '0';
+  document.getElementById('pa_tax').value = '0';
   updatePrepaidAssignPriceFromPlan();
   document.getElementById('pa_notes').value = '';
   renderTileRadioGroup('pa_paymentMethod_group', PAYMENT_METHODS, PAYMENT_METHODS.includes(current?.paymentMethod) ? current.paymentMethod : '');
@@ -5220,12 +5229,10 @@ function updatePrepaidAssignPriceFromPlan(){
   updatePrepaidAssignFinalPricePreview();
 }
 function updatePrepaidAssignFinalPricePreview(){
-  const price = Number(document.getElementById('pa_price').value)||0;
-  const discount = Number(document.getElementById('pa_discount').value)||0;
-  document.getElementById('pa_finalPricePreview').value = fmtWon(Math.max(0, price-discount));
+  document.getElementById('pa_finalPricePreview').value = fmtWon(prepaidTotal('pa'));
 }
 document.getElementById('pa_prepaidPlan_group').addEventListener('click', ()=> setTimeout(updatePrepaidAssignPriceFromPlan, 0));
-['pa_price','pa_discount'].forEach(id=>{
+['pa_price','pa_discount','pa_tax'].forEach(id=>{
   document.getElementById(id).addEventListener('input', updatePrepaidAssignFinalPricePreview);
 });
 document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
@@ -5238,7 +5245,7 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
   const activationDate = document.getElementById('pa_activationDate').value || todayISO();
   const price = Number(document.getElementById('pa_price').value)||0;
   const discount = Number(document.getElementById('pa_discount').value)||0;
-  const finalPrice = Math.max(0, price-discount);
+  const finalPrice = prepaidTotal('pa'); // price − discount + card tax
   const planInfo = PREPAID_PLANS.find(p=>p.days===durationDays);
   const d = new Date(activationDate); d.setDate(d.getDate()+durationDays);
   const svcData = {

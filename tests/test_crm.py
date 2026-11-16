@@ -123,11 +123,19 @@ def run(b):
     pg.evaluate("[...document.querySelectorAll('#f_idType_group .tile-radio')].find(x=>x.dataset.val==='Passport').click()"); pg.fill("#f_idNumber", "PCI1")
     pg.select_option("#p3_company_group_mirror", index=2); pg.wait_for_timeout(100)
     pg.select_option("#p3_svcCarrierType_group_mirror", index=1); pg.wait_for_timeout(200)
+    pg.evaluate("[...document.querySelectorAll('#p3_prepaidPlan_group [data-val]')].find(x=>x.dataset.val==='90').click()"); pg.wait_for_timeout(100)
+    pg.fill("#p3_tax", "5000"); pg.wait_for_timeout(50)
+    check("card tax is added to the total (55,000 + 5,000)", pg.input_value("#p3_finalPricePreview") == "₩60,000", pg.input_value("#p3_finalPricePreview"))
     pg.click("#saveCustomerBtn"); pg.wait_for_timeout(700)
     r = pg.evaluate("""(()=>{const c=DB.customers.find(c=>c.name==='CI NEW PREPAID'); if(!c) return null; const s=activeSubscriptionFor(c.id);
         return {phone:c.phone, num:s&&s.number, type:s&&s.type, dur:s&&s.durationDays, pay:s?(s.paymentMethod||''):null}})()""")
     check("new prepaid customer is saved with its plan", r and r["type"] == "prepaid" and r["num"] == "010-7777-0001", r)
     check("payment method is blank unless chosen", r and r["pay"] == "", r)
+    tot = pg.evaluate("(s=>[s.price,s.sellingPrice,s.received])(activeSubscriptionFor(DB.customers.find(c=>c.name==='CI NEW PREPAID').id))")
+    check("only the total is saved (price 55,000, total 60,000)", tot == [55000, 60000, 60000], tot)
+    pg.evaluate("closeAllModals(); openCustomerModal(DB.customers.find(c=>c.name==='CI NEW PREPAID'))"); pg.wait_for_timeout(300)
+    check("editing shows the tax again, so re-saving keeps it", pg.input_value("#p3_tax") == "5000")
+    pg.evaluate("closeAllModals()")
 
     cid = "c1"
     before = pg.evaluate(f"JSON.stringify(getCustomer('{cid}'))")
