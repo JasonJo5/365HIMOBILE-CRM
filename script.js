@@ -4232,7 +4232,7 @@ function openCustomerDetail(id){
       ${(()=>{ const ex = extensionInfo(c.id); if(!ex.show) return '';
         const lab = LANG==='zh' ? '三个月续期' : '3-Month Extension';
         return ex.eligible
-          ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?'同一号码再办一次3个月套餐（仅限一次）':'One more 3-month plan on the same number (one time only)'}">${pfBtnIcon('btnExtension')}${lab}</button>`
+          ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?`同一号码再办一次3个月套餐（仅限一次），截止 ${fmtDateHuman(ex.until)}`:`One more 3-month plan on the same number (one time only) — until ${fmtDateHuman(ex.until)}`}">${pfBtnIcon('btnExtension')}${lab}</button>`
           : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?'从第93天起可办理':'Available from day 93 of the 3-month plan'}">${pfBtnIcon('btnExtension')}${lab} · ${LANG==='zh'?fmtDateHuman(ex.from)+'起':'from '+fmtDateHuman(ex.from)}</button>`; })()}
       <button class="btn btn-ghost" id="btnChangeToPostpaid">${pfBtnIcon('swap')}${t('btn.changeToPostpaid')}</button>
       ${c.idType==='Passport' && !hasRealIdChangeRequest ? `<button class="btn btn-ghost" id="btnRequestIdChange">${pfBtnIcon('btnRequestIdChange')}${t('btn.requestIdChange')}</button>` : ''}
@@ -4477,10 +4477,12 @@ function progressStateClass(s){
    the Excel export, so all three always agree. */
 /* ---------------- 3-Month Extension ----------------
    A customer on a 3-month (90-day) prepaid plan may take ONE more 3-month plan on the same
-   phone number, from day 93 of that plan (90 days + 3). Normally only monthly recharges are
+   phone number, from day 93 of that plan (90 days + 3) until 70 days after it ends (after
+   that the number has expired). Normally only monthly recharges are
    possible after a plan ends. Worked out from the plan history itself (no extra field to
    store or lose): a number that already has two 90-day prepaid plans has used its extension. */
 const EXTENSION_FROM_DAY = 93;
+const EXTENSION_DAYS_AFTER_END = 70;
 const normNum = n=> String(n||'').replace(/[^0-9]/g,'');
 function is90(s){ return s && s.type==='prepaid' && Number(s.durationDays)>=85 && Number(s.durationDays)<=95; }
 function ninetyDayPlansOnNumber(customerId, number){
@@ -4489,14 +4491,16 @@ function ninetyDayPlansOnNumber(customerId, number){
     normNum(x.number || (cust && cust.phone))===n)
     .sort((a,b)=> String(a.activationDate||'').localeCompare(String(b.activationDate||'')) || (a.endedSeq||0)-(b.endedSeq||0));
 }
-/* {show, eligible, from, used, plan} for the customer's current plan */
+/* {show, eligible, from, until, used, closed, plan} for the customer's current plan */
 function extensionInfo(customerId){
   const cur = activeSubscriptionFor(customerId);
   if(!is90(cur) || !cur.activationDate) return {show:false};
   const plans = ninetyDayPlansOnNumber(customerId, cur.number);
   if(plans.length >= 2) return {show:false, used:true};          // already extended once on this number
   const from = addDaysISO(cur.activationDate, EXTENSION_FROM_DAY);
-  return {show:true, eligible: todayISO() >= from, from, plan:cur};
+  const until = addDaysISO(cur.expiryDate || addDaysISO(cur.activationDate, Number(cur.durationDays)||90), EXTENSION_DAYS_AFTER_END);
+  if(todayISO() > until) return {show:false, closed:true, until};   // 70 days after the plan ended: the number has expired
+  return {show:true, eligible: todayISO() >= from, from, until, plan:cur};
 }
 /* is this 90-day plan itself the extension (a later 90-day plan on the same number)? */
 function isExtensionPlan(s){
@@ -5185,8 +5189,8 @@ function openPrepaidAssignModal(customerId, mode){
   document.getElementById('prepaidAssignCurrentPlan').innerHTML = (current
     ? `${t('detail.currentPlan')}: <b>${planLabel(current)}</b>`
     : `<i>${t('detail.noActiveSubscription')}</i>`) + (ext ? `<div class="ext-note">${zh
-      ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码仅限一次，之后只能按月充值。`
-      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Allowed once per number — after this, only monthly recharges.`}</div>` : '');
+      ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码仅限一次，之后只能按月充值。最晚办理日：<b>${fmtDateHuman(extensionInfo(customerId).until)}</b>。`
+      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Allowed once per number — after this, only monthly recharges. Last day to do it: <b>${fmtDateHuman(extensionInfo(customerId).until)}</b>.`}</div>` : '');
 
   const plansForMode = ext ? PREPAID_PLANS.filter(p=>p.days===90) : (mode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS);
   renderPrepaidPlanTiles(String(plansForMode[0].days), 'pa_prepaidPlan_group', plansForMode);
