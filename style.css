@@ -1299,3 +1299,6 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 .pf-card .section-head .pf-btn-row .btn{white-space:nowrap}
 .pf-head-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
 .pf-head-btns .btn{margin:0!important}
+
+/* Sheet View: room between the sort menu and the table */
+.sheet-count-row{margin:4px 0 14px;}
