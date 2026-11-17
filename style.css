@@ -1293,3 +1293,9 @@ html[data-theme="dark"] .plan-tag.ext,html[data-theme="dark"] .pf-tile.ext{backg
 html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B5FD;border-color:rgba(124,58,237,.35)}
 .rep-plan-sum{display:flex;flex-wrap:wrap;gap:6px;padding:4px 4px 10px;border-bottom:1px solid var(--border)}
 .rep-plan-sum .plan-tag b{font-weight:800;margin-left:2px}
+
+/* profile: action buttons wrap instead of running off the card; Edit + Print side by side */
+.pf-card .section-head .pf-btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pf-card .section-head .pf-btn-row .btn{white-space:nowrap}
+.pf-head-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.pf-head-btns .btn{margin:0!important}

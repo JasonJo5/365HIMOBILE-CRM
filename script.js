@@ -2756,6 +2756,8 @@ function renderDashQuickSearchResults(query){
 }
 document.getElementById('dashQuickSearch').addEventListener('input', e=> renderDashQuickSearchResults(e.target.value.trim()));
 /* English "1 days" → "1 day" */
+/* "Nov 21" / "11月21日" — a date without the year, for tight spots */
+function shortDay(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString(LANG==='zh'?'zh-CN':'en-US',{month:LANG==='zh'?'numeric':'short',day:'numeric'}); }catch(e){ return iso; } }
 function oneDay(txt){ return LANG==='zh' ? txt : String(txt).replace(/^(-?1) days\b/, '$1 day'); }
 function emptyState(){ return `<div class="empty-state"><b>${t('rem.empty.title')}</b>${t('rem.empty.desc')}</div>`; }
 
@@ -4136,7 +4138,7 @@ function profileActivePlanHtml(s, c){
       prev = `<div class="pf-prev"><span class="pf-prev-k">${escapeHtml(__T('Previous plan'))}</span><span class="pf-prev-v">${escapeHtml((pl?pl[1]:(p.durationDays+' days'))+(p.plan?' · '+p.plan:'')+' · '+fmt(p.activationDate)+' → '+fmt(p.endedAt||p.expiryDate))}</span></div>`;
     }
   }
-  const status = contractStatusTextFor(s, false) + (usedDays!==null ? ` · ${__T('Used')} ${usedDays} ${LANG==='zh'?'天':'days'}` : '');
+  const status = contractStatusTextFor(s, false) + (usedDays!==null ? ` · ${__T('Used')} ${usedDays} ${LANG==='zh'?'天':(usedDays===1?'day':'days')}` : '');
   const printBtn = (cls, style)=> `<button class="btn btn-sm btn-ghost" data-print-service="${s.id}"${style?` style="${style}"`:''}>${pfBtnIcon('print')}${t('btn.print')}</button>`;
   return `<div class="service-card">
     <div class="service-card-head">
@@ -4147,9 +4149,9 @@ function profileActivePlanHtml(s, c){
       <div style="text-align:right;">
         <span class="pill ${statusPillClass(st)}">${t('status.'+st)}</span>${len ? `<span class="plan-tag ${len[0]}">${escapeHtml(len[1])}</span>` : ''}
         ${isServiceCurrentlyFrozen(s) ? `<span class="pill pill-frozen">${uiIcon('freeze')}${t('freeze.frozen')}</span>` : ''}
-        <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}" style="margin-left:6px;" title="${LANG==='zh'?'编辑套餐详情（价格、已收款、日期…）':'Edit plan details (price, received, dates…)'}">${t('btn.editRecord')}</button>${(s.type==='prepaid' && s.durationDays!==90) ? printBtn('', 'margin-left:8px') : ''}
-        <div style="margin-top:6px;display:flex;gap:6px;justify-content:flex-end;">
-          ${(s.type==='prepaid' && s.durationDays===90) ? printBtn('', 'color:var(--orange);') : ''}
+        <div class="pf-head-btns">
+          <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}" title="${LANG==='zh'?'编辑套餐详情（价格、已收款、日期…）':'Edit plan details (price, received, dates…)'}">${t('btn.editRecord')}</button>
+          ${s.type==='prepaid' ? printBtn('', s.durationDays===90 ? 'color:var(--orange);' : '') : ''}
         </div>
       </div>
     </div>
@@ -4240,7 +4242,7 @@ function openCustomerDetail(id){
         const lab = LANG==='zh' ? '三个月续期' : '3-Month Extension';
         return ex.eligible
           ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?`同一号码再办一次3个月套餐（仅限一次），截止 ${fmtDateHuman(ex.until)}`:`One more 3-month plan on the same number (one time only) — until ${fmtDateHuman(ex.until)}`}">${pfBtnIcon('btnExtension')}${lab}</button>`
-          : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?'从第93天起可办理':'Available from day 93 of the 3-month plan'}">${pfBtnIcon('btnExtension')}${lab} · ${LANG==='zh'?fmtDateHuman(ex.from)+'起':'from '+fmtDateHuman(ex.from)}</button>`; })()}
+          : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?`从第93天（${fmtDateHuman(ex.from)}）起可办理，截止 ${fmtDateHuman(ex.until)}`:`Available from day 93 (${fmtDateHuman(ex.from)}) until ${fmtDateHuman(ex.until)}`}">${pfBtnIcon('btnExtension')}${lab} · ${shortDay(ex.from)}</button>`; })()}
       <button class="btn btn-ghost" id="btnChangeToPostpaid">${pfBtnIcon('swap')}${t('btn.changeToPostpaid')}</button>
       ${c.idType==='Passport' && !hasRealIdChangeRequest ? `<button class="btn btn-ghost" id="btnRequestIdChange">${pfBtnIcon('btnRequestIdChange')}${t('btn.requestIdChange')}</button>` : ''}
       <button class="btn btn-danger" id="btnCancelSub">${pfBtnIcon('btnCancelSub')}${t('btn.cancelSubscription')}</button>`;
@@ -4332,7 +4334,7 @@ function openCustomerDetail(id){
   // ---- final card layout: Current plan · Plan info · Plan history · Income · AI insight ----
   const actionBtnList = actionButtons.match(/<button[\s\S]*?<\/button>/g) || [];
   const firstBtns = actionBtnList.slice(0,3).join('\n'), restBtns = actionBtnList.slice(3).join('\n');
-  const actionsHtml = `<div class="section-head"><div style="display:flex;gap:8px;">${firstBtns}${restBtns
+  const actionsHtml = `<div class="section-head"><div class="pf-btn-row">${firstBtns}${restBtns
       ? `<button type="button" class="btn btn-ghost pf-more">${pfSvg(PF_ICON.more,'width:16px;height:16px')}<span>${escapeHtml(__T('More'))}</span></button>` : ''}</div>${restBtns
       ? `<div class="pf-rest" style="display:none">${restBtns}</div>` : ''}</div>`;
   const currentCard = `<section class="pf-card">${pfTitle(__T('Current plan'),'sub')}
@@ -4463,11 +4465,13 @@ function contractStatusTextFor(s, short){
   // postpaid service doesn't just stop when the contract term ends — the customer keeps
   // their current plan or switches to a new one, so "expired" would be misleading; only
   // prepaid genuinely stops working once its paid-up period is over
+  const dd = n=> n===1 ? '1 day' : `${n} days`;
   if(remaining < 0) return isPostpaid
-    ? (LANG==='zh' ? `已超过合约期 ${Math.abs(remaining)} 天 — 可保留原套餐或更换新套餐` : `${Math.abs(remaining)} days over the contract term — can keep the current plan or switch to a new one`)
-    : (LANG==='zh' ? `已超过合约期 ${Math.abs(remaining)} 天（已到期）` : `${Math.abs(remaining)} days past contract end — expired`);
-  if(remaining <= 7) return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天（即将到期）` : `${remaining} days remaining, in contract — expiring soon`;
-  return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天` : `${remaining} days remaining, in contract`;
+    ? (LANG==='zh' ? `已超过合约期 ${Math.abs(remaining)} 天 — 可保留原套餐或更换新套餐` : `${dd(Math.abs(remaining))} over the contract term — can keep the current plan or switch to a new one`)
+    : (LANG==='zh' ? `已超过合约期 ${Math.abs(remaining)} 天（已到期）` : `${dd(Math.abs(remaining))} past contract end — expired`);
+  if(remaining === 0) return LANG==='zh' ? '今天到期' : 'Ends today';
+  if(remaining <= 7) return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天（即将到期）` : `${dd(remaining)} remaining, in contract — expiring soon`;
+  return LANG==='zh' ? `仍在合约内，剩余 ${remaining} 天` : `${dd(remaining)} remaining, in contract`;
 }
 /* Progress bar colour: red once a prepaid plan has expired, orange in its last 7 days,
    calm grey for a postpaid past its contract term (it keeps working — not an alarm). */
