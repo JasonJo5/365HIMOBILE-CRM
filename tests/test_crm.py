@@ -258,8 +258,12 @@ def run(b):
         const a = activeSubscriptionFor(c.id), keep = [a.activationDate, a.expiryDate];
         const set = endAgo => { a.expiryDate = addDaysISO(todayISO(), -endAgo); a.activationDate = addDaysISO(a.expiryDate, -90); return extensionInfo(c.id); };
         const r = [set(70).eligible, set(71).show];
-        a.activationDate = keep[0]; a.expiryDate = keep[1]; return r; })()""")
-    check("extension allowed up to 70 days after the plan ends, not after", lim == [True, False], lim)
+        closeAllModals(); openCustomerDetail(c.id);
+        const m = document.getElementById('customerDetailModal') || document.body;
+        r.push(!document.getElementById('btnExtension') && /closed on/.test((m.querySelector('.ext-closed-note')||{}).textContent||''));
+        a.activationDate = keep[0]; a.expiryDate = keep[1]; closeAllModals(); return r; })()""")
+    check("extension allowed up to 70 days after the plan ends, not after", lim[:2] == [True, False], lim)
+    check("after the 70 days the profile says why there is no extension button", lim[2] is True, lim)
     if elig:
         before = pg.evaluate(f"(a=>({{num:a.number, sim:a.simType||'physical'}}))(activeSubscriptionFor('{elig}'))")
         pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
@@ -268,6 +272,7 @@ def run(b):
         check("the extension is a new 3-month plan on the same number and SIM type", after == {**before, "days":90, "tag":"ext"}, after)
         pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
         check("only one extension per number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
+        check("a used extension is explained on the profile", "already used" in (pg.locator(".ext-closed-note").first.text_content() if pg.locator(".ext-closed-note").count() else ""))
 
     print("Sheet View")
     pg.evaluate("closeAllModals(); goTo('sheet')"); pg.wait_for_timeout(300)

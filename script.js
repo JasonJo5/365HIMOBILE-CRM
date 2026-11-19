@@ -4167,8 +4167,19 @@ function profileActivePlanHtml(s, c){
       </div>
     </div>
     <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill ${progressStateClass(s)}" style="width:${progressPct}%"></div></div>
-    <div class="muted" style="font-size:11.5px;margin-top:6px;">${status}</div>` : ''}
+    <div class="muted" style="font-size:11.5px;margin-top:6px;">${status}</div>${extClosedNote(s)}` : ''}
   </div>`;
+}
+/* Why a 3-month plan shows no "3-Month Extension" button: already used, or the 70-day window has passed */
+function extClosedNote(s){
+  if(!s || s.type!=='prepaid' || !is90(s)) return '';
+  let ex; try{ ex = extensionInfo(s.customerId); }catch(e){ return ''; }
+  if(!ex || ex.show || !(ex.used || ex.closed)) return '';
+  const zh = LANG==='zh';
+  const txt = ex.used
+    ? (zh ? '三个月续期：此号码已使用过（仅限一次）' : '3-Month Extension: already used on this number (one time only)')
+    : (zh ? `三个月续期：已于 ${fmtDateHuman(ex.until)} 截止（套餐结束后70天）` : `3-Month Extension: closed on ${fmtDateHuman(ex.until)} (70 days after the plan ended)`);
+  return `<div class="ext-closed-note">${txt}</div>`;
 }
 /* Small line icons for markup built in JS (same style as the rest of the app) */
 const UI_ICON = {
