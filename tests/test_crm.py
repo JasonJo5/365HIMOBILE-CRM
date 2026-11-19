@@ -284,6 +284,28 @@ def run(b):
     check("every date field jumps from year to month after 4 digits (max year 9999)", dmax)
     pg.evaluate("closeAllModals()")
 
+    print("Years in Korea counts down")
+    st = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id)); const keep = [c.years, DB.reminderState[stayKey(c.id)]];
+        const ago = d => addDaysISO(todayISO(), -d), out = {};
+        c.years = 5/12; DB.reminderState[stayKey(c.id)] = ago(0)+'|'+c.years; out.today = stayLeftText(c);
+        DB.reminderState[stayKey(c.id)] = ago(61)+'|'+c.years; out.after2mo = stayLeftText(c);
+        DB.reminderState[stayKey(c.id)] = ago(160)+'|'+c.years; out.after5mo = [stayLeft(c), stayLeftText(c)];
+        c.years = 1.5; DB.reminderState[stayKey(c.id)] = ago(0)+'|1.5'; out.y15 = stayLeftText(c);
+        // value typed in Sheet View restarts the countdown today
+        DB.reminderState[stayKey(c.id)] = ago(365)+'|1.5'; out.sheetBefore = stayLeftRounded(c);
+        sheetCommitEdit('customer', c.id, 'years', 2); out.sheetAfter = [c.years, DB.reminderState[stayKey(c.id)] === todayISO()+'|2'];
+        // the edit form shows the time left and leaves the countdown alone when untouched
+        DB.reminderState[stayKey(c.id)] = ago(183)+'|2';
+        closeAllModals(); openCustomerModal(c); out.form = document.getElementById('f_years').value;
+        closeAllModals();
+        c.years = keep[0]; if(keep[1]===undefined) delete DB.reminderState[stayKey(c.id)]; else DB.reminderState[stayKey(c.id)] = keep[1];
+        return out; })()""")
+    check("5 months entered today shows 5 mo, 3 mo after 2 months, 0 after 5 months",
+          st["today"] == "5 mo" and st["after2mo"] == "3 mo" and st["after5mo"] == [0, "0 (stay ended)"], st)
+    check("1.5 years shows as 1 yr 6 mo", st["y15"] == "1 yr 6 mo", st)
+    check("a new value typed in Sheet View restarts the countdown", st["sheetBefore"] == 0.5 and st["sheetAfter"] == [2, True], st)
+    check("the edit form shows the time left (2 yrs half a year ago -> 1.5)", st["form"] == "1.5", st)
+
     print("Reprint information change")
     rp = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id) && activeSubscriptionFor(c.id).type==='prepaid');
         const keep = [c.idChangeRequest, c.idType], orig = window.printIdChangeForm, calls = [];
@@ -366,6 +388,22 @@ def run(b):
     check("...and then goes away", not pg.is_visible("#btnUndoCancelExact"))
     pg.evaluate("pushToServer()"); pg.wait_for_timeout(1500)
     check("...and the server has the plan back exactly", srv_snap("c9") == sb9)
+    # cancelled on another PC (no local undo kept), plan already past its end date:
+    # "Undo cancellation" still shows and puts the plan back with its own dates, not from today
+    pg.evaluate("""(()=>{ const a = activeSubscriptionFor('c9'); a.activationDate = addDaysISO(todayISO(), -120); a.expiryDate = addDaysISO(a.activationDate, 90); a.changeReason = 'recharge'; saveDB(DB); })()""")
+    b9b = pg.evaluate("customerServices('c9').map(x=>{const o={}; Object.keys(x).sort().forEach(k=>{ if(x[k]!==null && x[k]!==undefined && x[k]!=='') o[k]=x[k]; }); return JSON.stringify(o);}).sort().join('\\n')")
+    pg.evaluate("closeAllModals(); openCustomerDetail('c9')"); pg.wait_for_timeout(200)
+    pg.click("#btnCancelSub"); pg.wait_for_timeout(200); pg.fill("#cs_cancelNotes", "wrong person"); pg.click("#confirmCancelSubBtn"); pg.wait_for_timeout(400)
+    pg.evaluate("localStorage.removeItem('himobile_cancel_undo'); hideUndo(); pushToServer()"); pg.wait_for_timeout(1500)
+    pg.evaluate("pullFromServer()"); pg.wait_for_timeout(1500)
+    pg.evaluate("closeAllModals(); openCustomerDetail('c9')"); pg.wait_for_timeout(300)
+    check("'Undo cancellation' shows even without this PC's undo history", pg.is_visible("#btnUndoCancelKeep") and not pg.is_visible("#btnUndoCancel"))
+    pg.click("#btnUndoCancelKeep"); pg.wait_for_timeout(600)
+    def plan_state(cid):   # blank, null and missing count as the same
+        return pg.evaluate(f"customerServices('{cid}').map(x=>{{const o={{}}; Object.keys(x).sort().forEach(k=>{{ if(x[k]!==null && x[k]!==undefined && x[k]!=='') o[k]=x[k]; }}); return JSON.stringify(o);}}).sort().join('\\n')")
+    a9 = plan_state("c9")
+    check("...and puts the plan back as on the cancel day (same dates, reason and notes)", a9 == b9b)
+
     # delete customer -> undo
     b8, sb8 = snap("c8"), srv_snap("c8")
     pg.evaluate("closeAllModals(); deleteCustomerById('c8')"); pg.wait_for_timeout(1200)

@@ -25,7 +25,7 @@ http.createServer((req, res)=>{
       (d.customers||[]).forEach(c=> db.customers.set(c.id, c));
       (d.services||[]).forEach(s=>{ if(!db.customers.has(s.customerId)) failedServices.push(s.id); else db.services.set(s.id, s); });
       if(Array.isArray(d.templates)) db.templates = d.templates;
-      if(d.reminderState) db.reminderState = d.reminderState;
+      if(d.reminderState) Object.assign(db.reminderState, d.reminderState);   // the real server upserts key by key
       log.push({t:'sync', customers:(d.customers||[]).length, services:(d.services||[]).length, bytes: body.length});
       return send(res, 200, {ok:true, failedCustomers:[], failedServices});
     }

@@ -700,6 +700,12 @@ function deferredSheetRerender(){
 function sheetCommitEdit(recordType, recordId, field, value){
   const rec = sheetRecordFor(recordType, recordId);
   if(!rec) return;
+  // Years in Korea: the cell shows the time left; leaving it as shown keeps the countdown,
+  // typing a new value restarts it from today
+  if(recordType==='customer' && field==='years'){
+    if(Number(value)===stayLeftRounded(rec)) return;
+    rec.years = value; markStaySet(rec); saveDB(DB); renderNav(); return;
+  }
   rec[field] = value;
   if(recordType==='service' && (field==='activationDate' || field==='durationDays')){
     if(rec.activationDate && rec.durationDays){
@@ -780,7 +786,7 @@ function beginSheetTextEdit(anchorEl){
     if(input.isConnected){
       const rec = sheetRecordFor(recordType, recordId);
       const temp = document.createElement('div');
-      temp.innerHTML = sheetTextCell(recordType, recordId, field, rec?.[field], inputType);
+      temp.innerHTML = sheetTextCell(recordType, recordId, field, (recordType==='customer' && field==='years' && rec) ? stayLeftRounded(rec) : rec?.[field], inputType);
       input.replaceWith(temp.firstElementChild);
     }
     // Deferred rather than called immediately: this blur handler can fire because the user
@@ -996,7 +1002,7 @@ function renderSheetPage(){
           <td>${sheetTextCell('customer',c.id,'idNumber',c.idNumber,'text')}</td>
           <td>${sheetTextCell('customer',c.id,'dob',c.dob,'date')}</td>
           <td>${sheetPillCell('customer',c.id,'nationality',c.nationality,NATIONALITIES, t('f.nationality'))}</td>
-          <td>${sheetTextCell('customer',c.id,'years',c.years,'number')}</td>
+          <td>${sheetTextCell('customer',c.id,'years',stayLeftRounded(c),'number')}</td>
           <td>${sheetTextCell('customer',c.id,'occupation',c.occupation,'text')}</td>
           <td>${sheetPillCell('customer',c.id,'handlerName',c.handlerName,STAFF_MEMBERS, t('f.handlerName'))}</td>
           <td>${sheetPillCell('service',svc.id,'simType',svc.simType,SIM_TYPES, t('f.simType'))}</td>
@@ -1026,7 +1032,7 @@ function renderSheetPage(){
         ${planTypeCell}
         <td>${sheetTextCell('customer',c.id,'dob',c.dob,'date')}</td>
         <td>${sheetPillCell('customer',c.id,'nationality',c.nationality,NATIONALITIES, t('f.nationality'))}</td>
-        <td>${sheetTextCell('customer',c.id,'years',c.years,'number')}</td>
+        <td>${sheetTextCell('customer',c.id,'years',stayLeftRounded(c),'number')}</td>
         <td>${sheetTextCell('customer',c.id,'occupation',c.occupation,'text')}</td>
         <td>${sheetPillCell('customer',c.id,'handlerName',c.handlerName,STAFF_MEMBERS, t('f.handlerName'))}</td>
         <td>${sheetPillCell('service',svc.id,'simType',svc.simType,SIM_TYPES, t('f.simType'))}</td>
@@ -1824,6 +1830,46 @@ function customerServices(id){ return DB.services.filter(s=>s.customerId===id); 
    this app, falling back to the earliest service activation date for imported/legacy
    customers who never had createdAt set — much more accurate than treating every import as
    "joined today". */
+/* ---------------- Years in Korea: a countdown ----------------
+   "Years in Korea" is how much longer the customer will stay, as told to staff on a given day.
+   It counts down from that day: 5 months entered today shows 0 five months later.
+   Start of the countdown: the day staff last typed the value (kept in reminderState as
+   'stay:<customerId>' = 'YYYY-MM-DD|value', which already syncs to the server), otherwise the
+   customer's first prepaid sign-up (the value is asked at the first sign-up and keeps counting
+   down across recharges), otherwise their first plan or the day they were added. */
+function stayKey(id){ return 'stay:'+id; }
+function hasStay(c){ return !!c && c.years!==undefined && c.years!==null && c.years!=='' && !isNaN(Number(c.years)); }
+function stayStart(c){
+  const v = DB.reminderState && DB.reminderState[stayKey(c.id)];
+  if(v){ const [d, y] = String(v).split('|'); if(isIsoDate(d) && Number(y)===Number(c.years)) return d; }
+  const svcs = customerServices(c.id).filter(x=>isIsoDate(x.activationDate));
+  const pre = svcs.filter(x=>x.type==='prepaid').map(x=>x.activationDate).sort()[0];
+  if(pre) return pre;
+  const any = svcs.map(x=>x.activationDate).sort()[0];
+  if(any) return any;
+  return c.createdAt ? String(c.createdAt).slice(0,10) : null;
+}
+/* years of stay left today (never below 0), or null when not filled in */
+function stayLeft(c){
+  if(!hasStay(c)) return null;
+  const y = Number(c.years), start = stayStart(c);
+  if(!start || !(y>0)) return Math.max(0, y);
+  const used = Math.max(0, daysBetween(start, todayISO())) / 365.25;
+  return Math.max(0, y - used);
+}
+/* the same, rounded to 0.1 year — what the form and Sheet View show and edit */
+function stayLeftRounded(c){ const v = stayLeft(c); return v==null ? null : Math.round(v*10)/10; }
+/* "1 yr 4 mo", "5 mo", "Stay ended" */
+function stayLeftText(c){
+  const v = stayLeft(c); if(v==null) return '—';
+  const zh = LANG==='zh', m = Math.round(v*12);
+  if(m<=0) return zh ? '0（已到期）' : '0 (stay ended)';
+  const yy = Math.floor(m/12), mm = m%12;
+  if(zh) return (yy?yy+'年':'') + (mm?mm+'个月':'');
+  return [yy ? yy+(yy===1?' yr':' yrs') : '', mm ? mm+' mo' : ''].filter(Boolean).join(' ');
+}
+/* call whenever staff type a new value: the countdown starts again from today */
+function markStaySet(c){ if(c && c.id){ DB.reminderState = DB.reminderState || {}; DB.reminderState[stayKey(c.id)] = todayISO()+'|'+(Number(c.years)||0); } }
 function customerJoinDate(c){
   if(c.createdAt) return c.createdAt;
   const svcs = customerServices(c.id).map(s=>s.activationDate).filter(isIsoDate).sort();
@@ -1902,8 +1948,49 @@ function setActiveSubscription(customerId, newServiceData, reason){
 /* Ends the active subscription with no replacement — e.g. the customer is discontinuing. */
 function endActiveSubscription(customerId, reason){
   const actives = DB.services.filter(s=>s.customerId===customerId && s.isActive);
-  actives.forEach(s=>{ s.isActive=false; s.endedAt=todayISO(); s.endedSeq=Date.now(); s.changeReason=reason||'cancelled'; });
+  actives.forEach(s=>{
+    // remember how the plan looked before, so the cancellation can be undone from any PC
+    // (reminderState syncs to the server): 'cancel:<serviceId>' = {d: day cancelled, r: old reason, n: old notes}
+    DB.reminderState = DB.reminderState || {};
+    DB.reminderState[cancelRecKey(s.id)] = JSON.stringify({d: todayISO(), r: s.changeReason||'new', n: s.notes||''});
+    s.isActive=false; s.endedAt=todayISO(); s.endedSeq=Date.now(); s.changeReason=reason||'cancelled';
+  });
   return actives;
+}
+/* ---------------- Undo a cancellation (any time, any PC) ----------------
+   A plan ended with "Cancel subscription" can be put back exactly as it was on the day it was
+   cancelled: same start and end dates, price and notes. Nothing restarts from today. */
+const CANCEL_REASONS = ['cancelled','switched_carrier','other'];
+function cancelRecKey(serviceId){ return 'cancel:'+serviceId; }
+function cancelRecord(serviceId){
+  try{ const v = DB.reminderState && DB.reminderState[cancelRecKey(serviceId)]; const o = v ? JSON.parse(v) : null; return o && o.d ? o : null; }catch(e){ return null; }
+}
+/* the customer's cancelled plan, when they have no active plan and their latest plan was cancelled */
+function cancelledPlanFor(customerId){
+  if(DB.services.some(x=>x.customerId===customerId && x.isActive && isSubscriptionType(x.type))) return null;
+  const last = [...customerServices(customerId)].filter(x=>isSubscriptionType(x.type)).sort((a,b)=> (b.endedSeq||0)-(a.endedSeq||0))[0];
+  if(!last || last.isActive || !last.endedAt || !CANCEL_REASONS.includes(last.changeReason)) return null;
+  return last;
+}
+function undoCancelKeepDates(customerId){
+  const cust = getCustomer(customerId), s = cancelledPlanFor(customerId);
+  if(!cust || !s) return false;
+  const rec = cancelRecord(s.id);
+  DB.services.filter(x=>x.customerId===customerId && x.isActive && x.id!==s.id).forEach(x=>{ x.isActive=false; });
+  s.isActive = true; s.endedAt = null; s.endedSeq = null;
+  s.changeReason = rec && rec.r ? rec.r : 'new';
+  if(rec && typeof rec.n==='string') s.notes = rec.n;   // drop the note added when cancelling
+  if(isSubscriptionType(s.type)) cust.subType = s.type;
+  if(rec) DB.reminderState[cancelRecKey(s.id)] = JSON.stringify(Object.assign(rec, {undone: todayISO()}));
+  forgetCancelUndo(customerId);
+  saveDB(DB);
+  toast(LANG==='zh' ? `已撤销取消 — 套餐恢复原样（${fmtDateHuman(s.activationDate)} → ${fmtDateHuman(s.expiryDate)}）`
+                    : `Cancellation undone — plan back as it was (${fmtDateHuman(s.activationDate)} → ${fmtDateHuman(s.expiryDate)})`);
+  if(typeof hideUndo==='function') hideUndo();
+  openCustomerDetail(customerId);
+  renderPage(currentPage);
+  renderNav();
+  return true;
 }
 /* Brings an inactive customer back — restores their most recent plan to active, exactly as
    it was (same price, discount, company, carrier, notes). Works whether they became
@@ -1996,8 +2083,7 @@ function getStayBasedOpportunities(){
     const svc = activeSubscriptionFor(c.id);
     if(!svc) return;
     const age = calcAge(c.dob);
-    const years = Number(c.years);
-    const hasYears = c.years!==undefined && c.years!=='' && !isNaN(years);
+    const hasYears = hasStay(c);
     // "Years in Korea" is stated ONCE, the first time a customer signs up — it's a
     // countdown from THAT moment, and needs to keep counting down across every recharge
     // afterward, not reset at each one. Someone who said "1 year" at their very first
@@ -2005,9 +2091,8 @@ function getStayBasedOpportunities(){
     // 4 of those 12 months by the time the recharge ends — not just the 1 month of the
     // most recent service alone. Measuring from the earliest prepaid activation on record
     // (rather than the current/most recent one) is what makes that accumulate correctly.
-    const earliestPrepaidDate = customerServices(c.id).filter(s=>s.type==='prepaid' && s.activationDate).map(s=>s.activationDate).sort()[0];
-    const monthsElapsedSinceStated = hasYears && earliestPrepaidDate ? daysBetween(earliestPrepaidDate, todayISO())/30.44 : 0;
-    const remainingStayYears = hasYears ? years - (monthsElapsedSinceStated/12) : null;
+    // (now done by stayLeft(), which also restarts the countdown when staff type a new value)
+    const remainingStayYears = stayLeft(c);
     if(svc.type==='prepaid'){
       // "Ready for postpaid" now surfaces as soon as someone qualifies by age/ID/stay —
       // even while their current prepaid plan is still running. Staff can go ahead and set
@@ -2028,7 +2113,7 @@ function getStayBasedOpportunities(){
       } else if(eligibleForPostpaid){
         readyForPostpaid.push({customer:c, service:svc, subStatus:'eligible', remainingStayYears});
       }
-      if([30,60,90].includes(Number(svc.durationDays)) && computedStatus(svc)==='expiring_soon' && hasYears && years>0){
+      if([30,60,90].includes(Number(svc.durationDays)) && computedStatus(svc)==='expiring_soon' && hasYears && remainingStayYears>0){
         prepaidRecharge.push({customer:c, service:svc});
       }
       // Plan already ran out, and postpaid isn't an option for them — either they're under
@@ -2060,7 +2145,7 @@ function getStayBasedDiagnostics(){
     const svc = activeSubscriptionFor(c.id);
     if(!svc) return;
     const age = calcAge(c.dob);
-    const hasYears = c.years!==undefined && c.years!=='' && !isNaN(Number(c.years));
+    const hasYears = hasStay(c);
     // "Ready for postpaid" no longer waits for the prepaid plan to actually expire — anyone
     // old enough is a candidate regardless of their current plan's status (matches the
     // eligibility check in getStayBasedOpportunities above).
@@ -3499,6 +3584,7 @@ document.getElementById('savePostpaidCustomerBtn').addEventListener('click', ()=
     rating:3, createdAt: todayISO(),
   };
   DB.customers.push(cust);
+  markStaySet(cust);
 
   const activationDate = document.getElementById('pc_activationDate').value || todayISO();
   const d = new Date(activationDate); d.setDate(d.getDate()+contractLength);
@@ -3552,7 +3638,8 @@ function openCustomerModal(customer){
   // an existing customer's occupation might be old free-text that predates this option set —
   // only pre-select a tile if it actually matches one of the current choices
   renderTileRadioGroup('f_occupation_group', OCCUPATION_OPTIONS, OCCUPATION_OPTIONS.includes(customer?.occupation) ? customer.occupation : '');
-  document.getElementById('f_years').value = customer?.years ?? '';
+  { const fy = document.getElementById('f_years'); const left = customer ? stayLeftRounded(customer) : null;
+    fy.value = left==null ? '' : left; fy.dataset.shown = fy.value; }
   // New customer → sensible defaults. Existing customer → exactly what's stored, even if
   // blank or an old value not in today's option list; previously Edit Profile silently
   // saved "SKT" / "Friend" / the current staff member over blanks and old values.
@@ -3897,13 +3984,19 @@ function saveCustomerCore(name){
     notes:document.getElementById('f_notes').value.trim(),
     rating:selectedRating,
   };
+  // Years in Korea counts down: a value left as shown keeps its countdown; a typed value restarts it today
+  const fyEl = document.getElementById('f_years'), yearsTyped = fyEl.value !== (fyEl.dataset.shown||'');
   if(editingCustomerId){
-    Object.assign(getCustomer(editingCustomerId), data);
-    return getCustomer(editingCustomerId);
+    const cur = getCustomer(editingCustomerId);
+    if(!yearsTyped) data.years = cur.years;
+    Object.assign(cur, data);
+    if(yearsTyped) markStaySet(cur);
+    return cur;
   } else {
     data.id = uid('c');
     data.createdAt = todayISO();
     DB.customers.push(data);
+    markStaySet(data);
     return data;
   }
 }
@@ -4083,11 +4176,11 @@ function profileInfoRows(c, s){
     if(s.company) rows.push(['company', t('f.company'), s.company]);
     if(s.partnerCompany) rows.push(['partner', t('f.partnerCompany'), s.partnerCompany]);
     if(s.svcCarrierType) rows.push(['carrier', t('f.svcCarrierType'), s.svcCarrierType]);
-    if(c.years!=null) rows.push(['years', t('f.years'), yrs(c.years)]);
+    if(c.years!=null) rows.push(['years', t('f.years'), stayLeftText(c)]);
   }
   rows.push(['phone', t('f.phone'), c.phone||'—']);
   rows.push(['occupation', t('f.occupation'), c.occupation||'—']);
-  rows.push(['years', t('f.years'), yrs(c.years||0)]);
+  rows.push(['years', t('f.years'), stayLeftText(c)]);
   rows.push(['network', t('f.carrierType'), c.carrierType||'—']);
   rows.push(['planType', t('f.planType'), c.planType||'—']);
   rows.push(['subscription', t('f.subType'), c.subType==='postpaid'?t('opt.postpaidShort'):t('opt.prepaidShort')]);
@@ -4272,9 +4365,13 @@ function openCustomerDetail(id){
     const mostRecent = [...customerServices(id)].filter(s=>isSubscriptionType(s.type)).sort((a,b)=> (b.endedSeq||0)-(a.endedSeq||0))[0];
     // cancelled from this browser and untouched since → exact undo; otherwise "Reactivate"
     const exactUndo = cancelUndoFor(id);
-    actionButtons = (exactUndo ? `<button class="btn btn-primary" id="btnUndoCancelExact" title="${LANG==='zh'?'把被取消的套餐原样恢复':'Put the cancelled plan back exactly as it was'}">${pfBtnIcon('btnUndoCancel')}${LANG==='zh'?'撤销取消':'Undo cancellation'}</button> ` : '')
-      + `<button class="btn ${exactUndo?'btn-ghost':'btn-primary'}" id="btnStartNewSub">${pfBtnIcon('btnStartNewSub')}${t('btn.startNewSubscription').replace(/^[＋+]\s*/,'')}</button>`
-      + (mostRecent && !exactUndo ? ` <button class="btn btn-ghost" id="btnUndoCancel">${pfBtnIcon('btnUndoCancel')}${t('btn.undoCancel')}</button>` : '');
+    // latest plan was cancelled → "Undo cancellation" puts it back with its own dates (works on any PC)
+    const cancelledPlan = !exactUndo && cancelledPlanFor(id);
+    const undoTitle = LANG==='zh'?'把被取消的套餐原样恢复（日期不变）':'Put the cancelled plan back exactly as it was (same dates)';
+    actionButtons = (exactUndo ? `<button class="btn btn-primary" id="btnUndoCancelExact" title="${undoTitle}">${pfBtnIcon('btnUndoCancel')}${LANG==='zh'?'撤销取消':'Undo cancellation'}</button> ` : '')
+      + (cancelledPlan ? `<button class="btn btn-primary" id="btnUndoCancelKeep" title="${undoTitle}">${pfBtnIcon('btnUndoCancel')}${LANG==='zh'?'撤销取消':'Undo cancellation'}</button> ` : '')
+      + `<button class="btn ${(exactUndo||cancelledPlan)?'btn-ghost':'btn-primary'}" id="btnStartNewSub">${pfBtnIcon('btnStartNewSub')}${t('btn.startNewSubscription').replace(/^[＋+]\s*/,'')}</button>`
+      + (mostRecent && !exactUndo && !cancelledPlan ? ` <button class="btn btn-ghost" id="btnUndoCancel">${pfBtnIcon('btnUndoCancel')}${t('btn.undoCancel')}</button>` : '');
   }
   // a finished information change (Passport → ARC) can be printed again at any time
   if(c.idChangeRequest && c.idChangeRequest.status==='completed'){
@@ -4428,6 +4525,8 @@ function openCustomerDetail(id){
   if(btnUndoCancel) btnUndoCancel.addEventListener('click', ()=> undoCancellation(id));
   const btnUndoCancelExact = document.getElementById('btnUndoCancelExact');
   if(btnUndoCancelExact) btnUndoCancelExact.addEventListener('click', ()=>{ const e = cancelUndoFor(id); if(e) runUndo(e); });
+  const btnUndoCancelKeep = document.getElementById('btnUndoCancelKeep');
+  if(btnUndoCancelKeep) btnUndoCancelKeep.addEventListener('click', ()=> undoCancelKeepDates(id));
   const btnFreezeSim = document.getElementById('btnFreezeSim');
   if(btnFreezeSim) btnFreezeSim.addEventListener('click', ()=> openFreezeSimModal(id));
   const btnUnfreezeSim = document.getElementById('btnUnfreezeSim');
@@ -4571,7 +4670,7 @@ function serviceCardHtml(s, customer){
         ${s.partnerCompany?`<div><div class="k">${t('f.partnerCompany')}</div><div class="v">${escapeHtml(s.partnerCompany)}</div></div>`:''}
         ${s.svcCarrierType?`<div><div class="k">${t('f.svcCarrierType')}</div><div class="v">${escapeHtml(s.svcCarrierType)}</div></div>`:''}
         ${usedDays!==null?`<div><div class="k">${t('f.usedDays')}</div><div class="v">${usedDays} ${LANG==='zh'?'天':'days'}</div></div>`:''}
-        ${customer && customer.years!=null?`<div><div class="k">${t('f.years')}</div><div class="v">${customer.years} ${t('years.suffix')}</div></div>`:''}
+        ${customer && customer.years!=null?`<div><div class="k">${t('f.years')}</div><div class="v">${stayLeftText(customer)}</div></div>`:''}
       </div>
     </div>`;
   // "What the customer pays" (postpaid only) — deliberately its own card, visually
@@ -6074,7 +6173,7 @@ function exportCustomersXlsx(){
   const rows = DB.customers.map(c=>({
     Name:c.name, Nationality:c.nationality, DOB:c.dob, Age:calcAge(c.dob),
     Phone:c.phone, Kakao:c.kakao, WeChat:c.wechat, IDType:c.idType, IDNumber:c.idNumber, IDExpiry:c.idExpiry,
-    Occupation:c.occupation, Workplace:c.workplace, YearsInKorea:c.years, Referral:c.referral,
+    Occupation:c.occupation, Workplace:c.workplace, YearsInKorea:stayLeftRounded(c)??'', Referral:c.referral,
     CarrierType:c.carrierType, PlanType:c.planType, BranchOffice:c.branchOffice, SubType:c.subType,
     Rating:c.rating, Notes:c.notes,
   }));
@@ -6121,13 +6220,13 @@ const POSTPAID_EXPORT_HEADERS = ['CUSTOMER','NATIONALITY','PHONE','DATE OF BIRTH
   'USIM FEE','DISCOUNT / MONTH','DISCOUNT MONTHS','EXPECTED INCOME','NOTES'];
 function prepaidExportRow(c, s){
   const lab = planLengthLabel(s); // recharge plans are written as "Recharge" in PLAN TYPE (same rule as the CRM)
-  return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', c.years||0,
+  return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', stayLeftRounded(c)||0,
     c.handlerName||'', (lab && lab[0]==='rc') ? 'Recharge' : ((lab && lab[0]==='ext') ? '3-Month Extension' : (c.planType||'')), s.svcCarrierType||'', s.company||'',
     s.activationDate||'', s.expiryDate||'', s.durationDays||'', Number(s.price)||0, Number(s.discount)||0,
     Math.max(0,(Number(s.price)||0)-(Number(s.discount)||0)), s.paymentMethod||'', s.notes||''];
 }
 function postpaidExportRow(c, s){
-  return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', c.years||0,
+  return [c.name, c.nationality||'', c.phone||'', c.dob||'', c.idType||'', c.idNumber||'', c.occupation||'', stayLeftRounded(c)||0,
     c.handlerName||'', c.workType||c.planType||'', s.svcCarrierType||'', s.company||'', s.partnerCompany||'',
     s.activationDate||'', s.expiryDate||'', s.durationDays||'', Number(s.monthlyFee)||0, Number(s.expectedProfit)||0,
     Number(s.actualProfit)||0, Number(s.usimFee)||0, Number(s.discountPerMonth)||0, Number(s.discountMonths)||0,
@@ -6225,6 +6324,7 @@ function restoreOwnExportSheet(sheetName, rows){
         address:'', notes:'', rating:5, createdAt: normDateForImport(row['ACTIVATION DATE'])||todayISO(),
       };
       DB.customers.push(cust);
+      markStaySet(cust); // the exported Years in Korea is the time left on the export day
     }
     const activationDate = normDateForImport(row['ACTIVATION DATE'])||todayISO();
     const expiryDate = normDateForImport(row['EXPIRY DATE'])||'';
@@ -6595,6 +6695,7 @@ function importRowsIntoDB(rows, sheetName, subTypeChoice, skipDupes){
       handlerName:String(guessField(row,['handlername','办理人','担当者'])||''),
     };
     DB.customers.push(cust);
+    markStaySet(cust); // Years in Korea in the file counts as time left from today
     cust.workType = String(guessField(row,['worktype','业务向','업무향'])||'');
     const plan = guessField(row,['plan','套餐']);
     const carrier = guessField(row,['carrier','통신사','통신社','签约公司','开通社']);
