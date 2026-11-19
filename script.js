@@ -4176,7 +4176,7 @@ function extClosedNote(s){
   let ex; try{ ex = extensionInfo(s.customerId); }catch(e){ return ''; }
   if(!ex || ex.show || !ex.used) return '';
   const zh = LANG==='zh';
-  const txt = zh ? '三个月续期：此号码已使用过（仅限一次）' : '3-Month Extension: already used on this number (one time only)';
+  const txt = zh ? `三个月续期：此号码已用完（最多${EXTENSION_MAX}次）` : `3-Month Extension: all ${EXTENSION_MAX} used on this number`;
   return `<div class="ext-closed-note">${txt}</div>`;
 }
 /* Small line icons for markup built in JS (same style as the rest of the app) */
@@ -4250,8 +4250,8 @@ function openCustomerDetail(id){
       ${(()=>{ const ex = extensionInfo(c.id); if(!ex.show) return '';
         const lab = LANG==='zh' ? '三个月续期' : '3-Month Extension';
         return ex.eligible
-          ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?'同一号码再办一次3个月套餐（仅限一次）':'One more 3-month plan on the same number (one time only)'}">${pfBtnIcon('btnExtension')}${lab}</button>`
-          : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?`从第93天（${fmtDateHuman(ex.from)}）起可办理`:`Available from day 93 (${fmtDateHuman(ex.from)})`}">${pfBtnIcon('btnExtension')}${lab} · ${shortDay(ex.from)}</button>`; })()}
+          ? `<button class="btn btn-ghost btn-ext" id="btnExtension" title="${LANG==='zh'?`同一号码再办一次3个月套餐（每个号码最多${EXTENSION_MAX}次，还剩${ex.left}次）`:`One more 3-month plan on the same number (max ${EXTENSION_MAX} per number, ${ex.left} left)`}">${pfBtnIcon('btnExtension')}${lab} <span class="ext-left">${ex.left}/${EXTENSION_MAX}</span></button>`
+          : `<button class="btn btn-ghost btn-ext" id="btnExtension" disabled title="${LANG==='zh'?`从第93天（${fmtDateHuman(ex.from)}）起可办理，还剩${ex.left}次`:`Available from day 93 (${fmtDateHuman(ex.from)}) — ${ex.left} of ${EXTENSION_MAX} left`}">${pfBtnIcon('btnExtension')}${lab} · ${shortDay(ex.from)}</button>`; })()}
       <button class="btn btn-ghost" id="btnChangeToPostpaid">${pfBtnIcon('swap')}${t('btn.changeToPostpaid')}</button>
       ${c.idType==='Passport' && !hasRealIdChangeRequest ? `<button class="btn btn-ghost" id="btnRequestIdChange">${pfBtnIcon('btnRequestIdChange')}${t('btn.requestIdChange')}</button>` : ''}
       <button class="btn btn-danger" id="btnCancelSub">${pfBtnIcon('btnCancelSub')}${t('btn.cancelSubscription')}</button>`;
@@ -4501,6 +4501,7 @@ function progressStateClass(s){
    possible after a plan ends. Worked out from the plan history itself (no extra field to
    store or lose): a number that already has two 90-day prepaid plans has used its extension. */
 const EXTENSION_FROM_DAY = 93;
+const EXTENSION_MAX = 3;   // at most 3 extensions per phone number
 const normNum = n=> String(n||'').replace(/[^0-9]/g,'');
 function is90(s){ return s && s.type==='prepaid' && Number(s.durationDays)>=85 && Number(s.durationDays)<=95; }
 function ninetyDayPlansOnNumber(customerId, number){
@@ -4509,14 +4510,15 @@ function ninetyDayPlansOnNumber(customerId, number){
     normNum(x.number || (cust && cust.phone))===n)
     .sort((a,b)=> String(a.activationDate||'').localeCompare(String(b.activationDate||'')) || (a.endedSeq||0)-(b.endedSeq||0));
 }
-/* {show, eligible, from, until, used, closed, plan} for the customer's current plan */
+/* {show, eligible, from, used, done, left, plan} for the customer's current plan */
 function extensionInfo(customerId){
   const cur = activeSubscriptionFor(customerId);
   if(!is90(cur) || !cur.activationDate) return {show:false};
   const plans = ninetyDayPlansOnNumber(customerId, cur.number);
-  if(plans.length >= 2) return {show:false, used:true};          // already extended once on this number
+  const done = Math.max(0, plans.length - 1);                      // the first 90-day plan is not an extension
+  if(done >= EXTENSION_MAX) return {show:false, used:true, done};   // all 3 extensions used on this number
   const from = addDaysISO(cur.activationDate, EXTENSION_FROM_DAY);
-  return {show:true, eligible: todayISO() >= from, from, plan:cur};
+  return {show:true, eligible: todayISO() >= from, from, plan:cur, done, left: EXTENSION_MAX - done};
 }
 /* is this 90-day plan itself the extension (a later 90-day plan on the same number)? */
 function isExtensionPlan(s){
@@ -5206,8 +5208,8 @@ function openPrepaidAssignModal(customerId, mode){
   document.getElementById('prepaidAssignCurrentPlan').innerHTML = (current
     ? `${t('detail.currentPlan')}: <b>${planLabel(current)}</b>`
     : `<i>${t('detail.noActiveSubscription')}</i>`) + (ext ? `<div class="ext-note">${zh
-      ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码仅限一次，之后只能按月充值。`
-      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Allowed once per number — after this, only monthly recharges.`}</div>` : '');
+      ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码最多${EXTENSION_MAX}次 — 这是第 <b>${extensionInfo(customerId).done+1}</b> 次，用完后只能按月充值。`
+      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Up to ${EXTENSION_MAX} per number — this is number <b>${extensionInfo(customerId).done+1} of ${EXTENSION_MAX}</b>. After that, only monthly recharges.`}</div>` : '');
 
   const plansForMode = ext ? PREPAID_PLANS.filter(p=>p.days===90) : (mode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS);
   renderPrepaidPlanTiles(String(plansForMode[0].days), 'pa_prepaidPlan_group', plansForMode);

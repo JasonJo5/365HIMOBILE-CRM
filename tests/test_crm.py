@@ -266,9 +266,17 @@ def run(b):
         pg.click("#btnExtension"); pg.wait_for_timeout(250); pg.click("#savePrepaidAssignBtn"); pg.wait_for_timeout(400)
         after = pg.evaluate(f"(a=>({{num:a.number, sim:a.simType||'physical', days:a.durationDays, tag:(planLengthLabel(a)||[])[0]}}))(activeSubscriptionFor('{elig}'))")
         check("the extension is a new 3-month plan on the same number and SIM type", after == {**before, "days":90, "tag":"ext"}, after)
-        pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
-        check("only one extension per number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
-        check("a used extension is explained on the profile", "already used" in (pg.locator(".ext-closed-note").first.text_content() if pg.locator(".ext-closed-note").count() else ""))
+        # up to 3 extensions per number: age the new plan past day 93 and repeat
+        age = f"(a=>{{a.activationDate=addDaysISO(todayISO(),-100); a.expiryDate=addDaysISO(a.activationDate,90);}})(activeSubscriptionFor('{elig}'))"
+        counts = []
+        for _ in range(2):
+            pg.evaluate(age); pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
+            counts.append(pg.locator("#btnExtension .ext-left").text_content() if pg.locator("#btnExtension").count() else None)
+            pg.click("#btnExtension"); pg.wait_for_timeout(250); pg.click("#savePrepaidAssignBtn"); pg.wait_for_timeout(400)
+        check("the button counts down the extensions left (2/3, then 1/3)", counts == ["2/3", "1/3"], counts)
+        pg.evaluate(age); pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
+        check("no 4th extension on the same number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
+        check("used-up extensions are explained on the profile", "all 3 used" in (pg.locator(".ext-closed-note").first.text_content() if pg.locator(".ext-closed-note").count() else ""))
 
     print("Sheet View")
     pg.evaluate("closeAllModals(); goTo('sheet')"); pg.wait_for_timeout(300)
