@@ -278,6 +278,18 @@ def run(b):
         check("no 4th extension on the same number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
         check("used-up extensions are explained on the profile", "all 3 used" in (pg.locator(".ext-closed-note").first.text_content() if pg.locator(".ext-closed-note").count() else ""))
 
+    print("Reprint information change")
+    rp = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id) && activeSubscriptionFor(c.id).type==='prepaid');
+        const keep = [c.idChangeRequest, c.idType], orig = window.printIdChangeForm, calls = [];
+        c.idChangeRequest = {status:'completed', requestedDate:'2026-10-01', completedDate:'2026-10-05', handledBy:'Test'};
+        window.printIdChangeForm = id => calls.push(id);
+        closeAllModals(); openCustomerDetail(c.id);
+        const top = document.getElementById('btnReprintIdChange'), hist = document.querySelector('#detailBody [data-idchange-reprint]');
+        if(top) top.click(); if(hist) hist.click();
+        window.printIdChangeForm = orig; c.idChangeRequest = keep[0]; c.idType = keep[1]; closeAllModals();
+        return [!!top, !!hist, calls.length===2 && calls.every(x=>x===c.id)]; })()""")
+    check("a completed info change has Reprint buttons (actions + history) that print it", rp == [True, True, True], rp)
+
     print("Sheet View")
     pg.evaluate("closeAllModals(); goTo('sheet')"); pg.wait_for_timeout(300)
     total = pg.evaluate("document.querySelectorAll('#sheetTable tbody tr [data-open-customer]').length")

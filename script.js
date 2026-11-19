@@ -4276,6 +4276,10 @@ function openCustomerDetail(id){
       + `<button class="btn ${exactUndo?'btn-ghost':'btn-primary'}" id="btnStartNewSub">${pfBtnIcon('btnStartNewSub')}${t('btn.startNewSubscription').replace(/^[＋+]\s*/,'')}</button>`
       + (mostRecent && !exactUndo ? ` <button class="btn btn-ghost" id="btnUndoCancel">${pfBtnIcon('btnUndoCancel')}${t('btn.undoCancel')}</button>` : '');
   }
+  // a finished information change (Passport → ARC) can be printed again at any time
+  if(c.idChangeRequest && c.idChangeRequest.status==='completed'){
+    actionButtons += `<button class="btn btn-ghost" id="btnReprintIdChange" title="${LANG==='zh'?'再次打印信息变更申请表':'Print the information change form again'}">${pfBtnIcon('print')}${LANG==='zh'?'重新打印信息变更':'Reprint info change'}</button>`;
+  }
 
   // Surfaces a pending Passport → Resident Card (ARC) change request right on the profile,
   // similar to how duplicate-detection works below — so staff see it immediately when
@@ -4432,6 +4436,9 @@ function openCustomerDetail(id){
   if(btnReqIdChange) btnReqIdChange.addEventListener('click', ()=> openIdChangeModal(id));
   const btnPrintIdChange = document.getElementById('btnPrintIdChange');
   if(btnPrintIdChange) btnPrintIdChange.addEventListener('click', ()=> printIdChangeForm(id));
+  const btnReprintIdChange = document.getElementById('btnReprintIdChange');
+  if(btnReprintIdChange) btnReprintIdChange.addEventListener('click', ()=> printIdChangeForm(id));
+  detailBody.querySelectorAll('[data-idchange-reprint]').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); printIdChangeForm(id); }));
   const btnCompleteIdChange = document.getElementById('btnCompleteIdChange');
   if(btnCompleteIdChange) btnCompleteIdChange.addEventListener('click', ()=>{
     completeIdChangeRequest(id, ()=> openCustomerDetail(id));
@@ -4644,6 +4651,7 @@ function idChangeHistoryItemHtml(req){
       </div>
       <div style="text-align:right;">
         <span class="pill pill-gray">${t('status.completed')}</span>
+        <div class="pf-head-btns"><button class="btn btn-sm btn-ghost" data-idchange-reprint="1" title="${LANG==='zh'?'再次打印信息变更申请表':'Print the information change form again'}">${pfBtnIcon('print')}${LANG==='zh'?'重新打印':'Reprint'}</button></div>
       </div>
     </div>
     <div class="muted" style="font-size:12px;margin-top:8px;font-weight:600;">${t('rem.idChange.completedOn')} ${fmtDateHuman(req.completedDate||req.requestedDate)}</div>
