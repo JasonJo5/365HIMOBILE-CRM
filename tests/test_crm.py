@@ -253,17 +253,13 @@ def run(b):
         check("before day 93 the extension button is shown but disabled", pg.is_disabled("#btnExtension"))
     pg.evaluate(f"closeAllModals(); openCustomerDetail('{monthly}')"); pg.wait_for_timeout(150)
     check("monthly-plan customers get no extension button", pg.locator("#btnExtension").count() == 0)
-    # 70-day limit after the 3-month plan ends
+    # no end date: still allowed long after the 3-month plan ended
     lim = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid' && a.durationDays===90 && extensionInfo(c.id).show;});
         const a = activeSubscriptionFor(c.id), keep = [a.activationDate, a.expiryDate];
         const set = endAgo => { a.expiryDate = addDaysISO(todayISO(), -endAgo); a.activationDate = addDaysISO(a.expiryDate, -90); return extensionInfo(c.id); };
-        const r = [set(70).eligible, set(71).show];
-        closeAllModals(); openCustomerDetail(c.id);
-        const m = document.getElementById('customerDetailModal') || document.body;
-        r.push(!document.getElementById('btnExtension') && /closed on/.test((m.querySelector('.ext-closed-note')||{}).textContent||''));
-        a.activationDate = keep[0]; a.expiryDate = keep[1]; closeAllModals(); return r; })()""")
-    check("extension allowed up to 70 days after the plan ends, not after", lim[:2] == [True, False], lim)
-    check("after the 70 days the profile says why there is no extension button", lim[2] is True, lim)
+        const r = [set(70).eligible, set(172).eligible, set(400).eligible];
+        a.activationDate = keep[0]; a.expiryDate = keep[1]; return r; })()""")
+    check("extension has no end date (70, 172, 400 days after the plan ended)", lim == [True, True, True], lim)
     if elig:
         before = pg.evaluate(f"(a=>({{num:a.number, sim:a.simType||'physical'}}))(activeSubscriptionFor('{elig}'))")
         pg.evaluate(f"closeAllModals(); openCustomerDetail('{elig}')"); pg.wait_for_timeout(150)
