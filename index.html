@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261119d">
+<link rel="stylesheet" href="style.css?v=20261119e">
 </head>
 <body>
 
@@ -260,9 +260,9 @@
             </select>
             <div class="date-range-pill" id="sheetDateRangePill">
               <svg class="date-range-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-              <input type="date" id="sheetDateFrom" data-i18n-title="filter.activationDateFrom" title="开通日期起">
+              <input type="date" max="9999-12-31" id="sheetDateFrom" data-i18n-title="filter.activationDateFrom" title="开通日期起">
               <span class="date-range-sep">–</span>
-              <input type="date" id="sheetDateTo" data-i18n-title="filter.activationDateTo" title="开通日期止">
+              <input type="date" max="9999-12-31" id="sheetDateTo" data-i18n-title="filter.activationDateTo" title="开通日期止">
               <button class="date-range-clear" id="sheetDateRangeClear" data-i18n-title="filter.clearDates" title="清除日期">✕</button>
             </div>
           </div>
@@ -341,7 +341,7 @@
           <div class="rem-seg" id="reportViewTabs"></div>
           <div class="rep-tools">
             <select class="select-input" id="repMonthSelect"></select>
-            <input type="date" class="select-input" id="repDaySelect">
+            <input type="date" max="9999-12-31" class="select-input" id="repDaySelect">
             <button class="btn btn-ghost" id="btnExportReport" data-i18n="btn.exportMonthExcel">导出该月份 Excel</button>
           </div>
         </div>
@@ -558,7 +558,7 @@
       <div class="form-grid">
         <div class="form-field"><label data-i18n="f.name">客户姓名</label><input id="pc_name" data-i18n-ph="ph.custName" placeholder="例如：KIM MINJUN"></div>
         <div class="form-field"><label data-i18n="f.nationality">国籍 / Country</label><input id="pc_nationality" data-i18n-ph="ph.nationality" placeholder="例如：CHINA"></div>
-        <div class="form-field"><label data-i18n="f.dob">出生日期</label><input id="pc_dob" type="date"></div>
+        <div class="form-field"><label data-i18n="f.dob">出生日期</label><input id="pc_dob" type="date" max="9999-12-31"></div>
         <div class="form-field"><label data-i18n="f.years">在韩年数</label><input id="pc_years" type="number" min="0" step="0.5"></div>
         <div class="form-field"><label data-i18n="f.idNumber">证件号码</label><input id="pc_idNumber"></div>
         <div class="form-field"><label data-i18n="f.occupation">职业</label><input id="pc_occupation"></div>
@@ -578,7 +578,7 @@
 
         <div class="form-hr"></div>
         <div class="form-field"><label data-i18n="f.number">电话号码</label><input id="pc_number" placeholder="010-0000-0000"></div>
-        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pc_activationDate" type="date"></div>
+        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pc_activationDate" type="date" max="9999-12-31"></div>
         <div class="form-field full"><label data-i18n="f.simType">SIM 类型</label><div class="tile-radio-group" id="pc_simType_group" data-field="simType"></div></div>
         <div class="form-field"><label data-i18n="f.monthlyFee">月租费（客户付给运营商，非本店收入）</label><input id="pc_monthlyFee" type="number" min="0"></div>
         <div class="form-field full"><label data-i18n="f.handlerName">办理人 Handled by</label><div class="tile-radio-group" id="pc_handlerName_group" data-field="handlerName"></div></div>
@@ -645,7 +645,7 @@
             <div class="form-field full"><label data-i18n="f.company">회사명 Company</label><div class="tile-radio-group" id="p3_company_group" data-field="company"></div></div>
             <div class="form-field full"><label data-i18n="f.svcCarrierType">통신사 Carrier type</label><div class="tile-radio-group" id="p3_svcCarrierType_group" data-field="svcCarrierType"></div></div>
             <div class="form-field"><label data-i18n="f.number">电话号码</label><input id="p3_number" placeholder="010-0000-0000"></div>
-            <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="p3_activationDate" type="date"></div>
+            <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="p3_activationDate" type="date" max="9999-12-31"></div>
             <div class="form-field full"><label data-i18n="print.template">打印模板</label><select id="p3_template"></select></div>
             <div class="form-field full" id="p3_paymentMethodField"><label data-i18n="f.paymentMethod">付款方式 Payment method</label><div class="tile-radio-group" id="p3_paymentMethod_group" data-field="paymentMethod"></div></div>
           </div>
@@ -664,7 +664,7 @@
             <div class="form-field full"><label data-i18n="f.partnerCompany">파트너사 Partner company</label><div class="tile-radio-group" id="pe_partnerCompany_group" data-field="partnerCompany"></div></div>
             <div class="form-field full"><label data-i18n="f.svcCarrierType">통신사 Carrier type</label><div class="tile-radio-group" id="pe_svcCarrierType_group" data-field="svcCarrierType"></div></div>
             <div class="form-field"><label data-i18n="f.number">电话号码</label><input id="pe_number" placeholder="010-0000-0000"></div>
-            <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pe_activationDate" type="date"></div>
+            <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pe_activationDate" type="date" max="9999-12-31"></div>
             <div class="form-field"><label data-i18n="f.monthlyFee">月租费</label><input id="pe_monthlyFee" type="number" min="0"></div>
             <div class="form-field"><label data-i18n="f.expectedProfit">公司价格 Company price</label><input id="pe_expectedProfit" type="number" min="0"></div>
             <div class="form-field"><label data-i18n="f.actualProfit">公司实际结算价</label><input id="pe_actualProfit" type="number" min="0"></div>
@@ -726,9 +726,9 @@
         <div class="form-field"><label data-i18n="f.plan">套餐名称</label><input id="o_plan" placeholder="360 / 60天"></div>
         <div class="form-field"><label data-i18n="f.number">电话号码</label><input id="o_number" placeholder="010-0000-0000"></div>
         <div class="form-field"><label data-i18n="f.simType">SIM 类型</label><select id="o_simType"><option value="physical" data-i18n="opt.physical">实体卡</option><option value="esim">eSIM</option></select></div>
-        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="o_activationDate" type="date"></div>
+        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="o_activationDate" type="date" max="9999-12-31"></div>
         <div class="form-field"><label data-i18n="f.durationDays">合同时长（天）</label><input id="o_durationDays" type="number" min="0" placeholder="30 / 60 / 90 / 365"></div>
-        <div class="form-field"><label data-i18n="f.expiryDate">到期日期</label><input id="o_expiryDate" type="date"></div>
+        <div class="form-field"><label data-i18n="f.expiryDate">到期日期</label><input id="o_expiryDate" type="date" max="9999-12-31"></div>
         <div class="form-field"><label data-i18n="f.status">办理状态</label><select id="o_status"></select></div>
         <div class="form-field" id="o_usedDaysField" style="display:none;"><label data-i18n="f.usedDays">已使用天数 Used days</label><input id="o_usedDaysDisplay" disabled></div>
         <div class="form-hr"></div>
@@ -769,7 +769,7 @@
     </div>
     <div class="modal-body">
       <div class="section-desc" style="margin-bottom:14px;" data-i18n="rem.idChange.modalDesc">用于记录客户希望将证件登记从护照改为外国人登记证（ARC），以便使用需要 ARC 的手机应用。</div>
-      <div class="form-field"><label data-i18n="f.date">日期</label><input id="idc_date" type="date"></div>
+      <div class="form-field"><label data-i18n="f.date">日期</label><input id="idc_date" type="date" max="9999-12-31"></div>
       <div class="form-field full"><label data-i18n="f.handlerName">经办人</label><div class="tile-radio-group" id="idc_handler_group" data-field="handledBy"></div></div>
     </div>
     <div class="modal-foot">
@@ -816,14 +816,14 @@
       </div>
       <div id="freezeDaysPane">
         <div class="form-grid">
-          <div class="form-field"><label data-i18n="freeze.startDate">开始日期</label><input id="fz_startDate" type="date"></div>
+          <div class="form-field"><label data-i18n="freeze.startDate">开始日期</label><input id="fz_startDate" type="date" max="9999-12-31"></div>
           <div class="form-field"><label data-i18n="freeze.days">暂停天数</label><input id="fz_days" type="number" min="1"></div>
         </div>
       </div>
       <div id="freezeRangePane" style="display:none;">
         <div class="form-grid">
-          <div class="form-field"><label data-i18n="freeze.startDate">开始日期</label><input id="fz_rangeStart" type="date"></div>
-          <div class="form-field"><label data-i18n="freeze.endDate">结束日期</label><input id="fz_rangeEnd" type="date"></div>
+          <div class="form-field"><label data-i18n="freeze.startDate">开始日期</label><input id="fz_rangeStart" type="date" max="9999-12-31"></div>
+          <div class="form-field"><label data-i18n="freeze.endDate">结束日期</label><input id="fz_rangeEnd" type="date" max="9999-12-31"></div>
         </div>
       </div>
       <div class="section-desc" id="freezePreview" style="margin-top:10px;font-weight:700;"></div>
@@ -866,7 +866,7 @@
         </div>
 
         <div class="form-hr"></div>
-        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="cs_activationDate" type="date"></div>
+        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="cs_activationDate" type="date" max="9999-12-31"></div>
         <div class="form-field"><label data-i18n="f.monthlyFee">月租费（客户付给运营商，非本店收入）</label><input id="cs_monthlyFee" type="number" min="0"></div>
         <div class="form-field full"><label data-i18n="f.handlerName">办理人 Handled by</label><div class="tile-radio-group" id="cs_handlerName_group" data-field="handlerName"></div></div>
 
@@ -908,7 +908,7 @@
         <div class="form-field"><label data-i18n="f.discount">折扣 Discount</label><input id="pa_discount" type="number" min="0" value="0"></div>
         <div class="form-field"><label data-i18n="f.cardTax">税费（刷卡）Tax (card)</label><input id="pa_tax" type="number" min="0" value="0" placeholder="0"></div>
         <div class="form-field"><label data-i18n="f.finalPrice">最终价格 Final price</label><input id="pa_finalPricePreview" disabled></div>
-        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pa_activationDate" type="date"></div>
+        <div class="form-field"><label data-i18n="f.activationDate">开通日期</label><input id="pa_activationDate" type="date" max="9999-12-31"></div>
         <div class="form-field"><label data-i18n="f.usimNumber">USIM 일련번호</label><input id="pa_usimNumber"></div>
         <div class="form-field"><label data-i18n="f.company">가입회사 Company</label><div class="tile-radio-group" id="pa_company_group" data-field="company"></div></div>
         <div class="form-field"><label data-i18n="f.svcCarrierType">통신사 Carrier type</label><div class="tile-radio-group" id="pa_svcCarrierType_group" data-field="svcCarrierType"></div></div>
@@ -1098,6 +1098,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261119d"></script>
+<script src="script.js?v=20261119e"></script>
 </body>
 </html>

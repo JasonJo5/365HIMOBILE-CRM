@@ -8686,3 +8686,12 @@ window.__planLab = planLengthLabel;
     });
   });
 })();
+
+/* Date fields: Chrome lets the year run to 6 digits, so after typing "2007" it waits instead of
+   jumping to the month. A 4-digit max year makes it move on to month, then day, by itself.
+   Also covers date fields added to the page later. */
+(function(){
+  const fix = el=>{ if(el && el.type==='date' && !el.max) el.max = '9999-12-31'; };
+  document.querySelectorAll('input[type="date"]').forEach(fix);
+  document.addEventListener('focusin', e=> fix(e.target), true);
+})();

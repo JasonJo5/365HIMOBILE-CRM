@@ -278,6 +278,12 @@ def run(b):
         check("no 4th extension on the same number", pg.locator("#btnExtension").count() == 0 and not pg.evaluate(f"extensionInfo('{elig}').show"))
         check("used-up extensions are explained on the profile", "all 3 used" in (pg.locator(".ext-closed-note").first.text_content() if pg.locator(".ext-closed-note").count() else ""))
 
+    print("Date typing")
+    pg.evaluate("closeAllModals(); openCustomerModal && openCustomerModal()") if pg.evaluate("typeof openCustomerModal==='function'") else None
+    dmax = pg.evaluate("[...document.querySelectorAll('input[type=date]')].every(i=>i.max==='9999-12-31')")
+    check("every date field jumps from year to month after 4 digits (max year 9999)", dmax)
+    pg.evaluate("closeAllModals()")
+
     print("Reprint information change")
     rp = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id) && activeSubscriptionFor(c.id).type==='prepaid');
         const keep = [c.idChangeRequest, c.idType], orig = window.printIdChangeForm, calls = [];
