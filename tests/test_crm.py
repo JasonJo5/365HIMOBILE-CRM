@@ -284,6 +284,32 @@ def run(b):
     check("every date field jumps from year to month after 4 digits (max year 9999)", dmax)
     pg.evaluate("closeAllModals()")
 
+    print("Prepaid: change plan after it expired (19+)")
+    cp = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';});
+        const a = activeSubscriptionFor(c.id), keep = [c.dob, a.activationDate, a.expiryDate], out = {};
+        const btn = () => { closeAllModals(); openCustomerDetail(c.id); const b = document.getElementById('btnChangePrepaidPlan'); return b ? (b.disabled ? 'disabled' : 'on') : 'none'; };
+        c.dob = '2000-01-01'; a.activationDate = addDaysISO(todayISO(), 10); a.expiryDate = addDaysISO(todayISO(), 40); out.notExpired = btn();
+        a.activationDate = addDaysISO(todayISO(), -40); a.expiryDate = addDaysISO(todayISO(), -10); out.adult = btn();
+        c.dob = addDaysISO(todayISO(), -365*17); out.u19 = btn();
+        c.dob = ''; out.noDob = btn();
+        c.dob = '2000-01-01'; btn();
+        document.getElementById('btnChangePrepaidPlan').click();
+        out.modal = document.getElementById('prepaidAssignModalOverlay').classList.contains('show') && /Change prepaid plan/.test(document.getElementById('prepaidAssignModalTitle').textContent);
+        const tile = document.querySelector('#pa_prepaidPlan_group [data-val="60"]'); if(tile) tile.click();
+        return new Promise(r=>setTimeout(()=>{
+          document.getElementById('pa_company_group').querySelector('[data-val]')?.click();
+          document.getElementById('pa_svcCarrierType_group').querySelector('[data-val]')?.click();
+          document.getElementById('savePrepaidAssignBtn').click();
+          const n = activeSubscriptionFor(c.id);
+          out.saved = [n && n.id!==a.id, n && n.durationDays, a.changeReason, a.isActive];
+          out.cid = c.id; r(out); }, 50)); })()""")
+    check("no Change plan button while the prepaid plan is still running", cp["notExpired"] == "none", cp)
+    check("expired prepaid, 19 or older: Change plan button", cp["adult"] == "on", cp)
+    check("under 19 or no date of birth: the button is locked", cp["u19"] == "disabled" and cp["noDob"] == "disabled", cp)
+    check("Change plan opens the prepaid plan window", cp["modal"] is True, cp)
+    check("saving starts the new prepaid plan (60 days) and ends the expired one", cp["saved"] == [True, 60, "plan_change", False], cp)
+    pg.evaluate("closeAllModals()")
+
     print("Years in Korea counts down")
     st = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id)); const keep = [c.years, DB.reminderState[stayKey(c.id)]];
         const ago = d => addDaysISO(todayISO(), -d), out = {};
@@ -366,6 +392,7 @@ def run(b):
     b4, sb4 = snap("c4"), srv_snap("c4")
     pg.evaluate("closeAllModals(); openCustomerDetail('c4')"); pg.wait_for_timeout(200)
     if not pg.is_visible("#btnCancelSub"): pg.click("#detailBody .pf-more")   # postpaid: under "More"
+    if not pg.is_visible("#btnCancelSub"): pg.click("#detailBody .pf-more")
     pg.click("#btnCancelSub"); pg.wait_for_timeout(200); pg.click("#confirmCancelSubBtn"); pg.wait_for_timeout(400)
     check("cancelling a subscription shows an Undo button", pg.evaluate("document.getElementById('undoBar')?.classList.contains('show')"))
     check("cancel really ended the plan", pg.evaluate("!activeSubscriptionFor('c4')"))
@@ -377,6 +404,7 @@ def run(b):
     # cancel -> close the bar -> sync -> the profile still offers an exact undo
     b9, sb9 = snap("c9"), srv_snap("c9")
     pg.evaluate("closeAllModals(); openCustomerDetail('c9')"); pg.wait_for_timeout(200)
+    if not pg.is_visible("#btnCancelSub"): pg.click("#detailBody .pf-more")
     pg.click("#btnCancelSub"); pg.wait_for_timeout(200); pg.click("#confirmCancelSubBtn"); pg.wait_for_timeout(400)
     pg.wait_for_timeout(1500)
     check("the Undo bar does not disappear by itself", pg.evaluate("document.getElementById('undoBar').classList.contains('show')"))
@@ -393,6 +421,7 @@ def run(b):
     pg.evaluate("""(()=>{ const a = activeSubscriptionFor('c9'); a.activationDate = addDaysISO(todayISO(), -120); a.expiryDate = addDaysISO(a.activationDate, 90); a.changeReason = 'recharge'; saveDB(DB); })()""")
     b9b = pg.evaluate("customerServices('c9').map(x=>{const o={}; Object.keys(x).sort().forEach(k=>{ if(x[k]!==null && x[k]!==undefined && x[k]!=='') o[k]=x[k]; }); return JSON.stringify(o);}).sort().join('\\n')")
     pg.evaluate("closeAllModals(); openCustomerDetail('c9')"); pg.wait_for_timeout(200)
+    if not pg.is_visible("#btnCancelSub"): pg.click("#detailBody .pf-more")
     pg.click("#btnCancelSub"); pg.wait_for_timeout(200); pg.fill("#cs_cancelNotes", "wrong person"); pg.click("#confirmCancelSubBtn"); pg.wait_for_timeout(400)
     pg.evaluate("localStorage.removeItem('himobile_cancel_undo'); hideUndo(); pushToServer()"); pg.wait_for_timeout(1500)
     pg.evaluate("pullFromServer()"); pg.wait_for_timeout(1500)

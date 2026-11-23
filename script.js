@@ -4340,6 +4340,11 @@ function openCustomerDetail(id){
   if(active && active.type==='prepaid'){
     actionButtons = `
       <button class="btn btn-primary" id="btnRecharge">${pfBtnIcon('btnRecharge')}${t('btn.recharge')}</button>
+      ${(()=>{ const pc = prepaidChangeInfo(c.id); if(!pc.show) return '';
+        const lab = LANG==='zh' ? '变更套餐' : 'Change plan';
+        return pc.ok
+          ? `<button class="btn btn-ghost" id="btnChangePrepaidPlan" title="${LANG==='zh'?'套餐已到期：换一个新的先付卡套餐':'Plan expired: switch to a different prepaid plan'}">${pfBtnIcon('swap')}${lab}</button>`
+          : `<button class="btn btn-ghost" id="btnChangePrepaidPlan" disabled title="${escapeHtml(pc.why)}">${pfBtnIcon('swap')}${lab} · 19+</button>`; })()}
       ${(()=>{ const ex = extensionInfo(c.id); if(!ex.show) return '';
         const lab = LANG==='zh' ? '三个月续期' : '3-Month Extension';
         return ex.eligible
@@ -4513,6 +4518,8 @@ function openCustomerDetail(id){
   if(btnChangePlan) btnChangePlan.addEventListener('click', ()=> openChangeSubModal(id, 'plan_change'));
   const btnRecharge = document.getElementById('btnRecharge');
   if(btnRecharge) btnRecharge.addEventListener('click', ()=> openPrepaidAssignModal(id, 'recharge'));
+  const btnChangePrepaidPlan = document.getElementById('btnChangePrepaidPlan');
+  if(btnChangePrepaidPlan) btnChangePrepaidPlan.addEventListener('click', ()=> openPrepaidAssignModal(id, 'prepaid_change'));
   const btnExtension = document.getElementById('btnExtension');
   if(btnExtension) btnExtension.addEventListener('click', ()=> openPrepaidAssignModal(id, 'extension'));
   const btnToPrepaid = document.getElementById('btnChangeToPrepaid');
@@ -5298,25 +5305,40 @@ document.getElementById('saveChangeSubBtn').addEventListener('click', ()=>{
 /* ---------------- RECHARGE / CHANGE TO PREPAID (shared modal) ---------------- */
 let prepaidAssignCustomerId = null;
 let prepaidAssignMode = null; // 'recharge' | 'to_prepaid'
+/* "Change plan" for prepaid: once the current prepaid plan has expired, a customer aged 19 or
+   older can switch to a different prepaid plan (any length, company, carrier). It is not the
+   change to postpaid. {show, ok, why} */
+function prepaidChangeInfo(customerId){
+  const cust = getCustomer(customerId), cur = activeSubscriptionFor(customerId);
+  if(!cust || !cur || cur.type!=='prepaid' || computedStatus(cur)!=='expired') return {show:false};
+  const zh = LANG==='zh', age = calcAge(cust.dob);
+  if(age===null) return {show:true, ok:false, why: zh?'需要先填写出生日期（须满19岁）':'Add the date of birth first (must be 19 or older)'};
+  if(age < 19) return {show:true, ok:false, why: zh?`客户 ${age} 岁 — 满19岁才能变更套餐`:`Customer is ${age} — must be 19 or older to change plan`};
+  return {show:true, ok:true, age};
+}
 function openPrepaidAssignModal(customerId, mode){
   const cust = getCustomer(customerId);
   const current = activeSubscriptionFor(customerId);
   if(!cust) return;
   prepaidAssignCustomerId = customerId;
   prepaidAssignMode = mode;
-  const zh = LANG==='zh', ext = mode==='extension';
+  const zh = LANG==='zh', ext = mode==='extension', chg = mode==='prepaid_change';
+  if(chg){ const pc = prepaidChangeInfo(customerId); if(!pc.show || !pc.ok){ toast(pc.why || (zh?'该客户不能变更套餐':'This customer can\'t change plan')); return; } }
   if(ext){
     const info = extensionInfo(customerId);
     if(!info.show){ toast(zh?'该客户不符合三个月续期条件':'This customer can\'t take a 3-Month Extension'); return; }
     if(!info.eligible){ toast(zh?`从 ${fmtDateHuman(info.from)} 起可办理`:`Available from ${fmtDateHuman(info.from)}`); return; }
   }
-  document.getElementById('prepaidAssignModalTitle').textContent = ext ? (zh?'三个月续期':'3-Month Extension') : (mode==='recharge' ? t('btn.recharge') : t('btn.changeToPrepaid'));
-  document.getElementById('savePrepaidAssignBtn').textContent = ext ? (zh?'确认续期':'Confirm extension') : (mode==='recharge' ? t('btn.confirmRecharge') : t('btn.confirmChange'));
+  document.getElementById('prepaidAssignModalTitle').textContent = ext ? (zh?'三个月续期':'3-Month Extension') : chg ? (zh?'变更先付卡套餐':'Change prepaid plan') : (mode==='recharge' ? t('btn.recharge') : t('btn.changeToPrepaid'));
+  document.getElementById('savePrepaidAssignBtn').textContent = ext ? (zh?'确认续期':'Confirm extension') : chg ? (zh?'确认变更':'Confirm change') : (mode==='recharge' ? t('btn.confirmRecharge') : t('btn.confirmChange'));
   document.getElementById('prepaidAssignCurrentPlan').innerHTML = (current
     ? `${t('detail.currentPlan')}: <b>${planLabel(current)}</b>`
     : `<i>${t('detail.noActiveSubscription')}</i>`) + (ext ? `<div class="ext-note">${zh
       ? `同一号码 <b>${escapeHtml(current.number||cust.phone||'')}</b> 再办一次3个月套餐。每个号码最多${EXTENSION_MAX}次 — 这是第 <b>${extensionInfo(customerId).done+1}</b> 次，用完后只能按月充值。`
-      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Up to ${EXTENSION_MAX} per number — this is number <b>${extensionInfo(customerId).done+1} of ${EXTENSION_MAX}</b>. After that, only monthly recharges.`}</div>` : '');
+      : `One more 3-month plan on the same number <b>${escapeHtml(current.number||cust.phone||'')}</b>. Up to ${EXTENSION_MAX} per number — this is number <b>${extensionInfo(customerId).done+1} of ${EXTENSION_MAX}</b>. After that, only monthly recharges.`}</div>` : '')
+    + (chg ? `<div class="ext-note">${zh
+      ? `套餐已于 <b>${fmtDateHuman(current.expiryDate)}</b> 到期。选择新的先付卡套餐（客户 ${calcAge(cust.dob)} 岁，满19岁可办理）。`
+      : `This plan expired on <b>${fmtDateHuman(current.expiryDate)}</b>. Choose the new prepaid plan (customer is ${calcAge(cust.dob)} — 19 or older can change).`}</div>` : '');
 
   const plansForMode = ext ? PREPAID_PLANS.filter(p=>p.days===90) : (mode==='recharge' ? RECHARGE_PLAN : PREPAID_PLANS);
   renderPrepaidPlanTiles(String(plansForMode[0].days), 'pa_prepaidPlan_group', plansForMode);
@@ -5359,6 +5381,7 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
   const ext = prepaidAssignMode==='extension';
   const before = activeSubscriptionFor(prepaidAssignCustomerId);
   if(ext){ const info = extensionInfo(prepaidAssignCustomerId); if(!info.show || !info.eligible){ toast(LANG==='zh'?'该客户不符合三个月续期条件':'This customer can\'t take a 3-Month Extension'); return; } }
+  if(prepaidAssignMode==='prepaid_change'){ const pc = prepaidChangeInfo(prepaidAssignCustomerId); if(!pc.show || !pc.ok){ toast(pc.why); return; } }
   const durationDays = ext ? 90 : (Number(document.getElementById('pa_prepaidPlan_group').dataset.selected)||90);
   const activationDate = document.getElementById('pa_activationDate').value || todayISO();
   const price = Number(document.getElementById('pa_price').value)||0;
@@ -5380,7 +5403,7 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
     company: document.getElementById('pa_company_group').dataset.selected || '',
     svcCarrierType: document.getElementById('pa_svcCarrierType_group').dataset.selected || '',
   };
-  const reason = ext ? 'extension' : (prepaidAssignMode==='recharge' ? 'recharge' : 'downgraded_to_prepaid');
+  const reason = ext ? 'extension' : prepaidAssignMode==='prepaid_change' ? 'plan_change' : (prepaidAssignMode==='recharge' ? 'recharge' : 'downgraded_to_prepaid');
   setActiveSubscription(prepaidAssignCustomerId, svcData, reason);
   saveDB(DB);
   closeAllModals();
