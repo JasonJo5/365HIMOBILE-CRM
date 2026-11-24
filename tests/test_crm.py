@@ -310,6 +310,27 @@ def run(b):
     check("saving starts the new prepaid plan (60 days) and ends the expired one", cp["saved"] == [True, 60, "plan_change", False], cp)
     pg.evaluate("closeAllModals()")
 
+    print("Age check")
+    ag = pg.evaluate("""(()=>{ const out = {};
+        out.parse = ['2007-05-12','20070512','070512','0705124123456','990101','2007.5.12','hello','2030-01-01'].map(parseBirthInput);
+        const u = addDaysISO(todayISO(), -365*17);   // about 17 years old
+        document.getElementById('btnAgeCheck').click();
+        out.open = document.getElementById('ageCheckModalOverlay').classList.contains('show');
+        const inp = document.getElementById('ageCheckInput'); inp.value = u; inp.dispatchEvent(new Event('input'));
+        const r = document.getElementById('ageCheckResult');
+        out.u19 = [!!r.querySelector('.age-card.warn'), /Turns 19 on/.test(r.textContent), /In about/.test(r.textContent)];
+        out.t19 = birthdayOn(u, 19);
+        inp.value = '2000-01-01'; inp.dispatchEvent(new Event('input'));
+        out.adult = [!!r.querySelector('.age-card.ok'), /19 or older/.test(r.textContent)];
+        out.diff = calDiffText(calDiff('2026-11-24','2028-01-30'));
+        closeAllModals(); return out; })()""")
+    check("reads 2007-05-12, 20070512, 070512, a full ID number, 1999 dates; rejects junk and future dates",
+          ag["parse"] == ["2007-05-12","2007-05-12","2007-05-12","2007-05-12","1999-01-01","2007-05-12",None,None], ag["parse"])
+    check("Age check opens from the top bar", ag["open"] is True, ag)
+    check("under 19: shows the day they turn 19 and how long until then", ag["u19"] == [True, True, True], ag)
+    check("19 or older is shown in green", ag["adult"] == [True, True], ag)
+    check("time left reads as years, months, days", ag["diff"] == "1 year 2 months 6 days", ag["diff"])
+
     print("Years in Korea counts down")
     st = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>activeSubscriptionFor(c.id)); const keep = [c.years, DB.reminderState[stayKey(c.id)]];
         const ago = d => addDaysISO(todayISO(), -d), out = {};

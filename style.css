@@ -1307,3 +1307,18 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 
 /* Locked profile buttons (e.g. Change plan for under 19): clearly greyed out */
 .pf-btn-row .btn:disabled,.pf-rest .btn:disabled{opacity:.5;cursor:not-allowed;color:var(--text-soft)!important;border-color:var(--border)!important;background:transparent!important;box-shadow:none!important}
+
+/* Age check (top bar) */
+#ageCheckInput{font-size:18px;font-weight:600;letter-spacing:.02em}
+.age-hint{margin-top:6px;font-size:12px;color:var(--text-soft);min-height:16px}
+.age-hint.bad{color:var(--danger,#dc2626)}
+.age-result{margin-top:14px}
+.age-card{border-radius:14px;padding:16px 18px;border:1px solid var(--border)}
+.age-card.ok{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.25)}
+.age-card.warn{background:rgba(234,88,12,.08);border-color:rgba(234,88,12,.3)}
+.age-big{font-size:34px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.age-big span{font-size:15px;font-weight:600;margin-left:4px;color:var(--text-soft)}
+.age-tag{display:inline-block;margin:6px 0 8px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.age-card.ok .age-tag{background:rgba(22,163,74,.15);color:#15803d}
+.age-card.warn .age-tag{background:rgba(234,88,12,.15);color:#c2410c}
+.age-line{font-size:14px;margin-top:4px}

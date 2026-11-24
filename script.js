@@ -8819,3 +8819,84 @@ window.__planLab = planLengthLabel;
   document.querySelectorAll('input[type="date"]').forEach(fix);
   document.addEventListener('focusin', e=> fix(e.target), true);
 })();
+
+/* ---------------- Age check (top bar) ----------------
+   Type a date of birth (2007-05-12, 20070512, or the first 6 digits of an ARC / ID number such as
+   070512) and see the age. Under 19: the day they turn 19 and roughly how long until then. */
+function parseBirthInput(v){
+  v = String(v||'').trim(); if(!v) return null;
+  let y, m, d, mm;
+  const digits = v.replace(/\D/g,'');
+  if((mm = v.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/))){ y=+mm[1]; m=+mm[2]; d=+mm[3]; }
+  else if(/^\d{8}$/.test(digits)){ y=+digits.slice(0,4); m=+digits.slice(4,6); d=+digits.slice(6,8); }
+  else if(/^\d{6}$/.test(digits) || /^\d{6}\d{7}$/.test(digits)){   // YYMMDD, or a full 13-digit ARC / ID number
+    const yy = +digits.slice(0,2), cur = new Date().getFullYear() % 100;
+    y = (yy > cur ? 1900 : 2000) + yy; m=+digits.slice(2,4); d=+digits.slice(4,6);
+  } else return null;
+  const dt = new Date(y, m-1, d);
+  if(dt.getFullYear()!==y || dt.getMonth()!==m-1 || dt.getDate()!==d) return null;
+  if(dt > new Date()) return null;
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+/* calendar difference from date a to later date b: {y, m, d} */
+function calDiff(a, b){
+  const A = new Date(a+'T00:00:00'), B = new Date(b+'T00:00:00');
+  let y = B.getFullYear()-A.getFullYear(), m = B.getMonth()-A.getMonth(), d = B.getDate()-A.getDate();
+  if(d < 0){ m--; d += new Date(B.getFullYear(), B.getMonth(), 0).getDate(); }
+  if(m < 0){ y--; m += 12; }
+  return {y, m, d};
+}
+function calDiffText(x){
+  const zh = LANG==='zh', parts = [];
+  if(x.y) parts.push(zh ? x.y+'年' : x.y+(x.y===1?' year':' years'));
+  if(x.m) parts.push(zh ? x.m+'个月' : x.m+(x.m===1?' month':' months'));
+  if(x.d || !parts.length) parts.push(zh ? x.d+'天' : x.d+(x.d===1?' day':' days'));
+  return zh ? parts.join('') : parts.join(' ');
+}
+function birthdayOn(dob, years){   // Feb 29 birthdays fall on Mar 1 in other years
+  const y = Number(dob.slice(0,4))+years, m = Number(dob.slice(5,7)), d = Number(dob.slice(8,10));
+  const dt = new Date(y, m-1, d); if(dt.getMonth()!==m-1) dt.setDate(0), dt.setDate(dt.getDate()+1);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+function renderAgeCheck(){
+  const zh = LANG==='zh', inp = document.getElementById('ageCheckInput'), out = document.getElementById('ageCheckResult'), hint = document.getElementById('ageCheckHint');
+  const raw = inp.value, dob = parseBirthInput(raw);
+  hint.textContent = raw.trim() && !dob ? (zh ? '日期无法识别 — 例如 2007-05-12、20070512 或 070512' : 'Can\'t read that date — try 2007-05-12, 20070512 or 070512') : (dob ? fmtDateHuman(dob) : '');
+  hint.classList.toggle('bad', !!(raw.trim() && !dob));
+  if(!dob){ out.innerHTML = ''; return; }
+  const age = calcAge(dob), today = todayISO();
+  if(age < 19){
+    const t19 = birthdayOn(dob, 19), left = calDiff(today, t19), days = daysBetween(today, t19);
+    out.innerHTML = `<div class="age-card warn">
+      <div class="age-big">${age}<span>${zh?'岁':(age===1?' year old':' years old')}</span></div>
+      <div class="age-tag">${zh?'未满19岁':'Under 19'}</div>
+      <div class="age-line">${zh?`<b>${fmtDateHuman(t19)}</b> 满19岁`:`Turns 19 on <b>${fmtDateHuman(t19)}</b>`}</div>
+      <div class="age-line">${zh?`还有约 <b>${calDiffText(left)}</b>（${days}天）`:`In about <b>${calDiffText(left)}</b> (${days} ${days===1?'day':'days'})`}</div>
+    </div>`;
+  } else {
+    const next = birthdayOn(dob, age+1), nd = daysBetween(today, next);
+    const isToday = birthdayOn(dob, age)===today;
+    out.innerHTML = `<div class="age-card ok">
+      <div class="age-big">${age}<span>${zh?'岁':' years old'}</span></div>
+      <div class="age-tag">${zh?'已满19岁':'19 or older'}</div>
+      <div class="age-line">${isToday ? (zh?'今天生日':'Birthday today') : (zh?`下次生日：${fmtDateHuman(next)}（${nd}天后）`:`Next birthday: ${fmtDateHuman(next)} (in ${nd} ${nd===1?'day':'days'})`)}</div>
+    </div>`;
+  }
+}
+function openAgeCheck(prefill){
+  const zh = LANG==='zh';
+  document.getElementById('ageCheckTitle').textContent = zh ? '年龄计算' : 'Age check';
+  document.getElementById('ageCheckLabel').textContent = zh ? '出生日期' : 'Date of birth';
+  const inp = document.getElementById('ageCheckInput');
+  if(prefill!==undefined) inp.value = prefill;
+  renderAgeCheck();
+  document.getElementById('ageCheckModalOverlay').classList.add('show');
+  setTimeout(()=>{ inp.focus(); inp.select(); }, 50);
+}
+(function(){
+  const b = document.getElementById('btnAgeCheck'); if(!b) return;
+  b.addEventListener('click', ()=> openAgeCheck());
+  document.getElementById('ageCheckInput').addEventListener('input', renderAgeCheck);
+  const setTitle = ()=>{ const tt = LANG==='zh' ? '年龄计算' : 'Age check'; b.title = tt; b.setAttribute('aria-label', tt); };
+  setTitle(); document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.lang-btn')) setTimeout(setTitle, 0); });
+})();
