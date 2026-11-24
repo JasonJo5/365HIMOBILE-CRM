@@ -928,10 +928,7 @@ function renderSheetPage(){
     // shown here (e.g. imported historical data), so those two dates can genuinely differ
     if(dateFrom || dateTo){ if(!matchesDateRange(svc.activationDate, dateFrom, dateTo)) return false; }
     else if(recentFilter){ if(!matchesRecentFilter(svc.activationDate, recentFilter)) return false; }
-    if(search){
-      const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
-      if(!hay.includes(search)) return false;
-    }
+    if(search && !customerSearchHit(c, search, svc)) return false;
     if(extraFilter && String((sheetTypeTab==='prepaid' ? svc.svcCarrierType : svc.partnerCompany)||'').trim()!==extraFilter) return false;
     if(sortOrder==='u19' && !isUnder19(c)) return false;
     if(sortOrder==='unpaid' && !(customerUnpaid(c) > 0)) return false;
@@ -1128,10 +1125,7 @@ function renderSheetSimpleView(tab, dupeGroups, filters){
       if(dateFrom || dateTo){ if(!matchesDateRange(relevantDate, dateFrom, dateTo)) return false; }
       else if(!matchesRecentFilter(relevantDate, recentFilter)) return false;
     }
-    if(search){
-      const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
-      if(!hay.includes(search)) return false;
-    }
+    if(search && !customerSearchHit(c, search, activeSubscriptionFor(c.id))) return false;
     return true;
   });
   if(u19) list = list.filter(isUnder19).sort((a,b)=> String(a.dob).localeCompare(String(b.dob)));
@@ -2810,14 +2804,26 @@ function renderCancelReasons(){
 }
 
 /* quick search: type-ahead over name/phone/idNumber, click a result to open their profile */
+/* ---------------- Search: names, numbers, ID ----------------
+   A phone or ID number matches however it is typed: 010-7980-2226, 010 7980 2226, 01079802226
+   and +82 10-7980-2226 all find the same customer, whether or not the saved number has dashes. */
+function searchDigits(v){ let d = String(v||'').replace(/\D/g,''); if(/^8210\d{7,8}$/.test(d)) d = '0'+d.slice(2); return d; }
+function customerSearchHit(c, query, svc){
+  const q = String(query||'').trim().toLowerCase(); if(!q) return true;
+  const hay = [c.name, c.phone, c.nationality, c.idNumber, svc && svc.number].join(' ').toLowerCase();
+  if(hay.includes(q)) return true;
+  // looks like a number (digits with - . space + ( ) in between): compare digits only
+  if(/^[\d\s\-.+()]+$/.test(q)){
+    const qd = searchDigits(q);
+    if(qd.length >= 3) return [c.phone, c.idNumber, svc && svc.number, svc && svc.usimNumber].some(v=> v && searchDigits(v).includes(qd));
+  }
+  return false;
+}
 function renderDashQuickSearchResults(query){
   const el = document.getElementById('dashQuickSearchResults');
   if(!query){ el.innerHTML = ''; el.className = ''; return; }
   const q = query.toLowerCase();
-  const matches = DB.customers.filter(c=>{
-    const hay = [c.name,c.phone,c.idNumber,c.nationality].join(' ').toLowerCase();
-    return hay.includes(q);
-  }).slice(0,8);
+  const matches = DB.customers.filter(c=> customerSearchHit(c, query, activeSubscriptionFor(c.id))).slice(0,8);
   el.className = 'qsearch-results';
   if(!matches.length){ el.innerHTML = `<div class="qsearch-empty">${t('dash.noMatches')}</div>`; return; }
   el.innerHTML = matches.map(c=>{
@@ -3218,7 +3224,7 @@ function renderAIList(groups){
     if(ci && ci.quiet && !aiShowContacted) return false;
     if(aiNat && c.nationality!==aiNat) return false;
     if(aiMonth && String(x.service.activationDate||'').slice(0,7)!==aiMonth) return false;
-    if(q && !(String(c.name||'').toLowerCase().includes(q) || (qd && String(c.phone||'').replace(/[^0-9]/g,'').includes(qd)))) return false;
+    if(q && !customerSearchHit(c, q, x.service)) return false;
     return true;
   });
   document.getElementById('aiListCount').textContent = rows.length;
@@ -3364,10 +3370,7 @@ function renderCustomers(){
     list = dupeGroups.flat().filter(c=>{
       if(natFilter && c.nationality!==natFilter) return false;
       if(recentFilter){ const jd=customerJoinDate(c); if(!jd || daysBetween(jd, todayISO())>Number(recentFilter)) return false; }
-      if(search){
-        const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
-        if(!hay.includes(search)) return false;
-      }
+      if(search && !customerSearchHit(c, search, activeSubscriptionFor(c.id))) return false;
       return true;
     });
   } else {
@@ -3382,10 +3385,7 @@ function renderCustomers(){
         const months = svc ? monthsSince(svc.activationDate) : null;
         if(months===null || months < Number(durFilter)) return false;
       }
-      if(search){
-        const hay = [c.name,c.phone,c.nationality,c.idNumber].join(' ').toLowerCase();
-        if(!hay.includes(search)) return false;
-      }
+      if(search && !customerSearchHit(c, search, activeSubscriptionFor(c.id))) return false;
       return true;
     })
     // sorted per the "Sort by" dropdown — defaults to newest first

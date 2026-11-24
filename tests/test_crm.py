@@ -310,6 +310,24 @@ def run(b):
     check("saving starts the new prepaid plan (60 days) and ends the expired one", cp["saved"] == [True, 60, "plan_change", False], cp)
     pg.evaluate("closeAllModals()")
 
+    print("Search with dashes in the phone number")
+    sr = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>c.phone && searchDigits(c.phone).length>=10 && activeSubscriptionFor(c.id)); const d = searchDigits(c.phone);
+        const dash = d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4), sp = dash.replace(/-/g,' '), intl = '+82 '+d.slice(1,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4);
+        const hits = [dash, sp, intl, d, d.slice(-4), dash.slice(4)].map(q=>customerSearchHit(c, q, activeSubscriptionFor(c.id)));
+        const keep = c.phone; c.phone = dash; const savedDash = customerSearchHit(c, d, null); c.phone = keep;
+        const out = {hits, savedDash, miss: customerSearchHit(c, '999-9999-9999', null), name: customerSearchHit(c, (c.name||'').slice(0,3), null)};
+        // dashboard quick search and Sheet View use it
+        goTo('dashboard'); const dq = document.getElementById('dashQuickSearch'); dq.value = dash; dq.dispatchEvent(new Event('input'));
+        out.dash = !!document.querySelector('#dashQuickSearchResults [data-open-customer="'+c.id+'"]'); dq.value=''; dq.dispatchEvent(new Event('input'));
+        const a = activeSubscriptionFor(c.id), keepTab = sheetTypeTab; sheetTypeTab = a.type; goTo('sheet');
+        const ss = document.getElementById('sheetSearch'); ss.value = dash; ss.dispatchEvent(new Event('input'));
+        out.sheet = document.getElementById('page-sheet').textContent.includes(c.name); ss.value=''; sheetTypeTab = keepTab; ss.dispatchEvent(new Event('input')); goTo('dashboard');
+        return out; })()""")
+    check("010-1234-5678, 010 1234 5678, +82 10-..., plain digits and parts of the number all match", all(sr["hits"]) and sr["savedDash"], sr)
+    check("a different number or the name still works as before", sr["miss"] is False and sr["name"] is True, sr)
+    check("dashboard quick search finds the customer by a dashed number", sr["dash"] is True, sr)
+    check("Sheet View search finds the customer by a dashed number", sr["sheet"] is True, sr)
+
     print("Age check")
     ag = pg.evaluate("""(()=>{ const out = {};
         out.parse = ['2007-05-12','20070512','070512','0705124123456','990101','2007.5.12','hello','2030-01-01'].map(parseBirthInput);
