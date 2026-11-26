@@ -310,6 +310,50 @@ def run(b):
     check("saving starts the new prepaid plan (60 days) and ends the expired one", cp["saved"] == [True, 60, "plan_change", False], cp)
     pg.evaluate("closeAllModals()")
 
+    print("Report plan filter")
+    rf = pg.evaluate("""(()=>{ const cs = DB.customers.slice(0,3), day = '2031-03-10', ids = [];
+        const add = (c, o) => { const s = Object.assign({id: uid('s'), customerId: c.id, isActive:false, activationDate: day, endedAt: day, endedSeq: 1}, o); DB.services.push(s); ids.push(s.id); };
+        add(cs[0], {type:'prepaid', durationDays:30, price:36000, sellingPrice:36000, changeReason:'recharge', plan:'R'});
+        add(cs[1], {type:'prepaid', durationDays:90, price:99000, sellingPrice:99000, plan:'Q'});
+        add(cs[2], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000});
+        const keep = repPlanFilter, out = {};
+        goTo('reports'); reportView = 'daily'; repSelectedDay = day;
+        const run = f => { const pf = document.getElementById('repPlanFilter'); pf.value = f; pf.dispatchEvent(new Event('change'));
+          const nPre = document.querySelectorAll('#repDailyPrepaidList .rep-day-row').length, nPost = document.querySelectorAll('#repDailyPostpaidList .rep-day-row').length;
+          return [nPre, nPost, document.getElementById('repDailyCards').textContent.replace(/\\s+/g,' ')]; };
+        out.all = run('all'); out.norc = run('norc'); out.m3 = run('m3'); out.rc = run('rc'); out.post = run('post');
+        out.hl = document.getElementById('repPlanFilter').classList.contains('is-filtered');
+        reportView = 'monthly'; repSelectedMonth = '2031-03'; run('norc');
+        out.month = document.getElementById('repIncomeCards').textContent.replace(/\\s+/g,' ');
+        run('all'); out.monthAll = document.getElementById('repIncomeCards').textContent.replace(/\\s+/g,' ');
+        out.saved = localStorage.getItem('himobile_rep_plan');
+        DB.services = DB.services.filter(s=>!ids.includes(s.id)); repPlanFilter = keep; localStorage.setItem('himobile_rep_plan', keep);
+        reportView = 'monthly'; repSelectedMonth = null; repSelectedDay = null; goTo('dashboard');
+        return out; })()""")
+    check("All plans: recharge, 3 months and postpaid are all counted", rf["all"][:2] == [2, 1], rf["all"])
+    check("Without recharge: the recharge is left out, the rest stays", rf["norc"][:2] == [1, 1] and "99,000" in rf["norc"][2], rf["norc"])
+    check("3 months only / Recharge only / Postpaid only", rf["m3"][:2] == [1, 0] and rf["rc"][:2] == [1, 0] and rf["post"][:2] == [0, 1], [rf["m3"], rf["rc"], rf["post"]])
+    check("monthly report uses the same filter", "99,000" in rf["month"] and "135,000" in rf["monthAll"], [rf["month"], rf["monthAll"]])
+    check("the filter is highlighted when it is not All plans, and remembered", rf["hl"] is True and rf["saved"] == "all", rf)
+
+    print("Payment method starts blank")
+    pm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';});
+        const a = activeSubscriptionFor(c.id), keep = a.paymentMethod, out = {}; a.paymentMethod = 'card';
+        closeAllModals(); openPrepaidAssignModal(c.id, 'recharge');
+        const g = document.getElementById('pa_paymentMethod_group');
+        out.rechargeStart = [g.dataset.selected, !!g.querySelector('.tile-blank.selected')];
+        g.querySelector('[data-val="cash"]').click(); g.querySelector('.tile-blank').click();
+        out.backToBlank = [g.dataset.selected, g.querySelector('.tile-blank').classList.contains('selected')];
+        closeAllModals();
+        // editing a plan: the saved method is shown, and can be set back to blank
+        openCustomerModal(c);
+        const g3 = document.getElementById('p3_paymentMethod_group');
+        out.editShows = g3 ? g3.dataset.selected : null;
+        closeAllModals(); a.paymentMethod = keep;
+        return out; })()""")
+    check("recharge / change plan / extension start with payment method blank (Not paid yet)", pm["rechargeStart"] == ["", True], pm)
+    check("a chosen method can be set back to blank", pm["backToBlank"] == ["", True], pm)
+
     print("Search with dashes in the phone number")
     sr = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>c.phone && searchDigits(c.phone).length>=10 && activeSubscriptionFor(c.id)); const d = searchDigits(c.phone);
         const dash = d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4), sp = dash.replace(/-/g,' '), intl = '+82 '+d.slice(1,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4);

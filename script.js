@@ -394,7 +394,11 @@ function renderTileRadioGroup(containerId, options, currentVal){
   if(!el) return;
   delete el.dataset.auto; // see autoFillPostpaidFromPlan
   el.dataset.selected = currentVal || '';
-  el.innerHTML = options.map(opt=>{
+  // payment method: a blank "Not paid yet" choice first — customers often haven't paid yet,
+  // and the payment method must stay blank until they do
+  const blank = /paymentMethod_group$/.test(containerId)
+    ? `<div class="tile-radio tile-blank ${!currentVal?'selected':''}" data-val="">${LANG==='zh'?'未付款':'Not paid yet'}</div>` : '';
+  el.innerHTML = blank + options.map(opt=>{
     const c = sheetColorFor(options, opt);
     const selected = opt===currentVal;
     return `<div class="tile-radio ${selected?'selected':''}" data-val="${escapeHtml(opt)}" style="background:${c.bg};color:${c.fg};">${escapeHtml(opt)}</div>`;
@@ -3905,7 +3909,7 @@ function saveCustomerFromForm(){
         company: document.getElementById('p3_company_group').dataset.selected || currentSvc.company,
         svcCarrierType: document.getElementById('p3_svcCarrierType_group').dataset.selected || currentSvc.svcCarrierType,
         carrier: document.getElementById('p3_svcCarrierType_group').dataset.selected || currentSvc.carrier,
-        paymentMethod: document.getElementById('p3_paymentMethod_group').dataset.selected || currentSvc.paymentMethod,
+        paymentMethod: document.getElementById('p3_paymentMethod_group').dataset.selected ?? (currentSvc.paymentMethod||''),
         simType: document.getElementById('p3_simType_group').dataset.selected || currentSvc.simType,
       });
       if(currentSvc.activationDate && durationDays){
@@ -5351,7 +5355,8 @@ function openPrepaidAssignModal(customerId, mode){
   document.getElementById('pa_tax').value = '0';
   updatePrepaidAssignPriceFromPlan();
   document.getElementById('pa_notes').value = '';
-  renderTileRadioGroup('pa_paymentMethod_group', PAYMENT_METHODS, PAYMENT_METHODS.includes(current?.paymentMethod) ? current.paymentMethod : '');
+  // a new payment (recharge, change plan, extension…) starts blank — not the last plan's method
+  renderTileRadioGroup('pa_paymentMethod_group', PAYMENT_METHODS, '');
   updateCurrencyBadgeFor('pa_paymentMethod_group');
   document.getElementById('prepaidAssignModalOverlay').classList.add('show');
 }
@@ -5759,6 +5764,37 @@ function renderIdChangeTab(list){
 let repSelectedMonth = null; // null = all time
 let reportView = 'monthly';
 let repSelectedDay = null;
+/* ---------------- Report plan filter (daily + monthly + export) ----------------
+   Count all plans, or e.g. everything without recharges, or only the 3-month plans. */
+const REP_PLAN_KEY = 'himobile_rep_plan';
+let repPlanFilter = (()=>{ try{ return localStorage.getItem(REP_PLAN_KEY) || 'all'; }catch(e){ return 'all'; } })();
+function repPlanOptions(){
+  const zh = LANG==='zh';
+  return [
+    ['all',  zh?'全部套餐':'All plans'],
+    ['norc', zh?'不含充值':'Without recharge'],
+    ['rc',   zh?'仅充值':'Recharge only'],
+    ['m3',   zh?'仅3个月（含续期）':'3 months only (incl. extension)'],
+    ['ext',  zh?'仅三个月续期':'3-Month Extension only'],
+    ['m2',   zh?'仅2个月':'2 months only'],
+    ['m1',   zh?'仅1个月（不含充值）':'1 month only (no recharge)'],
+    ['m0',   zh?'仅15天':'15 days only'],
+    ['pre',  zh?'仅先付':'Prepaid only'],
+    ['post', zh?'仅后付':'Postpaid only'],
+  ];
+}
+/* does plan s count under the chosen report filter? */
+function repPlanMatch(s, f){
+  f = f || repPlanFilter;
+  if(f==='all') return true;
+  if(f==='post') return s.type==='postpaid';
+  if(f==='pre') return s.type==='prepaid';
+  const l = s.type==='prepaid' ? planLengthLabel(s) : null, k = l ? l[0] : '';
+  if(f==='norc') return k!=='rc';
+  if(f==='m3') return k==='m3' || k==='ext';
+  return k===f;   // rc, ext, m2, m1, m0
+}
+function repPlanFilterLabel(){ const o = repPlanOptions().find(x=>x[0]===repPlanFilter); return o ? o[1] : ''; }
 /* Always the catalog/estimated figure, regardless of whether a real settlement exists yet —
    netProfitFor() deliberately prefers the real figure once reconciled, which is right for
    "current best-known income" but wrong for a card that specifically means "expected". */
@@ -5776,10 +5812,15 @@ function renderReports(){
   document.querySelectorAll('[data-reportview]').forEach(b=> b.addEventListener('click', ()=>{ reportView=b.dataset.reportview; renderReports(); }));
   document.getElementById('repMonthlyView').style.display = reportView==='monthly' ? '' : 'none';
   document.getElementById('repDailyView').style.display = reportView==='daily' ? '' : 'none';
+  const pf = document.getElementById('repPlanFilter');
+  if(!repPlanOptions().some(o=>o[0]===repPlanFilter)) repPlanFilter = 'all';
+  pf.innerHTML = repPlanOptions().map(([v,l])=>`<option value="${v}">${escapeHtml(l)}</option>`).join('');
+  pf.value = repPlanFilter; pf.classList.toggle('is-filtered', repPlanFilter!=='all');
+  pf.title = LANG==='zh' ? '报表统计哪些套餐' : 'Which plans the report counts';
   if(reportView==='monthly') renderMonthlyReport(); else renderDailyReport();
 }
 function renderMonthlyReport(){
-  const allSvcs = DB.services.filter(s=>isSubscriptionType(s.type));
+  const allSvcs = DB.services.filter(s=>isSubscriptionType(s.type) && repPlanMatch(s));
   const now = new Date();
   const curMonthStr = localMonthKey(0);
 
@@ -5925,7 +5966,7 @@ function renderMonthlyReport(){
   });
 }
 function renderDailyReport(){
-  const allSvcs = DB.services.filter(s=>isSubscriptionType(s.type) && isIsoDate(s.activationDate));
+  const allSvcs = DB.services.filter(s=>isSubscriptionType(s.type) && isIsoDate(s.activationDate) && repPlanMatch(s));
   const daySel = document.getElementById('repDaySelect');
   if(!repSelectedDay) repSelectedDay = todayISO();
   daySel.value = repSelectedDay;
@@ -6004,6 +6045,7 @@ function fmtMonthLabel(m){
 }
 document.getElementById('repMonthSelect').addEventListener('change', e=>{ repSelectedMonth = e.target.value; renderReports(); });
 document.getElementById('repDaySelect').addEventListener('change', e=>{ repSelectedDay = e.target.value; renderReports(); });
+document.getElementById('repPlanFilter').addEventListener('change', e=>{ repPlanFilter = e.target.value; try{ localStorage.setItem(REP_PLAN_KEY, repPlanFilter); }catch(_){} renderReports(); });
 function renderMoneyBars(elId, map){
   const entries = Object.entries(map).sort((a,b)=>b[1].rev-a[1].rev);
   const max = Math.max(1, ...entries.map(([,v])=>Math.abs(v.rev)));
@@ -6290,6 +6332,7 @@ function exportReportForMonth(){
   DB.customers.forEach(c=>{
     customerServices(c.id).forEach(s=>{
       if(!isAllTime && (!s.activationDate || s.activationDate.slice(0,7)!==repSelectedMonth)) return;
+      if(!repPlanMatch(s)) return;   // same plan filter as the report on screen
       if(s.type==='prepaid') prepaidRows.push(prepaidExportRow(c, s));
       else if(s.type==='postpaid') postpaidRows.push(postpaidExportRow(c, s));
     });
@@ -6306,7 +6349,7 @@ function exportReportForMonth(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prepaidRows), 'Prepaid');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(postpaidRows), 'Postpaid');
-  const label = isAllTime ? 'AllTime' : repSelectedMonth;
+  const label = (isAllTime ? 'AllTime' : repSelectedMonth) + ({norc:'_NoRecharge', rc:'_RechargeOnly', m3:'_3Months', ext:'_3MonthExtension', m2:'_2Months', m1:'_1Month', m0:'_15Days', pre:'_PrepaidOnly', post:'_PostpaidOnly'}[repPlanFilter]||'');
   XLSX.writeFile(wb, `Himobile_Report_${label}.xlsx`);
   toast(t('toast.exported'));
 }

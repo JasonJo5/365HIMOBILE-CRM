@@ -1322,3 +1322,10 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 .age-card.ok .age-tag{background:rgba(22,163,74,.15);color:#15803d}
 .age-card.warn .age-tag{background:rgba(234,88,12,.15);color:#c2410c}
 .age-line{font-size:14px;margin-top:4px}
+
+/* Reports: plan filter — highlighted when it is not "All plans" */
+#repPlanFilter.is-filtered{border-color:var(--blue);background-color:rgba(37,99,235,.08);color:var(--blue);font-weight:700}
+
+/* Payment method: "Not paid yet" (blank) choice */
+.tile-radio.tile-blank{background:transparent;color:var(--text-soft);border:1px dashed var(--border);font-style:italic}
+.tile-radio.tile-blank.selected{color:var(--text);border-style:solid;font-style:normal}
