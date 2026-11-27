@@ -1615,3 +1615,86 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 .dc-hint{font-size:12px;color:var(--text-soft);margin-top:6px}
 .dc-modal .dc-preset{padding:8px 14px;font-size:13px}
 @media (max-width:720px){.dc-listhead{margin:0 0 10px;justify-content:stretch}.dc-listhead .btn{width:100%}}
+/* month table: one colour per plan length */
+.dc-table td:nth-child(3) .dc-cnt,.dc-table td:nth-child(4) .dc-cnt{background:rgba(37,99,235,.09);color:var(--blue)}
+.dc-table td.c90 .dc-cnt{background:rgba(37,99,235,.12);color:#1d4ed8}
+.dc-table td.c60 .dc-cnt{background:rgba(14,165,233,.13);color:#0369a1}
+.dc-table td.c30 .dc-cnt{background:rgba(22,163,74,.12);color:#15803d}
+.dc-table td.c15 .dc-cnt{background:rgba(100,116,139,.14);color:#475569}
+.dc-table td.crc .dc-cnt{background:rgba(234,88,12,.1);color:#c2410c}
+.dc-table td.cpo .dc-cnt{background:rgba(124,58,237,.1);color:#7c3aed}
+.dc-table th.n{min-width:44px}
+
+/* =========== Daily closing — one consistent theme =========== 
+   Same corners as every other CRM card (--radius), one accent colour (blue), soft inner
+   panels instead of boxes-in-boxes, gentle hover/press motion. Status colours only for
+   status: green = paid back / matches, orange = owed / not paid, red = short. */
+#page-daily{--dc-r:14px;--dc-soft:rgba(37,99,235,.045);--dc-line:rgba(15,23,42,.07)}
+html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rgba(148,163,184,.14)}
+#page-daily .card,.dc-toolbar,.dc-step,.dc-sum,.dc-month{border-radius:var(--radius)}
+.dc-toolbar{padding:10px 14px}
+.dc-step{padding:20px 22px}
+.dc-step-h{margin-bottom:14px}
+.dc-num{background:var(--blue);color:#fff;box-shadow:0 4px 10px rgba(37,99,235,.25)}
+.dc-step.done .dc-num{background:#16a34a;color:#fff;box-shadow:0 4px 10px rgba(22,163,74,.25)}
+/* chips and tiles: soft panels, same corner */
+.dc-chip,.dc-mtile{border:0;background:var(--dc-soft);border-radius:var(--dc-r)}
+.dc-chip.total{background:var(--blue);}
+.dc-chip.total b,.dc-chip.total span{color:#fff}
+.dc-chip.rc{background:rgba(234,88,12,.08)}
+.dc-chip.rc b{color:#c2410c}
+/* lists: one soft panel, rows separated by hairlines */
+.dc-orders{border:0;background:var(--dc-soft);border-radius:var(--dc-r);padding:4px;gap:2px}
+.dc-order{border-radius:10px;padding:11px 12px;transition:background .18s var(--ease)}
+.dc-order+.dc-order{border-top:0;box-shadow:0 -1px 0 var(--dc-line)}
+.dc-order:hover{background:var(--card)}
+.dc-orders .dc-empty{background:none;border:0;padding:18px;color:var(--text-soft)}
+/* top-ups: same blue as the rest (no separate teal) */
+.dc-who{background:rgba(37,99,235,.1);color:var(--blue)}
+.dc-who.store{background:rgba(100,116,139,.13);color:var(--text-soft)}
+.dc-seg.who button.on{background:var(--blue)}
+.dc-seg{border-radius:12px;border-color:var(--border)}
+.dc-seg button{transition:background .18s var(--ease),color .18s var(--ease)}
+.dc-paid{border-radius:999px;padding:6px 12px;font-size:12px}
+.dc-paid.on{border-color:transparent}
+.dc-paid:not(.on):not(.na){border-color:rgba(234,88,12,.35);background:rgba(234,88,12,.06)}
+.dc-paid.na{border:0;background:none;padding:6px 4px}
+.dc-paypill{padding:4px 11px}
+/* totals under lists */
+.dc-adds{margin-top:12px}
+.dc-adds-total{color:var(--text-soft)}
+.dc-adds-total b{color:var(--text)}
+/* add buttons in the step header */
+.dc-listhead .btn{border-radius:999px;padding:9px 18px;box-shadow:0 6px 14px rgba(37,99,235,.22)}
+/* close-the-day panel */
+.dc-calc{border:0;background:var(--dc-soft);border-radius:var(--dc-r)}
+.dc-calc>div+div{border-top:1px solid var(--dc-line)}
+.dc-calc .eq{background:rgba(37,99,235,.08)}
+.dc-money{border-radius:10px}
+.dc-compare>div:not(.vs){border:0;background:var(--dc-soft);border-radius:var(--dc-r)}
+.dc-cash-state{border-radius:var(--dc-r)}
+.dc-note{border-radius:var(--dc-r)}
+/* summary card */
+.dc-sum-v{letter-spacing:-.02em}
+.dc-alert{border-radius:12px}
+.dc-sum-cash{border-top-color:var(--dc-line)}
+/* month table */
+.dc-table-wrap{border:0;background:var(--dc-soft);border-radius:var(--dc-r)}
+.dc-table th,.dc-table tfoot td{background:var(--card)}
+.dc-table td{border-bottom-color:var(--dc-line)}
+.dc-table thead th:first-child{border-top-left-radius:var(--dc-r)}
+.dc-table thead th:last-child{border-top-right-radius:var(--dc-r)}
+.dc-table tfoot td:first-child{border-bottom-left-radius:var(--dc-r)}
+.dc-table tfoot td:last-child{border-bottom-right-radius:var(--dc-r)}
+.dc-table .g-money{border-left-color:var(--dc-line)}
+.dc-mtile.main{background:var(--blue)}
+/* gentle motion */
+#page-daily .btn,.dc-preset,.dc-chip,.dc-x{transition:transform .15s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease),color .18s var(--ease)}
+#page-daily .btn:active,.dc-preset:active,.dc-seg button:active,.dc-paid:active{transform:scale(.97)}
+/* pop-ups */
+.dc-modal{border-radius:var(--radius);overflow:hidden}
+.dc-modal .dc-seg{border-radius:12px}
+.dc-modal .dc-qty,.dc-modal .dc-money{border-radius:12px}
+.dc-modal .dc-in{border-radius:12px}
+.dc-table td,.dc-table th{padding-left:9px;padding-right:9px}
+.dc-table{font-size:13px}

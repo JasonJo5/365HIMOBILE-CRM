@@ -430,7 +430,7 @@ def run(b):
         // a day with only unpaid 1-month plans (like Nov 13) still shows in the month table, with plans and 'Not paid'
         const d3 = addDaysISO(day, -3); add(cs[0], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3}); add(cs[1], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3});
         renderDailyClosing(); const r3 = document.querySelector('[data-dc-day="'+d3+'"]');
-        out.unpaidDay = !!r3 && /Not paid/.test(document.querySelector('#dcMonthCard thead').textContent) && /60,000/.test(r3.textContent);
+        out.unpaidDay = !!r3 && /Not paid/.test(document.querySelector("#dcMonthCard thead").textContent) && /60,000/.test(r3.textContent) && /90.*60.*30.*Recharge.*Postpaid/.test(document.querySelector("#dcMonthCard thead").textContent);
         window.scrollTo(0, document.body.scrollHeight); const y0 = window.scrollY; r3.click();
         out.noJump = dcDay===d3 && (y0===0 || window.scrollY > 0);
         DB.services = DB.services.filter(s=>!ids.includes(s.id)); delete DB.reminderState['daily:'+day]; goTo('dashboard');

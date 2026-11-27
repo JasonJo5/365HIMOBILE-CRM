@@ -9307,9 +9307,13 @@ function renderDailyMonth(){
   const anyUnpaid = rows.some(r=> r.a.unpaidN);
   const cols = [
     {h: zh?'日期':'Date', v: r=> shortDay(r.day), k:'date'},
-    {h: zh?'先付':'Plans', v: r=> r.a.preCount - r.a.rc, k:'n', t: zh?'先付（不含充值）':'Prepaid sign-ups (not recharges)'},
-    {h: zh?'充值':'Recharge', v: r=> r.a.rc, k:'n'},
-    {h: zh?'后付':'Postpaid', v: r=> r.a.postN, k:'n', t: zh?'后付卡数量':'Postpaid lines'},
+    // sign-ups by plan length; 15 days only shows when the month has any
+    {h: zh?'90天':'90', v: r=> r.a.d90, k:'n', t: zh?'3个月':'3 months', cls:'c90'},
+    {h: zh?'60天':'60', v: r=> r.a.d60, k:'n', t: zh?'2个月':'2 months', cls:'c60'},
+    {h: zh?'30天':'30', v: r=> r.a.d30, k:'n', t: zh?'1个月（不含充值）':'1 month (not recharges)', cls:'c30'},
+    ...(rows.some(r=> r.a.d15) ? [{h: zh?'15天':'15', v: r=> r.a.d15, k:'n', t: zh?'15天':'15 days', cls:'c15'}] : []),
+    {h: zh?'充值':'Recharge', v: r=> r.a.rc, k:'n', cls:'crc'},
+    {h: zh?'后付':'Postpaid', v: r=> r.a.postN, k:'n', t: zh?'后付卡数量':'Postpaid lines', cls:'cpo'},
     {h: zh?'现金':'Cash', v: r=> r.a.cash, k:'w', grp:'money'},
     {h: zh?'转账':'Transfer', v: r=> r.a.transfer, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.a.card, k:'w'},
