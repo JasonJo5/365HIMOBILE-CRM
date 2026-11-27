@@ -9233,7 +9233,6 @@ function renderDailyClosing(){
       <div class="dc-chip total"><b>${a.preCount + a.postN}</b><span>${zh?'合计':'Total'}</span></div>
     </div>
     ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}
-    <div class="dc-sec2">${zh?'今天是谁':'Who today'}</div>
     ${dcWhoListHtml(dcDay)}`;
 
   // ---- step 2: other sales — same as a top-up: choose the item, quantity, price, payment, press Add
@@ -9347,7 +9346,16 @@ function dcWhoListHtml(day){
     {key:'pre',  title: zh?'先付（含充值）':'Prepaid (incl. recharge)',  list: svcs.filter(s=> s.type==='prepaid')},
     {key:'post', title: zh?'后付':'Postpaid', list: svcs.filter(s=> s.type==='postpaid')},
   ].filter(g=> g.list.length);
-  return `<div class="dc-people">${groups.map(g=>{
+  // tucked away by default — tap to open; the choice is remembered
+  let open = false; try{ open = localStorage.getItem('himobile_dc_who_open')==='1'; }catch(e){}
+  const anyDup = svcs.some(s=> !dcReplacedSameDay(s) && seen[s.customerId+'|'+s.type] > 1);
+  const nPre = svcs.filter(s=> s.type==='prepaid' && !dcReplacedSameDay(s)).length, nPost = svcs.filter(s=> s.type==='postpaid' && !dcReplacedSameDay(s)).length;
+  return `<details class="dc-whobox" id="dcWhoBox" ${open?'open':''}>
+    <summary><span class="t">${zh?'今天是谁':'Who today'}</span>
+      <span class="c pre">${zh?'先付':'Prepaid'} ${nPre}</span><span class="c post">${zh?'后付':'Postpaid'} ${nPost}</span>
+      ${anyDup ? `<span class="dc-tag warn">${zh?'有重复':'Possible duplicate'}</span>` : ''}
+      <span class="tg">${zh?'展开 / 收起':'Show / hide'}</span></summary>
+    <div class="dc-people">${groups.map(g=>{
     const counted = g.list.filter(s=>!dcReplacedSameDay(s));
     const sum = counted.reduce((x,s)=> x + (s.type==='prepaid' ? (dcPayKey(s.paymentMethod)==='unpaid' ? 0 : Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0)), 0);
     return `<div class="dc-wg ${g.key}">
@@ -9356,7 +9364,7 @@ function dcWhoListHtml(day){
       ${g.list.sort((a2,b2)=> (Number(b2.sellingPrice||b2.expectedProfit)||0) - (Number(a2.sellingPrice||a2.expectedProfit)||0)).map(row).join('')}
     </div>`; }).join('')}
     <div class="dc-who-foot">${zh?'点名字打开客户资料 · 已取消或之后换了套餐的，仍算在开通那天':'Tap a name to open the customer · plans cancelled or changed later still count on the day they started'}</div>
-  </div>`;
+  </div></details>`;
 }
 /* the two pop-ups: add a sale / add a top-up — same look as the other CRM windows */
 function dcPayName(k){ const zh = LANG==='zh'; return ({cash:zh?'现金':'Cash', card:zh?'刷卡':'Card', transfer:zh?'转账':'Transfer', rmb:zh?'人民币':'RMB', free:zh?'免费':'Free'})[k]; }
@@ -9563,6 +9571,7 @@ function exportDailyMonth(){
     if(e.key==='Enter' && ['dcItemName','dcItemQty','dcItemAmt'].includes(e.target.id)){ e.preventDefault(); dcAddItem(); }
     if(e.key==='Enter' && e.target.matches && e.target.matches('tr[data-dc-day]')){ e.preventDefault(); e.target.click(); }
   }));
+  page.addEventListener('toggle', e=>{ if(e.target.id==='dcWhoBox'){ try{ localStorage.setItem('himobile_dc_who_open', e.target.open ? '1' : '0'); }catch(_){} } }, true);
   page.addEventListener('input', e=> edit(e, false));
   page.addEventListener('change', e=> edit(e, true));
   roots.forEach(root=> root.addEventListener('click', e=>{

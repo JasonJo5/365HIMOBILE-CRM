@@ -455,6 +455,8 @@ def run(b):
         const sh = books[0] && books[0][1][0][1];
         out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
         // "See who": every plan of the day by name; the same customer's postpaid twice is flagged
+        localStorage.removeItem('himobile_dc_who_open'); renderDailyClosing();
+        { const bx = document.getElementById('dcWhoBox'); out.tuck = [bx.open]; bx.open = true; bx.dispatchEvent(new Event('toggle')); renderDailyClosing(); out.tuck.push(document.getElementById('dcWhoBox').open); }
         out.who1 = [document.querySelectorAll('.dc-people .dc-wr').length, !!document.querySelector('.dc-people .dc-wr.dup'), [...document.querySelectorAll('.dc-wg-h b')].map(x=>x.textContent)];
         add(cs[5], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000}); renderDailyClosing();
         out.who2 = [document.querySelectorAll('.dc-people .dc-wr').length, document.querySelectorAll('.dc-people .dc-wr.dup').length, true];
@@ -492,6 +494,7 @@ def run(b):
           dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000"], dc["cashDetail"])
     check("'Who today' lists every plan by name in Prepaid (incl. recharge) / Postpaid groups, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
           dc["who1"] == [6, False, ["Prepaid (incl. recharge)", "Postpaid"]] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
+    check("'Who today' is tucked away by default; once opened it stays open", dc["tuck"] == [False, True], dc["tuck"])
     check("a postpaid plan changed on the same day is counted once (the newer plan), marked 'not counted'",
           dc["sameDay"] == [1, 179000, True, True], dc["sameDay"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
