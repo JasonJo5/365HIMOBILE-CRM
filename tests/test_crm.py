@@ -376,14 +376,14 @@ def run(b):
         const nSvc = DB.services.length, nCust = DB.customers.length;
         goTo('daily'); dcDay = day; renderDailyClosing();
         const a = dcAuto(day);
-        out.auto = [a.d90, a.d60, a.d30, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
+        out.auto = [a.d90, a.d60, a.d30, a.rc, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
         const ev = (el, v, type) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
         document.querySelector('[data-add-item="sp"]').click();
         ev(document.querySelector('[data-i="0"] [data-f="amount"]'), '10000');
         await new Promise(r=>setTimeout(r, 30));
-        document.querySelector('[data-add-top="Jason"]').click();
-        ev(document.querySelector('[data-t="0"] [data-f="amount"]'), '30000');
-        await new Promise(r=>setTimeout(r, 30));
+        const addTop = (who, amt) => { document.querySelector('[data-draft-who="'+who+'"]').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
+        addTop('Jason', '30000'); await new Promise(r=>setTimeout(r, 30));
+        out.formCleared = document.getElementById('dcTopAmt').value === '' && document.querySelector('[data-draft-who="Jason"]').classList.contains('on');
         document.querySelector('[data-repaid="0"]').click();
         await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
@@ -392,8 +392,18 @@ def run(b):
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
         // store money top-up comes out of the drawer straight away; Jihan's not paid back yet is "owed"
-        document.querySelector('[data-add-top="Store"]').click(); ev(document.querySelector('[data-t="1"] [data-f="amount"]'), '5000'); await new Promise(r=>setTimeout(r, 30));
-        document.querySelector('[data-add-top="Jihan"]').click(); ev(document.querySelector('[data-t="2"] [data-f="amount"]'), '7000'); await new Promise(r=>setTimeout(r, 30));
+        addTop('Store', '5000'); await new Promise(r=>setTimeout(r, 30));
+        addTop('Jihan', '7000'); await new Promise(r=>setTimeout(r, 30));
+        const nBefore = dcLoad(day).topups.length; document.getElementById('dcTopAmt').value=''; document.getElementById('dcTopAdd').click();
+        out.noEmpty = dcLoad(day).topups.length === nBefore;
+        // yesterday's count is today's starting drawer: yesterday 36,000, today 72,000 counted
+        const y = addDaysISO(day, -1), t = day;
+        DB.reminderState['daily:'+y] = JSON.stringify({items:[], topups:[], deposit:0, counted:36000, note:''});
+        const keepT = DB.reminderState['daily:'+t];
+        const tmp = Object.assign(dcLoad(t), {counted: 72000}); DB.reminderState['daily:'+t] = JSON.stringify(tmp);
+        const cy = dcCalc(t, dcLoad(t)); out.yday = [cy.start, cy.prev && cy.prev.day===y, cy.grew, cy.cashExpected - cy.start === cy.cashToday];
+        renderDailyClosing(); out.compare = !!document.querySelector('.dc-compare') && /Drawer went up today/.test(document.querySelector('.dc-compare').textContent) && /[+]₩36,000/.test(document.querySelector('.dc-compare').textContent);
+        DB.reminderState['daily:'+t] = keepT; delete DB.reminderState['daily:'+y]; renderDailyClosing();
         const c2 = dcCalc(day, dcLoad(day)); out.who = [c2.topStore, c2.topOwed, c2.cashExpected, dcLoad(day).topups.map(dcWho)];
         out.short = /Over by ₩5,000/.test(document.querySelector('.dc-cash-state').textContent);
         out.stored = !!DB.reminderState['daily:'+day];
@@ -406,12 +416,14 @@ def run(b):
         out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
         DB.services = DB.services.filter(s=>!ids.includes(s.id)); delete DB.reminderState['daily:'+day]; goTo('dashboard');
         return out; })()""")
-    check("Daily closing counts the day from the CRM: 90/60/30/15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
-          dc["auto"] == [1, 1, 2, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
+    check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
+          dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
     check("screen protector, staff top-up paid back, deposit: cash in drawer 55,000+10,000-30,000-20,000 = 15,000 and it matches",
           dc["calc"] == [1, 10000, 30000, 30000, 15000, 0, 221000] and dc["kpiOk"], dc["calc"])
     check("top-ups by Jason / Jihan / Store money: store money leaves the drawer, unpaid staff top-ups show as owed",
           dc["who"] == [5000, 7000, 10000, ["Jason", "Store", "Jihan"]] and dc["short"], dc["who"])
+    check("yesterday's count (36,000) is today's start; counted 72,000 shows the drawer went up +36,000, compared with today's cash", dc["yday"] == [36000, True, 36000, True] and dc["compare"], [dc["yday"], dc["compare"]])
+    check("top-up works like an order: pick who, type amount, Add; form clears and keeps the person; empty amount isn't added", dc["formCleared"] and dc["noEmpty"], dc)
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 
