@@ -364,6 +364,52 @@ def run(b):
           [r[1:] for r in px["rows"]] == [[36000, "", 32400, 3600], [60000, 5000, "", ""], [100000, "", 18000, 82000]] and px["rows"][0][0].startswith("Recharge") and px["rows"][2][0] == "PLAN A", px["rows"])
     check("totals row, and a note when a cost is missing", px["total"][7] == 196000 and px["total"][10] == 85600 and px["note"], px)
 
+    print("Daily closing")
+    dc = pg.evaluate("""(async()=>{ const cs = DB.customers.slice(0,6), day = '2020-02-11', ids = [], out = {};
+        const add = (c, o) => { const s = Object.assign({id: uid('s'), customerId: c.id, isActive:false, activationDate: day, endedAt: day, endedSeq: 1}, o); DB.services.push(s); ids.push(s.id); };
+        add(cs[0], {type:'prepaid', durationDays:90, price:55000, sellingPrice:55000, paymentMethod:'cash'});
+        add(cs[1], {type:'prepaid', durationDays:30, price:36000, sellingPrice:36000, paymentMethod:'card', changeReason:'recharge'});
+        add(cs[2], {type:'prepaid', durationDays:15, price:20000, sellingPrice:20000, paymentMethod:'bank transfer'});
+        add(cs[3], {type:'prepaid', durationDays:30, price:300, sellingPrice:300, paymentMethod:'alipay'});
+        add(cs[4], {type:'prepaid', durationDays:60, price:40000, sellingPrice:40000, paymentMethod:''});
+        add(cs[5], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000});
+        const nSvc = DB.services.length, nCust = DB.customers.length;
+        goTo('daily'); dcDay = day; renderDailyClosing();
+        const a = dcAuto(day);
+        out.auto = [a.d90, a.d60, a.d30, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
+        const ev = (el, v, type) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
+        document.querySelector('[data-add-item="sp"]').click();
+        ev(document.querySelector('#dcOtherCard [data-i="0"] [data-f="amount"]'), '10000');
+        await new Promise(r=>setTimeout(r, 30));
+        document.querySelector('[data-add-top]').click();
+        ev(document.querySelector('#dcTopupCard [data-t="0"] [data-f="staff"]'), 'Jason');
+        await new Promise(r=>setTimeout(r, 30));
+        ev(document.querySelector('#dcTopupCard [data-t="0"] [data-f="amount"]'), '30000');
+        await new Promise(r=>setTimeout(r, 30));
+        const cb = document.querySelector('#dcTopupCard [data-t="0"] [data-f="repaid"]'); cb.checked = true; cb.dispatchEvent(new Event('change', {bubbles:true}));
+        await new Promise(r=>setTimeout(r, 30));
+        ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
+        ev(document.getElementById('dcCounted'), '15000'); await new Promise(r=>setTimeout(r, 30));
+        const c = dcCalc(day, dcLoad(day));
+        out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
+        out.kpiOk = !!document.querySelector('.dc-kpi.ok');
+        out.stored = !!DB.reminderState['daily:'+day];
+        out.untouched = DB.services.length===nSvc && DB.customers.length===nCust;
+        out.monthRow = !!document.querySelector('[data-dc-day="'+day+'"]');
+        const keepX = window.XLSX, books = [];
+        window.XLSX = {utils:{book_new:()=>({s:[]}), aoa_to_sheet:a=>({a}), book_append_sheet:(wb,ws,n)=>wb.s.push([n,ws.a])}, writeFile:(wb,f)=>books.push([f,wb.s])};
+        document.getElementById('dcExport').click(); window.XLSX = keepX;
+        const sh = books[0] && books[0][1][0][1];
+        out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
+        DB.services = DB.services.filter(s=>!ids.includes(s.id)); delete DB.reminderState['daily:'+day]; goTo('dashboard');
+        return out; })()""")
+    check("Daily closing counts the day from the CRM: 90/60/30/15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
+          dc["auto"] == [1, 1, 2, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
+    check("screen protector, staff top-up paid back, deposit: cash in drawer 55,000+10,000-30,000-20,000 = 15,000 and it matches",
+          dc["calc"] == [1, 10000, 30000, 30000, 15000, 0, 221000] and dc["kpiOk"], dc["calc"])
+    check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
+    check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
+
     print("Payment method starts blank")
     pm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';});
         const a = activeSubscriptionFor(c.id), keep = a.paymentMethod, out = {}; a.paymentMethod = 'card';

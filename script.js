@@ -44,10 +44,10 @@ const LANG_KEY = 'himobile_crm_lang';
 const I18N = {
   zh: {
     'sidebar.sub':'客户管理系统 · 고객 관리','sidebar.store':'韩国手机店','sidebar.staffSub':'点击切换办理人',
-    'nav.dashboard':'工作台','nav.customers':'客户档案','nav.sheet':'表格视图','nav.ai':'AI 商业洞察','nav.reminders':'到期跟进','nav.orders':'业务订单','nav.reports':'报表分析','nav.templates':'打印模板','nav.io':'导入导出',
+    'nav.dashboard':'工作台','nav.customers':'客户档案','nav.sheet':'表格视图','nav.ai':'AI 商业洞察','nav.reminders':'到期跟进','nav.orders':'业务订单','nav.reports':'报表分析','nav.templates':'打印模板','nav.io':'导入导出','nav.daily':'每日结算',
     'sub.sheet':'像表格一样直接编辑客户与套餐信息',
     'sheet.hint':'点击彩色标签可直接选择新值；点击文字/数字/日期可直接编辑，回车或点击其他地方即保存',
-    'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份',
+    'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份','sub.daily':'每天的收款、贴膜和垫付 — 自动加总，不影响客户记录',
     'btn.newCustomer':'新建客户','btn.exportExcel':'导出 Excel','btn.exportMonthExcel':'导出 Excel','btn.addFollowup':'＋ 添加跟进','btn.newOrder':'＋ 新增业务','btn.cancel':'取消','btn.saveCustomer':'保存客户','btn.saveOrder':'保存业务','btn.edit':'编辑资料','btn.addService':'＋ 新增业务','btn.confirmImport':'确认导入','btn.view':'查看','btn.complete':'完成','btn.followUpAgain':'再次跟进','btn.delete':'删除','btn.deleteCustomer':'删除客户','btn.saveTemplate':'保存模板','btn.print':'打印','btn.savePrint':'保存并打印申请表','btn.merge':'合并','btn.copyName':'复制姓名','btn.save':'保存','btn.requestIdChange':'信息变更','btn.markComplete':'标记已完成','btn.freezeSim':'暂停卡号','btn.unfreezeSim':'解除暂停',
     'freeze.modalTitle':'暂停卡号（Freeze SIM）','freeze.modalDesc':'暂停期间不计入合约期限，合约到期日将顺延相应天数。仅限后付卡客户使用。','freeze.byDays':'按天数','freeze.byRange':'按日期范围','freeze.startDate':'开始日期','freeze.endDate':'结束日期','freeze.days':'暂停天数','freeze.frozen':'暂停中','freeze.colHeader':'暂停状态','freeze.clickToUnfreeze':'点击解除暂停',
     'btn.changeToPostpaid':'转为后付卡','btn.changePlan':'变更套餐','btn.cancelSubscription':'取消订阅','btn.startNewSubscription':'开通新订阅','btn.confirmChange':'确认变更','btn.confirmCancel':'确认取消订阅','btn.back':'返回','btn.undoCancel':'恢复订阅 Reactivate',
@@ -144,10 +144,10 @@ const I18N = {
   },
   en: {
     'sidebar.sub':'Customer Management · CRM','sidebar.store':'Korea SIM Store','sidebar.staffSub':'Click to switch staff',
-    'nav.dashboard':'Dashboard','nav.customers':'Customers','nav.sheet':'Sheet View','nav.ai':'AI Insights','nav.reminders':'Reminders','nav.orders':'Orders','nav.reports':'Reports','nav.templates':'Print Templates','nav.io':'Import / Export',
+    'nav.dashboard':'Dashboard','nav.customers':'Customers','nav.sheet':'Sheet View','nav.ai':'AI Insights','nav.reminders':'Reminders','nav.orders':'Orders','nav.reports':'Reports','nav.templates':'Print Templates','nav.io':'Import / Export','nav.daily':'Daily closing',
     'sub.sheet':'Edit customer & plan info directly, like a spreadsheet',
     'sheet.hint':'Click a colored tag to pick a new value; click text/numbers/dates to edit directly — press Enter or click away to save',
-    'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup',
+    'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup','sub.daily':'The day\'s money, screen protectors and staff top-ups — added up for you, kept out of the customer records',
     'btn.newCustomer':'New customer','btn.exportExcel':'Export Excel','btn.exportMonthExcel':'Export to Excel','btn.addFollowup':'＋ Add reminder','btn.newOrder':'＋ New order','btn.cancel':'Cancel','btn.saveCustomer':'Save customer','btn.saveOrder':'Save order','btn.edit':'Edit profile','btn.addService':'＋ Add service','btn.confirmImport':'Confirm import','btn.view':'View','btn.complete':'Complete','btn.followUpAgain':'Follow up again','btn.delete':'Delete','btn.deleteCustomer':'Delete customer','btn.saveTemplate':'Save template','btn.print':'Print','btn.savePrint':'Save & print application form','btn.merge':'Merge','btn.copyName':'Copy name','btn.save':'Save','btn.requestIdChange':'Information change','btn.markComplete':'Mark complete','btn.freezeSim':'Freeze SIM','btn.unfreezeSim':'Unfreeze SIM',
     'freeze.modalTitle':'Freeze SIM','freeze.modalDesc':'Frozen time doesn\'t count toward the contract — the end date pushes back by however many days are frozen. Postpaid only.','freeze.byDays':'By days','freeze.byRange':'By date range','freeze.startDate':'Start date','freeze.endDate':'End date','freeze.days':'Days to freeze','freeze.frozen':'Frozen','freeze.colHeader':'Freeze status','freeze.clickToUnfreeze':'Click to unfreeze',
     'btn.changeToPostpaid':'Change to Postpaid','btn.changePlan':'Change Plan','btn.cancelSubscription':'Cancel Subscription','btn.startNewSubscription':'＋ Start New Subscription','btn.confirmChange':'Confirm Change','btn.confirmCancel':'Confirm Cancellation','btn.back':'Back','btn.undoCancel':'Reactivate',
@@ -2459,6 +2459,7 @@ const NAV_ITEMS = [
   {key:'ai', icon:'sparkle', label:'nav.ai'},
   {key:'reminders', icon:'clock', label:'nav.reminders'},
   // (Orders page retired 2026-11-11 — Sheet View lists every plan; other services and edits live in each customer's profile)
+  {key:'daily', icon:'calc', label:'nav.daily'},
   {key:'reports', icon:'chart', label:'nav.reports'},
   {key:'templates', icon:'printer', label:'nav.templates'},
   {key:'io', icon:'cloud', label:'nav.io'},
@@ -2469,6 +2470,7 @@ const ICONS = {
   clock:'<circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
   list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   chart:'<path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  calc:'<rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15v2.5M8.5 18h.01M12 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   cloud:'<path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0117.5 15H17M9 18h8" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   printer:'<path d="M7 8V4h10v4M7 17h10v4H7v-4zM5 8h14a2 2 0 012 2v5h-3M5 15H2v-5a2 2 0 012-2h0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>',
   sheet:'<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M4 10h16M9 4v16" stroke="currentColor" stroke-width="1.6"/>',
@@ -2512,6 +2514,7 @@ function renderPage(page){
   if(page==='ai') renderAIPage();
   if(page==='reminders') renderReminders();
   if(page==='reports') renderReports();
+  if(page==='daily') renderDailyClosing();
   if(page==='templates') renderTemplates();
   if(page==='io') renderIO();
 }
@@ -9020,4 +9023,277 @@ function openAgeCheck(prefill){
   document.getElementById('ageCheckInput').addEventListener('input', renderAgeCheck);
   const setTitle = ()=>{ const tt = LANG==='zh' ? '年龄计算' : 'Age check'; b.title = tt; b.setAttribute('aria-label', tt); };
   setTitle(); document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.lang-btn')) setTimeout(setTitle, 0); });
+})();
+
+/* =====================================================================================
+   Daily closing (每日结算) — replaces the daily Excel sheet.
+   • From the CRM, filled in automatically for the chosen day: prepaid sign-ups by length
+     (90 / 60 / 30 / 15 days), money by payment method (cash, transfer, card, RMB for
+     Alipay/WeChat), postpaid count and total, recharges at 36,000/36,300 vs other.
+   • Typed in by staff: other sales (screen protectors and anything else), staff top-ups
+     (paid with their own money, paid back by the company at the end of the day), cash
+     deposited, the cash counted in the drawer, and a note.
+   • Kept apart from the customer records: stored per day in reminderState as
+     'daily:YYYY-MM-DD' (JSON), which syncs to the server like the rest — so it never
+     changes customers, plans, reports or exports.
+   ===================================================================================== */
+let dcDay = null;
+const DC_PAY = ['cash','transfer','card','rmb','free'];
+function dcKey(day){ return 'daily:'+day; }
+function dcBlank(){ return {items:[], topups:[], deposit:0, counted:'', note:''}; }
+function dcLoad(day){
+  try{ const v = DB.reminderState && DB.reminderState[dcKey(day)]; const o = v ? JSON.parse(v) : null;
+       return o ? Object.assign(dcBlank(), o) : dcBlank(); }catch(e){ return dcBlank(); }
+}
+let dcSaveTimer = null;
+function dcStore(day, d){
+  DB.reminderState = DB.reminderState || {};
+  const empty = !d.items.length && !d.topups.length && !Number(d.deposit) && d.counted==='' && !d.note;
+  if(empty && !DB.reminderState[dcKey(day)]) return;
+  DB.reminderState[dcKey(day)] = JSON.stringify(d);
+  clearTimeout(dcSaveTimer);
+  const el = document.getElementById('dcSaved'); if(el) el.textContent = LANG==='zh' ? '保存中…' : 'Saving…';
+  dcSaveTimer = setTimeout(()=>{ saveDB(DB); const e2 = document.getElementById('dcSaved'); if(e2) e2.textContent = LANG==='zh' ? '已保存' : 'Saved'; }, 500);
+}
+function dcPayKey(m){
+  if(m==='cash') return 'cash';
+  if(m==='card') return 'card';
+  if(m==='bank transfer' || m==='transfer') return 'transfer';
+  if(m==='alipay' || m==='wechat') return 'rmb';
+  return 'unpaid';
+}
+/* everything the CRM already knows about that day */
+function dcAuto(day){
+  const a = {d90:0, d60:0, d30:0, d15:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
+             postN:0, postAmt:0, rc36:0, rcOther:0};
+  DB.services.forEach(s=>{
+    if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
+    if(s.type==='prepaid'){
+      a.preCount++;
+      const dd = Number(s.durationDays)||0;
+      if(dd===90) a.d90++; else if(dd===60) a.d60++; else if(dd===30) a.d30++; else if(dd===15 || dd===14) a.d15++; else a.dOther++;
+      const amt = Number(s.sellingPrice)||0, k = dcPayKey(s.paymentMethod);
+      if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; } else a[k] += amt;
+      if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; }
+    } else if(s.type==='postpaid'){
+      a.postN++; a.postAmt += (s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit)) || 0;
+    }
+  });
+  a.preTotal = a.cash + a.transfer + a.card;   // ₩ only — RMB is kept separately
+  return a;
+}
+function dcCalc(day, d){
+  const a = dcAuto(day);
+  const o = {cash:0, transfer:0, card:0, rmb:0, freeQty:0, total:0, spQty:0, spCharged:0, spFree:0};
+  d.items.forEach(it=>{
+    const qty = Number(it.qty)||0, amt = Number(it.amount)||0, pay = DC_PAY.includes(it.pay) ? it.pay : 'cash';
+    const isSp = /screen|protector|贴膜|膜/i.test(it.name||'');
+    if(pay==='free'){ o.freeQty += qty; if(isSp) o.spFree += qty; }
+    else { o[pay] += amt; if(pay!=='rmb') o.total += amt; if(isSp) o.spCharged += amt; }
+    if(isSp) o.spQty += qty;
+  });
+  const topAll = d.topups.reduce((x,t)=> x + (Number(t.amount)||0), 0);
+  const topPaid = d.topups.filter(t=>t.repaid).reduce((x,t)=> x + (Number(t.amount)||0), 0);
+  const income = a.preTotal + a.postAmt + o.total;
+  const cashExpected = a.cash + o.cash - topPaid - (Number(d.deposit)||0);
+  const counted = d.counted==='' || d.counted==null ? null : Number(d.counted)||0;
+  return {a, o, topAll, topPaid, topOwed: topAll - topPaid, income, cashExpected, counted, diff: counted==null ? null : counted - cashExpected};
+}
+function dcFmtY(n){ n = Math.round((Number(n)||0)*100)/100; return '¥'+n.toLocaleString('en-US'); }
+function renderDailyClosing(){
+  const zh = LANG==='zh';
+  if(!dcDay || !isIsoDate(dcDay)) dcDay = todayISO();
+  document.getElementById('dcDate').value = dcDay;
+  document.getElementById('dcToday').textContent = zh ? '今天' : 'Today';
+  document.getElementById('dcExport').textContent = zh ? '导出本月 Excel' : 'Export month to Excel';
+  document.getElementById('dcSaved').textContent = '';
+  const d = dcLoad(dcDay), c = dcCalc(dcDay, d), a = c.a;
+  // KPIs
+  const kpi = (lab, val, sub, cls)=> `<div class="dc-kpi ${cls||''}"><div class="dc-kpi-l">${lab}</div><div class="dc-kpi-v">${val}</div>${sub?`<div class="dc-kpi-s">${sub}</div>`:''}</div>`;
+  document.getElementById('dcKpis').innerHTML =
+      kpi(zh?'当日先付合计':'Prepaid total', fmtWon(a.preTotal), zh?`${a.preCount} 笔先付`:`${a.preCount} prepaid`)
+    + kpi(zh?'后付卡总金额':'Postpaid total', fmtWon(a.postAmt), zh?`${a.postN} 张后付卡`:`${a.postN} postpaid`)
+    + kpi(zh?'其他销售':'Other sales', fmtWon(c.o.total), zh?`贴膜 ${c.o.spQty} 张`:`${c.o.spQty} screen protector${c.o.spQty===1?'':'s'}`)
+    + kpi(zh?'当日收入总':'Day income total', fmtWon(c.income), zh?'先付 + 后付 + 其他':'prepaid + postpaid + other', 'main')
+    + kpi(zh?'人民币金额':'RMB (Alipay/WeChat)', dcFmtY(a.rmb + c.o.rmb), zh?'单独计算，不换算':'kept separate, not converted')
+    + kpi(zh?'抽屉应有现金':'Cash in drawer', fmtWon(c.cashExpected), c.diff==null ? (zh?'下面输入点钞结果':'count it below') : (c.diff===0 ? (zh?'✓ 对上了':'✓ matches') : (zh?`差额 ${c.diff>0?'+':''}${fmtWon(c.diff)}`:`difference ${c.diff>0?'+':''}${fmtWon(c.diff)}`)), c.diff==null ? '' : (c.diff===0 ? 'ok' : 'bad'));
+  // automatic card
+  const row = (l, v, cls)=> `<div class="dc-row ${cls||''}"><span>${l}</span><b>${v}</b></div>`;
+  document.getElementById('dcAutoCard').innerHTML = `
+    <div class="dc-h"><div><div class="section-title">${zh?'来自 CRM（自动）':'From the CRM (automatic)'}</div>
+      <div class="muted dc-sub">${zh?'按当天的开通日期统计 — 改客户资料会自动更新':'Counted from plans activated on this day — updates by itself when plans change'}</div></div></div>
+    <div class="dc-sec">${zh?'先付办理数量':'Prepaid sign-ups'}</div>
+    <div class="dc-chips">
+      <div class="dc-chip"><b>${a.d90}</b><span>${zh?'90天':'90 days'}</span></div>
+      <div class="dc-chip"><b>${a.d60}</b><span>${zh?'60天':'60 days'}</span></div>
+      <div class="dc-chip"><b>${a.d30}</b><span>${zh?'30天':'30 days'}</span></div>
+      <div class="dc-chip"><b>${a.d15}</b><span>${zh?'15天':'15 days'}</span></div>
+      <div class="dc-chip total"><b>${a.preCount}</b><span>${zh?'合计':'Total'}</span></div>
+    </div>
+    <div class="dc-sec">${zh?'先付收款':'Prepaid money'}</div>
+    ${row(zh?'当日现金 (cash)':'Cash', fmtWon(a.cash))}
+    ${row(zh?'转账金额 (tf)':'Bank transfer', fmtWon(a.transfer))}
+    ${row(zh?'刷卡金额 (card)':'Card', fmtWon(a.card))}
+    ${row(zh?'当日先付合计':'Prepaid total', fmtWon(a.preTotal), 'sum')}
+    ${row(zh?'人民币金额 (支付宝/微信)':'RMB (Alipay / WeChat)', dcFmtY(a.rmb))}
+    ${a.unpaidN ? row(`<span class="dc-warn">${zh?`未付款 / 未选付款方式：${a.unpaidN} 笔`:`Not paid yet / no method: ${a.unpaidN}`}</span>`, fmtWon(a.unpaidAmt), 'warn') : ''}
+    <div class="dc-sec">${zh?'充值':'Recharge'}</div>
+    ${row(zh?'充值 36 / 36.3':'Recharge 36,000 / 36,300', a.rc36)}
+    ${row(zh?'其他充值':'Other recharge', a.rcOther)}
+    <div class="dc-sec">${zh?'后付':'Postpaid'}</div>
+    ${row(zh?'后付卡数量':'Postpaid count', a.postN)}
+    ${row(zh?'后付卡总金额（公司价格）':'Postpaid total (company price)', fmtWon(a.postAmt))}`;
+  // other sales
+  const payOpt = v=> DC_PAY.map(k=>`<option value="${k}" ${v===k?'selected':''}>${({cash:zh?'现金':'Cash', transfer:zh?'转账':'Transfer', card:zh?'刷卡':'Card', rmb:zh?'人民币':'RMB', free:zh?'免费/未收费':'Free / not charged'})[k]}</option>`).join('');
+  document.getElementById('dcOtherCard').innerHTML = `
+    <div class="dc-h"><div><div class="section-title">${zh?'其他销售（贴膜等）':'Other sales (screen protectors etc.)'}</div>
+      <div class="muted dc-sub">${zh?'只用于当天结算，不会进入客户记录':'Only for the daily count — never added to customer records'}</div></div></div>
+    <div class="dc-items">${d.items.length ? `<div class="dc-item dc-item-head"><span>${zh?'项目':'Item'}</span><span>${zh?'数量':'Qty'}</span><span>${zh?'金额 ₩':'Amount ₩'}</span><span>${zh?'付款':'Paid by'}</span><span></span></div>` : ''}
+      ${d.items.map((it,i)=>`<div class="dc-item" data-i="${i}">
+        <input class="dc-in" data-f="name" value="${escapeHtml(it.name||'')}" placeholder="${zh?'项目':'Item'}">
+        <input class="dc-in" data-f="qty" type="number" min="0" step="1" value="${escapeHtml(String(it.qty??1))}">
+        <input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(it.amount??''))}" placeholder="0">
+        <select class="dc-in" data-f="pay">${payOpt(it.pay||'cash')}</select>
+        <button class="dc-x" data-del-item="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button></div>`).join('') || `<div class="muted dc-empty">${zh?'今天还没有其他销售':'No other sales today yet'}</div>`}
+    </div>
+    <div class="dc-adds"><button class="btn btn-ghost btn-sm" data-add-item="sp">+ ${zh?'贴膜':'Screen protector'}</button><button class="btn btn-ghost btn-sm" data-add-item="other">+ ${zh?'其他项目':'Other item'}</button></div>
+    ${d.items.length ? `<div class="dc-foot">${zh?'合计':'Total'} <b>${fmtWon(c.o.total)}</b>${c.o.rmb?` · ${dcFmtY(c.o.rmb)}`:''}${c.o.freeQty?` · ${zh?'未收费':'not charged'} ${c.o.freeQty}`:''}</div>` : ''}`;
+  // staff top-ups
+  document.getElementById('dcTopupCard').innerHTML = `
+    <div class="dc-h"><div><div class="section-title">${zh?'员工垫付充值':'Staff top-ups'}</div>
+      <div class="muted dc-sub">${zh?'员工先用自己的钱充值，下班时公司还给他们':'Staff paid with their own money; the company pays them back at the end of the day'}</div></div></div>
+    <div class="dc-items">${d.topups.length ? `<div class="dc-item dc-top dc-item-head"><span>${zh?'员工':'Staff'}</span><span>${zh?'金额 ₩':'Amount ₩'}</span><span>${zh?'备注':'Note'}</span><span>${zh?'已还':'Paid back'}</span><span></span></div>` : ''}
+      ${d.topups.map((t2,i)=>`<div class="dc-item dc-top" data-t="${i}">
+        <input class="dc-in" data-f="staff" value="${escapeHtml(t2.staff||'')}" placeholder="${zh?'姓名':'Name'}">
+        <input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(t2.amount??''))}" placeholder="0">
+        <input class="dc-in" data-f="note" value="${escapeHtml(t2.note||'')}" placeholder="${zh?'例如客户号码':'e.g. customer number'}">
+        <label class="dc-chk"><input type="checkbox" data-f="repaid" ${t2.repaid?'checked':''}><span>${zh?'从抽屉还':'from drawer'}</span></label>
+        <button class="dc-x" data-del-top="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button></div>`).join('') || `<div class="muted dc-empty">${zh?'今天没有垫付':'No top-ups today'}</div>`}
+    </div>
+    <div class="dc-adds"><button class="btn btn-ghost btn-sm" data-add-top="1">+ ${zh?'垫付':'Top-up'}</button></div>
+    ${d.topups.length ? `<div class="dc-foot">${zh?'垫付合计':'Total'} <b>${fmtWon(c.topAll)}</b> · ${zh?'已还':'paid back'} ${fmtWon(c.topPaid)}${c.topOwed?` · <span class="dc-warn">${zh?'还欠':'still owed'} ${fmtWon(c.topOwed)}</span>`:''}</div>` : ''}`;
+  // cash check
+  document.getElementById('dcCashCard').innerHTML = `
+    <div class="dc-h"><div class="section-title">${zh?'现金核对':'Cash check'}</div></div>
+    ${row(zh?'先付现金':'Prepaid cash', fmtWon(a.cash))}
+    ${row(zh?'其他销售现金':'Other sales cash', fmtWon(c.o.cash))}
+    ${row(zh?'从抽屉还给员工的垫付':'Top-ups paid back from the drawer', '− '+fmtWon(c.topPaid))}
+    <div class="dc-row"><span>${zh?'存现金额（存进银行）':'Cash deposited (to the bank)'}</span><input class="dc-in dc-num" id="dcDeposit" type="number" min="0" step="1000" value="${escapeHtml(String(d.deposit||''))}" placeholder="0"></div>
+    ${row(zh?'抽屉应有现金':'Cash that should be in the drawer', fmtWon(c.cashExpected), 'sum')}
+    <div class="dc-row"><span>${zh?'实际点钞':'Cash counted'}</span><input class="dc-in dc-num" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'点完填写':'type after counting'}"></div>
+    ${c.diff==null ? '' : row(zh?'差额':'Difference', (c.diff>0?'+':'')+fmtWon(c.diff), c.diff===0 ? 'ok' : 'bad')}
+    <textarea class="dc-in dc-note" id="dcNote" rows="2" placeholder="${zh?'备注（可选）':'Note (optional)'}">${escapeHtml(d.note||'')}</textarea>`;
+  renderDailyMonth();
+}
+/* one row per day of the month, the same columns as the old Excel sheet */
+function dcMonthRows(month){
+  const [y, m] = month.split('-').map(Number), last = new Date(y, m, 0).getDate(), today = todayISO(), rows = [];
+  for(let i=1;i<=last;i++){
+    const day = `${month}-${String(i).padStart(2,'0')}`; if(day > today) break;
+    const d = dcLoad(day), c = dcCalc(day, d), a = c.a;
+    rows.push({day, a, c, d});
+  }
+  return rows;
+}
+function renderDailyMonth(){
+  const zh = LANG==='zh', month = dcDay.slice(0,7), rows = dcMonthRows(month);
+  const tot = k=> rows.reduce((x,r)=> x + (Number(k(r))||0), 0);
+  const cols = [
+    [zh?'日期':'Date', r=> shortDay(r.day), null],
+    ['90', r=>r.a.d90, 'n'], ['60', r=>r.a.d60, 'n'], ['30', r=>r.a.d30, 'n'], ['15', r=>r.a.d15, 'n'], [zh?'合计':'Total', r=>r.a.preCount, 'n'],
+    [zh?'现金':'Cash', r=>r.a.cash, 'w'], [zh?'转账':'Transfer', r=>r.a.transfer, 'w'], [zh?'刷卡':'Card', r=>r.a.card, 'w'], [zh?'先付合计':'Prepaid', r=>r.a.preTotal, 'w'],
+    [zh?'存现':'Deposited', r=>Number(r.d.deposit)||0, 'w'], [zh?'人民币':'RMB', r=>r.a.rmb + r.c.o.rmb, 'y'],
+    [zh?'后付数':'Post #', r=>r.a.postN, 'n'], [zh?'后付金额':'Postpaid', r=>r.a.postAmt, 'w'], [zh?'收入总':'Income', r=>r.c.income, 'w'],
+    ['36/363', r=>r.a.rc36, 'n'], [zh?'其他充值':'Other rc', r=>r.a.rcOther, 'n'],
+    [zh?'贴膜':'Prot.', r=>r.c.o.spQty, 'n'], [zh?'贴膜收费':'Prot. ₩', r=>r.c.o.spCharged, 'w'], [zh?'未收费':'Free', r=>r.c.o.spFree, 'n'],
+  ];
+  const fmt = (v, k)=> k==='w' ? (v ? fmtWon(v) : '—') : k==='y' ? (v ? dcFmtY(v) : '—') : (k==='n' ? (v || '—') : v);
+  document.getElementById('dcMonthCard').innerHTML = `
+    <div class="dc-h"><div class="section-title">${zh?`${month} 每日汇总`:`${month} day by day`}</div><div class="muted dc-sub">${zh?'只列出有记录的日子 · 点一行打开那一天':'Days with activity · click a row to open that day'}</div></div>
+    <div class="dc-table-wrap"><table class="dc-table"><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preCount || r.a.postN || r.d.items.length || r.d.topups.length || Number(r.d.deposit) || r.d.counted!=='' ).map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}">${cols.map(c=>`<td>${fmt(c[1](r), c[2])}</td>`).join('')}</tr>`).join('')}</tbody>
+    <tfoot><tr>${cols.map((c,i)=>`<td>${i===0 ? (zh?'本月合计':'Month total') : fmt(tot(c[1]), c[2])}</td>`).join('')}</tr></tfoot></table></div>`;
+}
+/* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
+function exportDailyMonth(){
+  const month = dcDay.slice(0,7), rows = dcMonthRows(month);
+  const h1 = ['日期','先付办理数量','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总','充值36','','贴膜','','','员工垫付','备注'];
+  const h2 = ['','90天','60天','30天','15天','合计','','','','','','','','','','36/363','其他','数量','收费','未收费','',''];
+  const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.preTotal,
+    Number(r.d.deposit)||0, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
+  const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
+  const total = ['合计', ...Array.from({length:20}, (_,k)=> sumCol(k+1)), ''];
+  const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data, total]);
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:5}}, ...[6,7,8,9,10,11,12,13,14,20,21].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:15},e:{r:0,c:16}}, {s:{r:0,c:17},e:{r:0,c:19}}];
+  ws['!cols'] = [12,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,6,10,8,12,24].map(w=>({wch:w}));
+  // staff top-ups listed one by one on a second sheet
+  const tops = [['日期','员工','金额','备注','已还']];
+  rows.forEach(r=> r.d.topups.forEach(t2=> tops.push([r.day, t2.staff||'', Number(t2.amount)||0, t2.note||'', t2.repaid?'是':'否'])));
+  const items = [['日期','项目','数量','金额','付款']];
+  rows.forEach(r=> r.d.items.forEach(it=> items.push([r.day, it.name||'', Number(it.qty)||0, Number(it.amount)||0, it.pay||'cash'])));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, month);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(items), '其他销售');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tops), '员工垫付');
+  XLSX.writeFile(wb, `Himobile_Daily_${month}.xlsx`);
+  toast(t('toast.exported'));
+}
+(function(){
+  const page = document.getElementById('page-daily'); if(!page) return;
+  const go = day=>{ if(isIsoDate(day)){ dcDay = day; renderDailyClosing(); } };
+  document.getElementById('dcPrev').addEventListener('click', ()=> go(addDaysISO(dcDay, -1)));
+  document.getElementById('dcNext').addEventListener('click', ()=> go(addDaysISO(dcDay, 1)));
+  document.getElementById('dcToday').addEventListener('click', ()=> go(todayISO()));
+  document.getElementById('dcDate').addEventListener('change', e=> go(e.target.value));
+  document.getElementById('dcExport').addEventListener('click', exportDailyMonth);
+  // typing: save right away, refresh the totals once the field is left (so the cursor isn't lost)
+  const edit = (e, rerender)=>{
+    const el = e.target; if(!el.classList || !el.classList.contains('dc-in') && !(el.type==='checkbox' && el.dataset.f)) return;
+    const d = dcLoad(dcDay), item = el.closest('[data-i]'), top = el.closest('[data-t]'), f = el.dataset.f;
+    const val = el.type==='checkbox' ? el.checked : (el.type==='number' ? (el.value==='' ? '' : Number(el.value)) : el.value);
+    if(item) d.items[Number(item.dataset.i)][f] = val;
+    else if(top) d.topups[Number(top.dataset.t)][f] = val;
+    else if(el.id==='dcDeposit') d.deposit = val==='' ? 0 : val;
+    else if(el.id==='dcCounted') d.counted = val;
+    else if(el.id==='dcNote') d.note = val;
+    else return;
+    dcStore(dcDay, d);
+    if(rerender) setTimeout(dcRerenderKeepFocus, 0);
+  };
+  // re-draw the totals but keep the cursor in whatever field staff moved to
+  function dcRerenderKeepFocus(){
+    const f = document.activeElement, inPage = f && page.contains(f);
+    const key = inPage ? { id: f.id, i: f.closest('[data-i]')?.dataset.i, t: f.closest('[data-t]')?.dataset.t, f: f.dataset.f } : null;
+    const sel = inPage && f.selectionStart!=null ? [f.selectionStart, f.selectionEnd] : null;
+    renderDailyClosing();
+    if(!key) return;
+    let el = key.id ? document.getElementById(key.id)
+      : key.i!=null ? page.querySelector(`[data-i="${key.i}"] [data-f="${key.f}"]`)
+      : key.t!=null ? page.querySelector(`[data-t="${key.t}"] [data-f="${key.f}"]`) : null;
+    if(el){ el.focus(); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0], sel[1]); }catch(_){} }
+  }
+  page.addEventListener('input', e=> edit(e, false));
+  page.addEventListener('change', e=> edit(e, true));
+  page.addEventListener('click', e=>{
+    const t2 = e.target;
+    const row = t2.closest('[data-dc-day]'); if(row){ go(row.dataset.dcDay); window.scrollTo({top:0, behavior:'smooth'}); return; }
+    const d = dcLoad(dcDay), zh = LANG==='zh';
+    if(t2.closest('[data-add-item]')){
+      const sp = t2.closest('[data-add-item]').dataset.addItem==='sp';
+      d.items.push({id: uid('i'), name: sp ? (zh?'贴膜':'Screen protector') : '', qty:1, amount:'', pay:'cash'});
+      dcStore(dcDay, d); renderDailyClosing();
+      const ins = document.querySelectorAll('#dcOtherCard .dc-item:not(.dc-item-head)'); const last = ins[ins.length-1];
+      if(last) last.querySelector(sp ? '[data-f="amount"]' : '[data-f="name"]').focus();
+      return;
+    }
+    if(t2.closest('[data-add-top]')){
+      d.topups.push({id: uid('t'), staff:'', amount:'', note:'', repaid:false});
+      dcStore(dcDay, d); renderDailyClosing();
+      const ins = document.querySelectorAll('#dcTopupCard .dc-item:not(.dc-item-head)'); const last = ins[ins.length-1];
+      if(last) last.querySelector('[data-f="staff"]').focus();
+      return;
+    }
+    const di = t2.closest('[data-del-item]'); if(di){ d.items.splice(Number(di.dataset.delItem), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
+    const dt = t2.closest('[data-del-top]'); if(dt){ d.topups.splice(Number(dt.dataset.delTop), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
+  });
 })();

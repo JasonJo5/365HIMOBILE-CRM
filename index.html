@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261127a">
+<link rel="stylesheet" href="style.css?v=20261127d">
 </head>
 <body>
 
@@ -337,6 +337,30 @@
       <!-- ORDERS -->
 
       <!-- REPORTS -->
+      <section class="page" id="page-daily">
+        <div class="dc-toolbar">
+          <div class="dc-datebar">
+            <button class="btn btn-ghost btn-sm" id="dcPrev" aria-label="Previous day">‹</button>
+            <input type="date" max="9999-12-31" class="select-input" id="dcDate">
+            <button class="btn btn-ghost btn-sm" id="dcNext" aria-label="Next day">›</button>
+            <button class="btn btn-ghost btn-sm" id="dcToday"></button>
+          </div>
+          <div class="dc-tools">
+            <span class="dc-saved" id="dcSaved"></span>
+            <button class="btn btn-ghost" id="dcExport"></button>
+          </div>
+        </div>
+        <div class="dc-kpis" id="dcKpis"></div>
+        <div class="dc-grid">
+          <div class="card" id="dcAutoCard"></div>
+          <div class="dc-col">
+            <div class="card" id="dcOtherCard"></div>
+            <div class="card" id="dcTopupCard"></div>
+            <div class="card" id="dcCashCard"></div>
+          </div>
+        </div>
+        <div class="card dc-month" id="dcMonthCard"></div>
+      </section>
       <section class="page" id="page-reports">
         <div class="rep-toolbar">
           <div class="rem-seg" id="reportViewTabs"></div>
@@ -1122,6 +1146,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261127a"></script>
+<script src="script.js?v=20261127d"></script>
 </body>
 </html>
