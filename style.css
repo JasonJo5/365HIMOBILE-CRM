@@ -1804,3 +1804,5 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .dc-whobox .dc-wr:hover{background:var(--dc-soft)}
 .dc-whobox .dc-who-foot{padding:2px 10px}
 .dc-paypill.other{background:rgba(234,88,12,.12);color:#c2410c}
+.dc-sum-rows small.incl{display:block;font-size:11px;color:var(--text-soft);font-weight:500}
+.dc-sum-rows>div b{white-space:nowrap}
