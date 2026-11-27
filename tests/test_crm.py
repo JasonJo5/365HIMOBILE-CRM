@@ -394,20 +394,20 @@ def run(b):
         out.stayOpen = document.getElementById('dcItemModal').classList.contains('show'); closeAllModals();
         out.itemForm2 = dcLoad(day).items.map(it=>[it.name, it.amount, it.pay]);
         { const d0 = dcLoad(day); d0.items = d0.items.slice(0,1); dcStore(day, d0); renderDailyClosing(); }
-        const addTop = (amt) => { document.getElementById('dcOpenTop').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
-        out.noWho = (document.getElementById('dcOpenTop').click(), !document.querySelector('#dcTopModal [data-draft-who]')); closeAllModals();
-        addTop('30000'); await new Promise(r=>setTimeout(r, 30));
+        const addTop = (who, amt) => { document.getElementById('dcOpenTop').click(); document.querySelector('#dcTopModal [data-draft-who="'+who+'"]').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
+        out.noPaidBack = (document.getElementById('dcOpenTop').click(), !document.querySelector('#dcTopModal [data-repaid]')); closeAllModals();
+        addTop('Store', '30000'); await new Promise(r=>setTimeout(r, 30));
         out.formCleared = !document.getElementById('dcTopModal').classList.contains('show') && !!document.querySelector('.dc-order.top2');
-        ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
-        ev(document.getElementById('dcCounted'), '15000'); await new Promise(r=>setTimeout(r, 30));
+        ev(document.getElementById('dcCounted'), '35000'); await new Promise(r=>setTimeout(r, 30));
         out.cashDetail = [...document.querySelectorAll('.dc-cashlist .dc-cl:not(.tot):not(.none)')].map(x=> x.querySelector('.sg').textContent + x.querySelector(':scope > b').textContent);
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
-        // store money top-up comes out of the drawer straight away; Jihan's not paid back yet is "owed"
-        addTop('5000'); await new Promise(r=>setTimeout(r, 30));
-        // an old worker top-up (Jihan) saved earlier is ignored — workers' top-ups are counted by hand
-        { const d1 = dcLoad(day); d1.topups.push({who:'Jihan', amount:7000}); DB.reminderState['daily:'+day] = JSON.stringify(d1); renderDailyClosing(); }
+        // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
+        addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));
+        addTop('Jason', '3000'); await new Promise(r=>setTimeout(r, 30));
+        addTop('Jihan', '7000'); await new Promise(r=>setTimeout(r, 30));
+        out.totals = [...document.querySelectorAll('.dc-wt')].map(x=> x.querySelector('span').textContent + ' ' + x.querySelector('b').textContent);
         const nBefore = dcLoad(day).topups.length; document.getElementById('dcOpenTop').click(); document.getElementById('dcTopAdd').click();
         out.noEmpty = dcLoad(day).topups.length === nBefore && document.getElementById('dcTopModal').classList.contains('show'); closeAllModals();
         // yesterday's count is today's starting drawer: yesterday 36,000, today 72,000 counted
@@ -418,8 +418,8 @@ def run(b):
         const cy = dcCalc(t, dcLoad(t)); out.yday = [cy.start, cy.prev && cy.prev.day===y, cy.grew, cy.cashExpected - cy.start === cy.cashToday];
         renderDailyClosing(); out.compare = !!document.querySelector('.dc-compare') && /Drawer went up today/.test(document.querySelector('.dc-compare').textContent) && /[+]₩36,000/.test(document.querySelector('.dc-compare').textContent);
         DB.reminderState['daily:'+t] = keepT; delete DB.reminderState['daily:'+y]; renderDailyClosing();
-        const c2 = dcCalc(day, dcLoad(day)); out.who = [c2.topStore, c2.topOwed, c2.cashExpected, document.querySelectorAll('.dc-order.top2').length];
-        out.short = /Over by ₩5,000/.test(document.querySelector('.dc-cash-state').textContent);
+        const c2 = dcCalc(day, dcLoad(day)); out.who = [c2.topStore, c2.byWho.Jason, c2.byWho.Jihan, c2.cashExpected, document.querySelectorAll('.dc-order.top2').length];
+        out.short = /Cash matches/.test(document.querySelector('.dc-cash-state').textContent);
         out.stored = !!DB.reminderState['daily:'+day];
         out.untouched = DB.services.length===nSvc && DB.customers.length===nCust;
         out.monthRow = !!document.querySelector('[data-dc-day="'+day+'"]');
@@ -438,20 +438,21 @@ def run(b):
         return out; })()""")
     check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
           dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
-    check("screen protector, store-money top-up, deposit: cash in drawer 55,000+10,000-30,000-20,000 = 15,000 and it matches",
-          dc["calc"] == [1, 10000, 30000, 0, 15000, 0, 221000] and dc["kpiOk"], dc["calc"])
-    check("only store-money top-ups are entered (no worker choice); they leave the drawer; old worker entries are ignored",
-          dc["noWho"] and dc["who"] == [35000, 0, 10000, 2] and dc["short"], dc["who"])
+    check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
+          dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 221000] and dc["kpiOk"], dc["calc"])
+    check("Jason / Jihan top-ups: a total for each person, no 'paid back', and they don't change the drawer",
+          dc["noPaidBack"] and dc["who"] == [30000, 8000, 7000, 35000, 4] and dc["short"]
+          and dc["totals"] == ["Jason ₩8,000", "Jihan ₩7,000", "Store money ₩30,000", "Total ₩45,000"], [dc["who"], dc["totals"]])
     check("yesterday's count (36,000) is today's start; counted 72,000 shows the drawer went up +36,000, compared with today's cash", dc["yday"] == [36000, True, 36000, True] and dc["compare"], [dc["yday"], dc["compare"]])
     check("other sales: Add sale opens a pop-up; Screen protector, price, payment, Save closes it and the sale is listed",
           dc["itemModal"] and dc["itemForm"] == [1, False, True], [dc["itemModal"], dc["itemForm"]])
     check("an item can be typed by hand and given free; no price means it isn't added",
           dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
-    check("today's cash one by one: the 90-day cash sale, the screen protector, the store-money top-up, the deposit",
-          dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000", "−₩20,000"], dc["cashDetail"])
+    check("today's cash one by one: the 90-day cash sale, the screen protector, the store-money top-up",
+          dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000"], dc["cashDetail"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
     check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
-    check("top-up: Add top-up opens a pop-up; amount + Save closes it and lists it; empty amount isn't saved", dc["formCleared"] and dc["noEmpty"], dc)
+    check("top-up: Add top-up opens a pop-up; who + amount + Save closes it and lists it; empty amount isn't saved", dc["formCleared"] and dc["noEmpty"], dc)
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 

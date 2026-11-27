@@ -9067,7 +9067,7 @@ function dcLoad(day){
 let dcSaveTimer = null;
 function dcStore(day, d){
   DB.reminderState = DB.reminderState || {};
-  const empty = !d.items.length && !d.topups.length && !Number(d.deposit) && d.counted==='' && !d.note && (d.start===''||d.start==null);
+  const empty = !d.items.length && !d.topups.length && d.counted==='' && !d.note && (d.start===''||d.start==null);
   if(empty && !DB.reminderState[dcKey(day)]) return;
   DB.reminderState[dcKey(day)] = JSON.stringify(d);
   clearTimeout(dcSaveTimer);
@@ -9117,22 +9117,23 @@ function dcCalc(day, d){
     else { o[pay] += amt; if(pay!=='rmb') o.total += amt; if(isSp) o.spCharged += amt; }
     if(isSp) o.spQty += qty;
   });
-  // only top-ups paid with store money (out of the drawer) count here — workers' own
-  // top-ups are settled by hand, so any old Jason/Jihan entries are ignored
+  // top-ups: totals per person. Only store money comes out of the drawer; Jason's and
+  // Jihan's own money is settled by hand later, so it doesn't touch the cash count
   const amt = t=> Number(t.amount)||0;
-  const topStore = d.topups.filter(t=> dcWho(t)==='Store').reduce((x,t)=> x + amt(t), 0);
-  const topAll = topStore, topPaid = 0, topOwed = 0;
+  const byWho = {}; d.topups.forEach(t=>{ const w = dcWho(t); byWho[w] = (byWho[w]||0) + amt(t); });
+  const topStore = byWho.Store || 0;
+  const topAll = d.topups.reduce((x,t)=> x + amt(t), 0), topPaid = 0, topOwed = 0;
   const income = a.preTotal + a.postAmt + o.total;
-  const drawerOut = topPaid + topStore;
+  const drawerOut = topStore;
   // today's cash only: what should have been added to the drawer today
-  const cashToday = a.cash + o.cash - drawerOut - (Number(d.deposit)||0);
+  const cashToday = a.cash + o.cash - drawerOut;
   // drawer at the start of the day = the last cash count before today (or typed by hand)
   const prev = dcPrevCount(day);
   const startTyped = d.start!=='' && d.start!=null;
   const start = startTyped ? (Number(d.start)||0) : (prev ? prev.amount : 0);
   const cashExpected = start + cashToday;
   const counted = d.counted==='' || d.counted==null ? null : Number(d.counted)||0;
-  return {a, o, topAll, topPaid, topStore, topOwed, drawerOut, income, cashToday, start, startTyped, prev, cashExpected, counted,
+  return {a, o, byWho, topAll, topPaid, topStore, topOwed, drawerOut, income, cashToday, start, startTyped, prev, cashExpected, counted,
           grew: counted==null ? null : counted - start, diff: counted==null ? null : counted - cashExpected};
 }
 function dcFmtY(n){ n = Math.round((Number(n)||0)*100)/100; return '¥'+n.toLocaleString('en-US'); }
@@ -9201,17 +9202,18 @@ function renderDailyClosing(){
     ${d.items.length ? `<div class="dc-adds"><span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.o.total)}</b>${c.o.freeQty?` · ${zh?'免费':'free'} ${c.o.freeQty}`:''}</span></div>` : ''}`;
 
   // ---- step 3: top-ups — pick who paid, type the amount, press Add (like an order)
-  const storeTops = d.topups.map((t2,i)=>({t2,i})).filter(x=> dcWho(x.t2)==='Store');
   const s3 = `
-    <div class="dc-listhead"><button type="button" class="btn btn-primary" id="dcOpenTop">+ ${zh?'添加充值':'Add top-up'}</button></div>
+    <div class="dc-listhead"><button type="button" class="btn btn-primary" id="dcOpenTop">+ ${zh?'添加垫付':'Add top-up'}</button></div>
     <div class="dc-orders">
-      ${storeTops.map(({t2,i})=>`<div class="dc-order top2" data-t="${i}">
-        <span class="dc-order-note">${escapeHtml(t2.note||(zh?'（没写号码）':'(no number)'))}</span>
+      ${d.topups.map((t2,i)=>{ const who = dcWho(t2); return `<div class="dc-order top2" data-t="${i}">
+        <span class="dc-who ${who==='Store'?'store':''}">${escapeHtml(whoName(who))}</span>
+        <span class="dc-order-note">${escapeHtml(t2.note||'')}</span>
         <b class="dc-order-amt">${W(Number(t2.amount)||0)}</b>
         <button class="dc-x" data-del-top="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button>
-      </div>`).join('') || `<div class="dc-empty">${zh?'今天没有用店里的钱充值':'No top-ups with store money today'}</div>`}
+      </div>`; }).join('') || `<div class="dc-empty">${zh?'今天没有垫付':'No top-ups today'}</div>`}
     </div>
-    ${storeTops.length ? `<div class="dc-adds"><span class="dc-adds-total">${zh?'从抽屉付出':'Paid from the drawer'} <b>${W(c.topStore)}</b></span></div>` : ''}`;
+    ${d.topups.length ? `<div class="dc-whototals">${[...DC_PEOPLE, ...Object.keys(c.byWho).filter(w=>!DC_PEOPLE.includes(w))].filter(w=> c.byWho[w]).map(w=>`<div class="dc-wt ${w==='Store'?'store':''}"><span>${escapeHtml(whoName(w))}</span><b>${W(c.byWho[w])}</b>${w==='Store'?`<small>${zh?'从抽屉出':'from the drawer'}</small>`:`<small>${d.topups.filter(t=>dcWho(t)===w).length} ${zh?'笔':(d.topups.filter(t=>dcWho(t)===w).length===1?'top-up':'top-ups')}</small>`}</div>`).join('')}
+      <div class="dc-wt all"><span>${zh?'合计':'Total'}</span><b>${W(c.topAll)}</b></div></div>` : ''}`;
 
   // ---- step 4: close the day
   const prevLbl = c.prev ? (zh ? `${shortDay(c.prev.day)} 点的钱` : `counted on ${shortDay(c.prev.day)}`) : (zh ? '没有之前的点钞 — 可手动填写' : 'no earlier count — type it if needed');
@@ -9221,18 +9223,16 @@ function renderDailyClosing(){
         <div class="dc-money"><span>₩</span><input class="dc-in" id="dcStart" type="number" min="0" step="1000" value="${escapeHtml(String(c.startTyped ? d.start : (c.prev ? c.prev.amount : '')))}" placeholder="0"></div></div>
       <div><span>${zh?'+ 今天先付现金':'+ Prepaid cash today'}</span><b>${W(a.cash)}</b></div>
       <div><span>${zh?'+ 今天其他销售现金':'+ Other sales cash today'}</span><b>${W(c.o.cash)}</b></div>
-      ${c.drawerOut ? `<div><span>${zh?'− 用店里的钱充值':'− Top-ups with store money'}</span><b>${W(c.drawerOut)}</b></div>` : ''}
-      <div class="in"><span>${zh?'− 存进银行的现金':'− Cash deposited to the bank'}</span><div class="dc-money"><span>₩</span><input class="dc-in" id="dcDeposit" type="number" min="0" step="1000" value="${escapeHtml(String(d.deposit||''))}" placeholder="0"></div></div>
+      ${c.drawerOut ? `<div><span>${zh?'− 店里的钱垫付':'− Top-ups with store money'}</span><b>${W(c.drawerOut)}</b></div>` : ''}
       <div class="eq"><span>${zh?'= 现在抽屉应有现金':'= Cash that should be in the drawer now'}</span><b>${W(c.cashExpected)}</b></div>
+      <div class="in today"><span>${zh?'今天抽屉里的钱':'Drawer money today'}<small>${zh?'点一下抽屉里的现金，填在这里':'count the cash in the drawer and type it here'}</small></span>
+        <div class="dc-money big"><span>₩</span><input class="dc-in" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'输入金额':'amount'}"></div></div>
     </div>
-    <label class="dc-count"><span>${zh?'点一下抽屉里的现金，填在这里':'Count the cash in the drawer and type it here'}</span>
-      <div class="dc-money big"><span>₩</span><input class="dc-in" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'输入金额':'amount'}"></div></label>
     ${(()=>{ // today's cash, one by one — to match against what's in the drawer
       const lines = [];
       a.cashList.forEach(x=> lines.push(['+', x.amt, `<b>${escapeHtml(x.plan)}</b> · ${escapeHtml(x.name||'—')}`, 'pre', x.cid]));
       d.items.filter(it=> (it.pay||'cash')==='cash' && Number(it.amount)).forEach(it=> lines.push(['+', Number(it.amount)||0, `<b>${escapeHtml(it.name||'—')}</b> × ${Number(it.qty)||1}`, 'oth']));
-      d.topups.forEach(t2=>{ if(dcWho(t2)==='Store') lines.push(['−', Number(t2.amount)||0, (zh?'充值 · 店里的钱':'Top-up · store money')+(t2.note?` · ${escapeHtml(t2.note)}`:''), 'out']); });
-      if(Number(d.deposit)) lines.push(['−', Number(d.deposit), zh?'存进银行':'Deposited to the bank', 'out']);
+      d.topups.forEach(t2=>{ if(dcWho(t2)==='Store') lines.push(['−', Number(t2.amount)||0, (zh?'垫付 · 店里的钱':'Top-up · store money')+(t2.note?` · ${escapeHtml(t2.note)}`:''), 'out']); });
       return `<details class="dc-cashlist" ${lines.length ? 'open' : ''}>
         <summary><span>${zh?'今天的现金明细':'Today\'s cash, one by one'}</span><b>${c.cashToday>=0?'+':'−'}${W(Math.abs(c.cashToday))}</b></summary>
         ${lines.length ? lines.map(([sg, v, txt, cls, cid])=>`<div class="dc-cl ${cls}" ${cid?`data-open-customer="${cid}" title="${zh?'打开客户':'Open customer'}"`:''}><span class="sg">${sg}</span><span class="tx">${txt}</span><b>${W(v)}</b></div>`).join('')
@@ -9250,7 +9250,7 @@ function renderDailyClosing(){
   document.getElementById('dcAutoCard').outerHTML = `<div id="dcAutoCard">${
       step(1, zh?'今天的业务（自动）':'Today\'s sales (automatic)', zh?'来自 CRM — 不用输入':'From the CRM — nothing to type', s1, true)
     + step(2, zh?'其他销售':'Other sales', zh?'贴膜等 — 只用于当天结算，不进客户记录':'Screen protectors etc. — only for the daily count, never in customer records', s2, false)
-    + step(3, zh?'用店里的钱充值':'Top-ups with store money', zh?'从抽屉里付的钱 — 员工自己垫付的另外手动算':'Paid out of the drawer — workers\' own top-ups are counted by hand', s3, false)
+    + step(3, zh?'垫付充值':'Top-ups paid in advance', zh?'Jason、Jihan 或店里的钱 — 只有店里的钱从抽屉出':'Jason, Jihan or store money — only store money comes out of the drawer', s3, false)
     + step(4, zh?'结束今天 — 点钞':'Close the day — count the cash', '', s4, c.diff===0)
   }</div>`;
   renderDailyMonth();
@@ -9290,14 +9290,22 @@ function dcOpenItemModal(){
   document.getElementById('dcItemModal').classList.add('show');
   setTimeout(()=>{ const a = document.getElementById('dcItemAmt'); (a.disabled ? document.getElementById('dcItemName') : a).focus(); }, 60);
 }
-function dcOpenTopModal(){
+function dcTopHintText(who){
   const zh = LANG==='zh';
-  dcTopDraft = {who:'Store', amount:'', note:''};
-  document.getElementById('dcTopTitle').textContent = zh ? '用店里的钱充值' : 'Top-up with store money';
+  return who==='Store' ? (zh?'店里的钱 — 从抽屉里出，会从应有现金里扣掉':'Store money — comes out of the drawer, so it is taken off the cash')
+                       : (zh?'员工自己的钱 — 之后手动结算，不影响抽屉':'Their own money — settled by hand later, doesn\'t touch the drawer');
+}
+function dcOpenTopModal(){
+  const zh = LANG==='zh', who = DC_PEOPLE.includes(dcTopDraft.who) ? dcTopDraft.who : 'Jason';
+  dcTopDraft = {who, amount:'', note:''};
+  const whoName = w=> w==='Store' ? (zh?'店里的钱':'Store money') : w;
+  document.getElementById('dcTopTitle').textContent = zh ? '添加垫付充值' : 'Add a top-up';
   document.getElementById('dcTopAdd').textContent = zh ? '保存' : 'Save';
   document.getElementById('dcTopCancel').textContent = zh ? '取消' : 'Cancel';
   document.getElementById('dcTopBody').innerHTML = `
-    <div class="dc-hint" style="margin:0 0 14px">${zh?'这笔钱从抽屉里出，会从应有现金里扣掉。':'This money comes out of the drawer, so it is taken off the cash that should be there.'}</div>
+    <div class="form-field full"><label>${zh?'谁付的？':'Who paid?'}</label>
+      <div class="dc-seg wide" id="dcTopWho">${DC_PEOPLE.map(p=>`<button type="button" data-draft-who="${p}" class="${who===p?'on':''}">${whoName(p)}</button>`).join('')}</div>
+      <div class="dc-hint" id="dcTopHint">${dcTopHintText(who)}</div></div>
     <div class="form-field full"><label>${zh?'金额':'Amount'}</label>
       <div class="dc-money big"><span>₩</span><input id="dcTopAmt" type="number" min="0" step="1000" value="" placeholder="0"></div></div>
     <div class="form-field full"><label>${zh?'给谁充的（号码，可选）':'For whom (number, optional)'}</label>
@@ -9355,24 +9363,27 @@ function renderDailyMonth(){
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
 function exportDailyMonth(){
   const month = dcDay.slice(0,7), rows = dcMonthRows(month);
-  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总','充值36','','贴膜','','','店里的钱充值','备注'];
+  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总','充值36','','贴膜','','','垫付合计','备注'];
   const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','36/363','其他','数量','收费','未收费','',''];
   const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.preTotal,
-    Number(r.d.deposit)||0, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
+    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
   const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
   const total = ['合计', ...Array.from({length:21}, (_,k)=> sumCol(k+1)), ''];
   const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data, total]);
   ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:6}}, ...[7,8,9,10,11,12,13,14,15,21,22].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:16},e:{r:0,c:17}}, {s:{r:0,c:18},e:{r:0,c:20}}];
   ws['!cols'] = [12,6,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,6,10,8,12,24].map(w=>({wch:w}));
   // staff top-ups listed one by one on a second sheet
-  const tops = [['日期','金额','给谁充的']];
-  rows.forEach(r=> r.d.topups.forEach(t2=>{ if(dcWho(t2)==='Store') tops.push([r.day, Number(t2.amount)||0, t2.note||'']); }));
+  const tops = [['日期','谁付的','金额','给谁充的']];
+  rows.forEach(r=> r.d.topups.forEach(t2=>{ const w = dcWho(t2); tops.push([r.day, w==='Store'?'店里的钱':w, Number(t2.amount)||0, t2.note||'']); }));
+  // totals per person for the month
+  const per = {}; rows.forEach(r=> r.d.topups.forEach(t2=>{ const w = dcWho(t2); per[w] = (per[w]||0) + (Number(t2.amount)||0); }));
+  tops.push([], ['合计']); Object.keys(per).forEach(w=> tops.push(['', w==='Store'?'店里的钱':w, per[w]]));
   const items = [['日期','项目','数量','金额','付款']];
   rows.forEach(r=> r.d.items.forEach(it=> items.push([r.day, it.name||'', Number(it.qty)||0, Number(it.amount)||0, it.pay||'cash'])));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, month);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(items), '其他销售');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tops), '店里的钱充值');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tops), '垫付');
   XLSX.writeFile(wb, `Himobile_Daily_${month}.xlsx`);
   toast(t('toast.exported'));
 }
@@ -9424,7 +9435,7 @@ function exportDailyMonth(){
     const amt = Number(document.getElementById('dcTopAmt').value)||0;
     if(!(amt>0)){ toast(LANG==='zh'?'先输入金额':'Type the amount first'); document.getElementById('dcTopAmt').focus(); return; }
     const d = dcLoad(dcDay);
-    d.topups.push({id: uid('t'), who: 'Store', amount: amt, note: document.getElementById('dcTopNote').value.trim()});
+    d.topups.push({id: uid('t'), who: dcTopDraft.who || 'Jason', amount: amt, note: document.getElementById('dcTopNote').value.trim()});
     dcStore(dcDay, d);
     dcTopDraft = {who: dcTopDraft.who, amount:'', note:''};   // same person next time
     document.getElementById('dcTopModal').classList.remove('show');
@@ -9484,7 +9495,7 @@ function exportDailyMonth(){
       return;
     }
     const dw = t2.closest('[data-draft-who]'); if(dw){ dcTopDraft.who = dw.dataset.draftWho; document.querySelectorAll('[data-draft-who]').forEach(x=> x.classList.toggle('on', x===dw));
-      const zh = LANG==='zh', h = document.getElementById('dcTopHint'); if(h) h.textContent = dcTopDraft.who==='Store' ? (zh?'店里的钱 — 直接从抽屉里出':'Store money — comes straight out of the drawer') : (zh?'员工自己的钱 — 公司之后还给他':'Their own money — the company pays it back');
+      const h = document.getElementById('dcTopHint'); if(h) h.textContent = dcTopHintText(dcTopDraft.who);
       document.getElementById('dcTopAmt').focus(); return; }
     if(t2.closest('#dcTopAdd')){ dcAddTopup(); return; }
     const pr = t2.closest('[data-preset]'); if(pr){ dcItemDraft.name = pr.dataset.preset; document.getElementById('dcItemName').value = pr.dataset.preset; document.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x===pr)); document.getElementById('dcItemAmt').focus(); return; }
