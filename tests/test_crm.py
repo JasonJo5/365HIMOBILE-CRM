@@ -425,7 +425,10 @@ def run(b):
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
         out.rc = [c.a.rcAmt, c.a.prePlans, c.income];
-        out.rcCol = /Recharge ₩/.test(document.querySelector('#dcMonthCard thead').textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
+        { const tr = document.querySelector('[data-dc-day="'+day+'"]'), hd = [...document.querySelectorAll('#dcMonthCard thead th')].map(x=>x.textContent.trim());
+          const val = h=> Number((tr.children[hd.indexOf(h)].textContent||'').replace(/[^0-9]/g,''))||0;
+          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Prepaid ₩') && val('Prepaid ₩') - val('of which recharge') + val('Postpaid ₩') + val('Other') === val('Income'); }
+        out.rcCol = /of which recharge/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
         addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));
         addTop('Jason', '3000'); await new Promise(r=>setTimeout(r, 30));
@@ -474,6 +477,7 @@ def run(b):
           dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
     check("recharge kept apart: Recharge ₩36,000 shown on its own; income = prepaid without recharge 75,000 + postpaid 100,000 + other 10,000",
           dc["rc"] == [36000, 75000, 185000] and dc["rcCol"], dc["rc"])
+    check("month table adds up: Cash + Transfer + Card = Prepaid ₩; Prepaid − recharge + Postpaid + Other = Income", dc["rowAdds"], dc)
     check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
           dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185000] and dc["kpiOk"], dc["calc"])
     check("Jason / Jihan top-ups: a total for each person, no 'paid back', and they don't change the drawer",
@@ -486,8 +490,8 @@ def run(b):
           dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
     check("today's cash one by one: the 90-day cash sale, the screen protector, the store-money top-up",
           dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000"], dc["cashDetail"])
-    check("'Who today' lists every plan by name in Prepaid / Recharge / Postpaid groups, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
-          dc["who1"] == [6, False, ["Prepaid", "Recharge (separate)", "Postpaid"]] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
+    check("'Who today' lists every plan by name in Prepaid (incl. recharge) / Postpaid groups, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
+          dc["who1"] == [6, False, ["Prepaid (incl. recharge)", "Postpaid"]] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
     check("a postpaid plan changed on the same day is counted once (the newer plan), marked 'not counted'",
           dc["sameDay"] == [1, 179000, True, True], dc["sameDay"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)

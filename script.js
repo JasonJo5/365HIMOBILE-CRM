@@ -9210,8 +9210,8 @@ function renderDailyClosing(){
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(a.cash)}</b></div>
         <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(a.transfer)}</b></div>
         <div><span><i class="dcdot dc-card"></i>${zh?'刷卡':'Card'}</span><b>${W(a.card)}</b></div>
-        <div class="sub"><span>${zh?'先付（不含充值）':'Prepaid (no recharge)'}</span><b>${W(a.prePlans)}</b></div>
-        ${a.rcAmt || a.rc ? `<div class="sub rcline"><span>${zh?`充值 ${a.rc} 笔（另计，不算收入）`:`Recharge × ${a.rc} (separate, not income)`}</span><b>${W(a.rcAmt)}</b></div>` : ''}
+        <div class="sub"><span>${zh?'先付合计':'Prepaid'}</span><b>${W(a.preTotal)}</b></div>
+        ${a.rcAmt || a.rc ? `<div class="sub rcline"><span>${zh?`其中充值 ${a.rc} 笔（不算收入）`:`of which recharge × ${a.rc} (not income)`}</span><b>− ${W(a.rcAmt)}</b></div>` : ''}
         <div class="sub"><span>${zh?'后付':'Postpaid'}</span><b>${W(a.postAmt)}</b></div>
         <div class="sub"><span>${zh?'其他（贴膜等）':'Other (screen protector…)'}</span><b>${W(c.o.total)}</b></div>
         ${(a.rmb + c.o.rmb) ? `<div class="sub muted"><span>${zh?'人民币（另计）':'RMB (separate)'}</span><b>${dcFmtY(a.rmb + c.o.rmb)}</b></div>` : ''}
@@ -9337,21 +9337,22 @@ function dcWhoListHtml(day){
     const amt = pre ? (Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
     return `<div class="dc-wr ${dup?'dup':''} ${skip?'skip':''}" data-open-customer="${s.customerId}" title="${zh?'打开客户':'Open customer'}">
       <span class="nm"><b>${escapeHtml(c.name||'—')}</b>${c.phone?`<small>${escapeHtml(c.phone)}</small>`:''}</span>
-      <span class="pl">${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
+      <span class="pl ${pre && planLengthLabel(s)[0]==='rc' ? 'rc' : ''}">${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
       <span class="py">${pre ? payTag(s) : ''}</span>
       <b class="am">${fmtWon(amt)}</b></div>`;
   };
   const isRc = s=> s.type==='prepaid' && planLengthLabel(s)[0]==='rc';
+  // recharges are listed with the prepaid sales (marked orange), their amount shown on its own
   const groups = [
-    {key:'pre',  title: zh?'先付':'Prepaid',  list: svcs.filter(s=> s.type==='prepaid' && !isRc(s))},
-    {key:'rc',   title: zh?'充值（另计）':'Recharge (separate)', list: svcs.filter(isRc)},
+    {key:'pre',  title: zh?'先付（含充值）':'Prepaid (incl. recharge)',  list: svcs.filter(s=> s.type==='prepaid')},
     {key:'post', title: zh?'后付':'Postpaid', list: svcs.filter(s=> s.type==='postpaid')},
   ].filter(g=> g.list.length);
   return `<div class="dc-people">${groups.map(g=>{
     const counted = g.list.filter(s=>!dcReplacedSameDay(s));
     const sum = counted.reduce((x,s)=> x + (s.type==='prepaid' ? (dcPayKey(s.paymentMethod)==='unpaid' ? 0 : Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0)), 0);
     return `<div class="dc-wg ${g.key}">
-      <div class="dc-wg-h"><span class="dot"></span><b>${g.title}</b><span class="n">${counted.length}</span><span class="sum">${fmtWon(sum)}</span></div>
+      ${(()=>{ const rcs = counted.filter(isRc), rcSum = rcs.reduce((x,s)=> x + (dcPayKey(s.paymentMethod)==='unpaid' ? 0 : Number(s.sellingPrice)||0), 0);
+        return `<div class="dc-wg-h"><span class="dot"></span><b>${g.title}</b><span class="n">${counted.length}</span>${rcs.length ? `<span class="rcnote">${zh?`其中充值 ${rcs.length} 笔 · ${fmtWon(rcSum)}`:`recharge ${rcs.length} · ${fmtWon(rcSum)}`}</span>` : ''}<span class="sum">${fmtWon(sum)}</span></div>`; })()}
       ${g.list.sort((a2,b2)=> (Number(b2.sellingPrice||b2.expectedProfit)||0) - (Number(a2.sellingPrice||a2.expectedProfit)||0)).map(row).join('')}
     </div>`; }).join('')}
     <div class="dc-who-foot">${zh?'点名字打开客户资料 · 已取消或之后换了套餐的，仍算在开通那天':'Tap a name to open the customer · plans cancelled or changed later still count on the day they started'}</div>
@@ -9423,8 +9424,8 @@ function renderDailyMonth(){
     {h: zh?'现金':'Cash', v: r=> r.a.cash, k:'w', grp:'money'},
     {h: zh?'转账':'Transfer', v: r=> r.a.transfer, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.a.card, k:'w'},
-    {h: zh?'先付合计':'Prepaid ₩', v: r=> r.a.prePlans, k:'w', grp:'sum', t: zh?'不含充值':'Without recharges'},
-    {h: zh?'充值金额':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'单独计算，不算在收入里':'Kept separate — not in the income'},
+    {h: zh?'先付合计':'Prepaid ₩', v: r=> r.a.preTotal, k:'w', grp:'sum', t: zh?'现金 + 转账 + 刷卡（含充值）':'Cash + transfer + card (incl. recharge)'},
+    {h: zh?'其中充值':'of which recharge', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在先付合计里，但不算收入':'Part of Prepaid ₩, but not counted as income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
     {h: zh?'其他':'Other', v: r=> r.c.o.total, k:'w', t: zh?'贴膜等':'Screen protectors etc.'},
     ...(anyUnpaid ? [{h: zh?'未付款':'Not paid', v: r=> r.a.unpaidAmt, k:'u', t: zh?'还没付款 / 没选付款方式 — 不算在收入里':'Not paid yet / no payment method — not in the income'}] : []),
@@ -9459,7 +9460,7 @@ function exportDailyMonth(){
   const month = dcDay.slice(0,7), rows = dcMonthRows(month);
   const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总（不含充值）','充值','','','贴膜','','','垫付合计','备注'];
   const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','36/363','其他','充值金额','数量','收费','未收费','',''];
-  const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.prePlans,
+  const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.preTotal,
     r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
   const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
   const total = ['合计', ...Array.from({length:22}, (_,k)=> sumCol(k+1)), ''];
