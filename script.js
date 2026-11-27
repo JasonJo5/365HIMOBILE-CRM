@@ -47,7 +47,7 @@ const I18N = {
     'nav.dashboard':'工作台','nav.customers':'客户档案','nav.sheet':'表格视图','nav.ai':'AI 商业洞察','nav.reminders':'到期跟进','nav.orders':'业务订单','nav.reports':'报表分析','nav.templates':'打印模板','nav.io':'导入导出','nav.daily':'每日结算',
     'sub.sheet':'像表格一样直接编辑客户与套餐信息',
     'sheet.hint':'点击彩色标签可直接选择新值；点击文字/数字/日期可直接编辑，回车或点击其他地方即保存',
-    'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份','sub.daily':'每天的收款、贴膜和垫付 — 自动加总，不影响客户记录',
+    'sub.dashboard':'门店运营总览','sub.customers':'客户资料与套餐管理','sub.ai':'找出适合转后付、需要续费、或适合升级合约的客户','sub.reminders':'到期、合同与信息变更提醒','sub.orders':'先付、后付、号码移动等业务记录','sub.reports':'营收、利润与客户结构报表','sub.templates':'运营商申请表自动填写与打印','sub.io':'Excel 导入与数据备份','sub.daily':'每天的收款、其他销售和垫付 — 自动加总',
     'btn.newCustomer':'新建客户','btn.exportExcel':'导出 Excel','btn.exportMonthExcel':'导出 Excel','btn.addFollowup':'＋ 添加跟进','btn.newOrder':'＋ 新增业务','btn.cancel':'取消','btn.saveCustomer':'保存客户','btn.saveOrder':'保存业务','btn.edit':'编辑资料','btn.addService':'＋ 新增业务','btn.confirmImport':'确认导入','btn.view':'查看','btn.complete':'完成','btn.followUpAgain':'再次跟进','btn.delete':'删除','btn.deleteCustomer':'删除客户','btn.saveTemplate':'保存模板','btn.print':'打印','btn.savePrint':'保存并打印申请表','btn.merge':'合并','btn.copyName':'复制姓名','btn.save':'保存','btn.requestIdChange':'信息变更','btn.markComplete':'标记已完成','btn.freezeSim':'暂停卡号','btn.unfreezeSim':'解除暂停',
     'freeze.modalTitle':'暂停卡号（Freeze SIM）','freeze.modalDesc':'暂停期间不计入合约期限，合约到期日将顺延相应天数。仅限后付卡客户使用。','freeze.byDays':'按天数','freeze.byRange':'按日期范围','freeze.startDate':'开始日期','freeze.endDate':'结束日期','freeze.days':'暂停天数','freeze.frozen':'暂停中','freeze.colHeader':'暂停状态','freeze.clickToUnfreeze':'点击解除暂停',
     'btn.changeToPostpaid':'转为后付卡','btn.changePlan':'变更套餐','btn.cancelSubscription':'取消订阅','btn.startNewSubscription':'开通新订阅','btn.confirmChange':'确认变更','btn.confirmCancel':'确认取消订阅','btn.back':'返回','btn.undoCancel':'恢复订阅 Reactivate',
@@ -147,7 +147,7 @@ const I18N = {
     'nav.dashboard':'Dashboard','nav.customers':'Customers','nav.sheet':'Sheet View','nav.ai':'AI Insights','nav.reminders':'Reminders','nav.orders':'Orders','nav.reports':'Reports','nav.templates':'Print Templates','nav.io':'Import / Export','nav.daily':'Daily closing',
     'sub.sheet':'Edit customer & plan info directly, like a spreadsheet',
     'sheet.hint':'Click a colored tag to pick a new value; click text/numbers/dates to edit directly — press Enter or click away to save',
-    'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup','sub.daily':'The day\'s money, screen protectors and staff top-ups — added up for you, kept out of the customer records',
+    'sub.dashboard':'Store operations overview','sub.customers':'Customer profiles & plan management','sub.ai':'Find who\'s ready for postpaid, due for a recharge, or worth a contract upgrade','sub.reminders':'Expiry, contract & info-change reminders','sub.orders':'Prepaid, postpaid, porting and other service records','sub.reports':'Revenue, profit and customer breakdowns','sub.templates':'Auto-fill and print carrier application forms','sub.io':'Excel import and data backup','sub.daily':'The day\'s money, other sales and top-ups — added up for you',
     'btn.newCustomer':'New customer','btn.exportExcel':'Export Excel','btn.exportMonthExcel':'Export to Excel','btn.addFollowup':'＋ Add reminder','btn.newOrder':'＋ New order','btn.cancel':'Cancel','btn.saveCustomer':'Save customer','btn.saveOrder':'Save order','btn.edit':'Edit profile','btn.addService':'＋ Add service','btn.confirmImport':'Confirm import','btn.view':'View','btn.complete':'Complete','btn.followUpAgain':'Follow up again','btn.delete':'Delete','btn.deleteCustomer':'Delete customer','btn.saveTemplate':'Save template','btn.print':'Print','btn.savePrint':'Save & print application form','btn.merge':'Merge','btn.copyName':'Copy name','btn.save':'Save','btn.requestIdChange':'Information change','btn.markComplete':'Mark complete','btn.freezeSim':'Freeze SIM','btn.unfreezeSim':'Unfreeze SIM',
     'freeze.modalTitle':'Freeze SIM','freeze.modalDesc':'Frozen time doesn\'t count toward the contract — the end date pushes back by however many days are frozen. Postpaid only.','freeze.byDays':'By days','freeze.byRange':'By date range','freeze.startDate':'Start date','freeze.endDate':'End date','freeze.days':'Days to freeze','freeze.frozen':'Frozen','freeze.colHeader':'Freeze status','freeze.clickToUnfreeze':'Click to unfreeze',
     'btn.changeToPostpaid':'Change to Postpaid','btn.changePlan':'Change Plan','btn.cancelSubscription':'Cancel Subscription','btn.startNewSubscription':'＋ Start New Subscription','btn.confirmChange':'Confirm Change','btn.confirmCancel':'Confirm Cancellation','btn.back':'Back','btn.undoCancel':'Reactivate',
@@ -9038,7 +9038,16 @@ function openAgeCheck(prefill){
      changes customers, plans, reports or exports.
    ===================================================================================== */
 let dcDay = null;
-let dcTopDraft = {who:'Jason', amount:'', note:''};   // the top-up being typed, before Add
+let dcTopDraft = {who:'Jason', amount:'', note:''};
+let dcItemDraft = {name:'Screen protector', qty:1, amount:'', pay:'cash'};   // the sale being typed, before Add
+/* quick choices: screen protector first, then items typed on earlier days (most recent first) */
+function dcItemPresets(){
+  const seen = new Set([LANG==='zh'?'贴膜':'Screen protector']);
+  Object.keys(DB.reminderState||{}).filter(k=>k.startsWith('daily:')).sort().reverse().forEach(k=>{
+    try{ (JSON.parse(DB.reminderState[k]).items||[]).forEach(it=>{ const n = String(it.name||'').trim(); if(n && !/^(screen protector|贴膜)$/i.test(n)) seen.add(n); }); }catch(e){}
+  });
+  return [...seen].slice(0, 6);
+}   // the top-up being typed, before Add
 const DC_PAY = ['cash','transfer','card','rmb','free'];
 function dcKey(day){ return 'daily:'+day; }
 function dcBlank(){ return {items:[], topups:[], deposit:0, counted:'', note:'', start:''}; }
@@ -9178,23 +9187,28 @@ function renderDailyClosing(){
     </div>
     ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}`;
 
-  // ---- step 2: other sales
-  const paySeg = (i, v)=> `<div class="dc-seg" data-seg-item="${i}">${['cash','card','transfer','free'].map(k=>`<button type="button" data-pay="${k}" class="${(v||'cash')===k?'on':''}">${payName(k)}</button>`).join('')}</div>`;
+  // ---- step 2: other sales — same as a top-up: choose the item, quantity, price, payment, press Add
+  const it0 = dcItemDraft, presets = dcItemPresets();
   const s2 = `
-    <div class="dc-list">
-      ${d.items.map((it,i)=>`<div class="dc-line" data-i="${i}">
-        <input class="dc-in dc-name" data-f="name" value="${escapeHtml(it.name||'')}" placeholder="${zh?'卖了什么？':'What was sold?'}">
-        <div class="dc-qty"><button type="button" data-qty="-1" aria-label="Less">−</button><input class="dc-in" data-f="qty" type="number" min="0" step="1" value="${escapeHtml(String(it.qty??1))}"><button type="button" data-qty="1" aria-label="More">+</button></div>
-        <div class="dc-money"><span>₩</span><input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(it.amount??''))}" placeholder="0" ${it.pay==='free'?'disabled':''}></div>
-        ${paySeg(i, it.pay)}
-        <button class="dc-x" data-del-item="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button>
-      </div>`).join('') || `<div class="dc-empty">${zh?'今天没有其他销售 — 用下面的按钮添加':'Nothing yet — add one with the buttons below'}</div>`}
+    <div class="dc-addform item">
+      <div class="dc-presets">${presets.map(p=>`<button type="button" class="dc-preset ${it0.name===p?'on':''}" data-preset="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}</div>
+      <input class="dc-in dc-draft" id="dcItemName" value="${escapeHtml(it0.name||'')}" placeholder="${zh?'或者自己输入…':'or type it yourself…'}" list="dcItemList">
+      <datalist id="dcItemList">${presets.map(p=>`<option value="${escapeHtml(p)}">`).join('')}</datalist>
+      <div class="dc-qty"><button type="button" data-dqty="-1" aria-label="Less">−</button><input class="dc-draft" id="dcItemQty" type="number" min="1" step="1" value="${escapeHtml(String(it0.qty||1))}"><button type="button" data-dqty="1" aria-label="More">+</button></div>
+      <div class="dc-money"><span>₩</span><input class="dc-draft" id="dcItemAmt" type="number" min="0" step="1000" value="${escapeHtml(String(it0.amount||''))}" placeholder="${zh?'价格':'Price'}" ${it0.pay==='free'?'disabled':''}></div>
+      <div class="dc-seg" id="dcItemPay">${['cash','card','transfer','free'].map(k=>`<button type="button" data-dpay="${k}" class="${(it0.pay||'cash')===k?'on':''}">${payName(k)}</button>`).join('')}</div>
+      <button type="button" class="btn btn-primary" id="dcItemAdd">${zh?'添加':'Add'}</button>
     </div>
-    <div class="dc-adds">
-      <button class="btn btn-primary btn-sm" data-add-item="sp">+ ${zh?'贴膜':'Screen protector'}</button>
-      <button class="btn btn-ghost btn-sm" data-add-item="other">+ ${zh?'其他':'Something else'}</button>
-      ${d.items.length ? `<span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.o.total)}</b>${c.o.freeQty?` · ${zh?'免费':'free'} ${c.o.freeQty}`:''}</span>` : ''}
-    </div>`;
+    <div class="dc-orders">
+      ${d.items.map((it,i)=>{ const free = it.pay==='free'; return `<div class="dc-order item" data-i="${i}">
+        <span class="dc-order-name">${escapeHtml(it.name||'—')}</span>
+        <span class="dc-order-qty">× ${Number(it.qty)||0}</span>
+        <b class="dc-order-amt">${free ? (zh?'免费':'Free') : W(Number(it.amount)||0)}</b>
+        <span class="dc-paypill ${it.pay||'cash'}">${payName(it.pay||'cash')}</span>
+        <button class="dc-x" data-del-item="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button>
+      </div>`; }).join('') || `<div class="dc-empty">${zh?'今天没有其他销售':'No other sales today'}</div>`}
+    </div>
+    ${d.items.length ? `<div class="dc-adds"><span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.o.total)}</b>${c.o.freeQty?` · ${zh?'免费':'free'} ${c.o.freeQty}`:''}</span></div>` : ''}`;
 
   // ---- step 3: top-ups — pick who paid, type the amount, press Add (like an order)
   const dr = dcTopDraft;
@@ -9377,12 +9391,29 @@ function exportDailyMonth(){
     renderDailyClosing();
     const el = document.getElementById('dcTopAmt'); if(el) el.focus();
   }
+  function dcAddItem(){
+    const zh = LANG==='zh', name = document.getElementById('dcItemName').value.trim();
+    const qty = Math.max(1, Number(document.getElementById('dcItemQty').value)||1), free = dcItemDraft.pay==='free';
+    const amt = free ? 0 : Number(document.getElementById('dcItemAmt').value)||0;
+    if(!name){ toast(zh?'先选或输入项目':'Choose or type the item first'); document.getElementById('dcItemName').focus(); return; }
+    if(!free && !(amt>0)){ toast(zh?'先输入价格（或选免费）':'Type the price first (or choose Free)'); document.getElementById('dcItemAmt').focus(); return; }
+    const d = dcLoad(dcDay);
+    d.items.push({id: uid('i'), name, qty, amount: amt, pay: dcItemDraft.pay||'cash'});
+    dcStore(dcDay, d);
+    dcItemDraft = {name, qty:1, amount:'', pay: dcItemDraft.pay||'cash'};   // same item and payment ready for the next one
+    renderDailyClosing();
+    const el = document.getElementById('dcItemAmt'); if(el && !el.disabled) el.focus();
+  }
   page.addEventListener('input', e=>{
+    if(e.target.id==='dcItemName'){ dcItemDraft.name = e.target.value; page.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x.dataset.preset===e.target.value)); return; }
+    if(e.target.id==='dcItemQty'){ dcItemDraft.qty = e.target.value; return; }
+    if(e.target.id==='dcItemAmt'){ dcItemDraft.amount = e.target.value; return; }
     if(e.target.id==='dcTopAmt'){ dcTopDraft.amount = e.target.value; return; }
     if(e.target.id==='dcTopNote'){ dcTopDraft.note = e.target.value; return; }
   });
   page.addEventListener('keydown', e=>{
     if(e.key==='Enter' && (e.target.id==='dcTopAmt' || e.target.id==='dcTopNote')){ e.preventDefault(); dcAddTopup(); }
+    if(e.key==='Enter' && ['dcItemName','dcItemQty','dcItemAmt'].includes(e.target.id)){ e.preventDefault(); dcAddItem(); }
     if(e.key==='Enter' && e.target.matches && e.target.matches('tr[data-dc-day]')){ e.preventDefault(); e.target.click(); }
   });
   page.addEventListener('input', e=> edit(e, false));
@@ -9410,6 +9441,10 @@ function exportDailyMonth(){
     }
     const dw = t2.closest('[data-draft-who]'); if(dw){ dcTopDraft.who = dw.dataset.draftWho; page.querySelectorAll('[data-draft-who]').forEach(x=> x.classList.toggle('on', x===dw)); document.getElementById('dcTopAmt').focus(); return; }
     if(t2.closest('#dcTopAdd')){ dcAddTopup(); return; }
+    const pr = t2.closest('[data-preset]'); if(pr){ dcItemDraft.name = pr.dataset.preset; document.getElementById('dcItemName').value = pr.dataset.preset; page.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x===pr)); document.getElementById('dcItemAmt').focus(); return; }
+    const dq = t2.closest('[data-dqty]'); if(dq){ const el = document.getElementById('dcItemQty'); dcItemDraft.qty = Math.max(1, (Number(el.value)||1) + Number(dq.dataset.dqty)); el.value = dcItemDraft.qty; return; }
+    const dp = t2.closest('[data-dpay]'); if(dp){ dcItemDraft.pay = dp.dataset.dpay; page.querySelectorAll('[data-dpay]').forEach(x=> x.classList.toggle('on', x===dp)); const am = document.getElementById('dcItemAmt'); am.disabled = dcItemDraft.pay==='free'; if(!am.disabled) am.focus(); return; }
+    if(t2.closest('#dcItemAdd')){ dcAddItem(); return; }
     if(t2.closest('[data-add-top]')){
       d.topups.push({id: uid('t'), who: t2.closest('[data-add-top]').dataset.addTop, amount:'', note:'', repaid:false});
       dcStore(dcDay, d); renderDailyClosing();

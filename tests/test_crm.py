@@ -378,9 +378,18 @@ def run(b):
         const a = dcAuto(day);
         out.auto = [a.d90, a.d60, a.d30, a.rc, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
         const ev = (el, v, type) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
-        document.querySelector('[data-add-item="sp"]').click();
-        ev(document.querySelector('[data-i="0"] [data-f="amount"]'), '10000');
+        // other sales: like an order — choose Screen protector, price, payment, Add
+        document.querySelector('[data-preset="Screen protector"]').click();
+        const am = document.getElementById('dcItemAmt'); am.value = '10000'; am.dispatchEvent(new Event('input', {bubbles:true}));
+        document.querySelector('[data-dpay="cash"]').click(); document.getElementById('dcItemAdd').click();
         await new Promise(r=>setTimeout(r, 30));
+        out.itemForm = [dcLoad(day).items.length, document.getElementById('dcItemAmt').value, document.getElementById('dcItemName').value, !!document.querySelector('.dc-order.item')];
+        // typed by hand, paid by card / free; an item without a price isn't added
+        const nm = document.getElementById('dcItemName'); nm.value = 'Phone case'; nm.dispatchEvent(new Event('input', {bubbles:true}));
+        document.querySelector('[data-dpay="free"]').click(); document.getElementById('dcItemAdd').click(); await new Promise(r=>setTimeout(r, 30));
+        document.querySelector('[data-dpay="card"]').click(); document.getElementById('dcItemAmt').value=''; document.getElementById('dcItemAdd').click();
+        out.itemForm2 = dcLoad(day).items.map(it=>[it.name, it.amount, it.pay]);
+        { const d0 = dcLoad(day); d0.items = d0.items.slice(0,1); dcStore(day, d0); renderDailyClosing(); }
         const addTop = (who, amt) => { document.querySelector('[data-draft-who="'+who+'"]').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
         addTop('Jason', '30000'); await new Promise(r=>setTimeout(r, 30));
         out.formCleared = document.getElementById('dcTopAmt').value === '' && document.querySelector('[data-draft-who="Jason"]').classList.contains('on');
@@ -429,6 +438,10 @@ def run(b):
     check("top-ups by Jason / Jihan / Store money: store money leaves the drawer, unpaid staff top-ups show as owed",
           dc["who"] == [5000, 7000, 10000, ["Jason", "Store", "Jihan"]] and dc["short"], dc["who"])
     check("yesterday's count (36,000) is today's start; counted 72,000 shows the drawer went up +36,000, compared with today's cash", dc["yday"] == [36000, True, 36000, True] and dc["compare"], [dc["yday"], dc["compare"]])
+    check("other sales work like an order: pick Screen protector, price, payment, Add; form keeps the item, clears the price",
+          dc["itemForm"] == [1, "", "Screen protector", True], dc["itemForm"])
+    check("an item can be typed by hand and given free; no price means it isn't added",
+          dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]], dc["itemForm2"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
     check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
     check("top-up works like an order: pick who, type amount, Add; form clears and keeps the person; empty amount isn't added", dc["formCleared"] and dc["noEmpty"], dc)

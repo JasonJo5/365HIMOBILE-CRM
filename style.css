@@ -1560,3 +1560,37 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 .dc-line,.dc-addform,.dc-orders,.dc-calc{border-radius:14px}
 .dc-order{transition:background .15s}
 .dc-order:hover{background:rgba(15,118,110,.04)}
+
+/* Daily closing: other sales "order" form (same style as top-ups) */
+.dc-addform.item{grid-template-columns:auto minmax(110px,.8fr) auto auto;grid-template-areas:"pre pre pre pre" "name name name name" "qty amt pay add"}
+.dc-addform.item .dc-presets{grid-area:pre}
+.dc-addform.item #dcItemName{grid-area:name}
+.dc-addform.item .dc-qty{grid-area:qty;background:var(--card)}
+.dc-addform.item .dc-money{grid-area:amt}
+.dc-addform.item .dc-seg{grid-area:pay}
+.dc-addform.item .btn{grid-area:add}
+.dc-addform.item{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.18)}
+.dc-presets{display:flex;flex-wrap:wrap;gap:6px}
+.dc-preset{border:1px solid var(--border);background:var(--card);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer}
+.dc-preset:hover{border-color:var(--blue)}
+.dc-preset.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.dc-order.item{grid-template-columns:minmax(0,1fr) 50px 100px 86px 28px}
+.dc-order-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-order-qty{color:var(--text-soft);text-align:center}
+.dc-order.item .dc-order-amt{text-align:right}
+.dc-paypill{justify-self:center;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(22,163,74,.12);color:#15803d}
+.dc-paypill.card{background:rgba(37,99,235,.12);color:var(--blue)}
+.dc-paypill.transfer{background:rgba(124,58,237,.12);color:#7c3aed}
+.dc-paypill.free,.dc-paypill.rmb{background:rgba(100,116,139,.14);color:var(--text-soft)}
+/* top-up form: same layout family */
+.dc-addform:not(.item){grid-template-columns:auto minmax(120px,.8fr) minmax(140px,1.2fr) auto}
+@media (max-width:720px){
+  .dc-addform.item{grid-template-columns:1fr 1fr;grid-template-areas:"pre pre" "name name" "qty amt" "pay pay" "add add"}
+  .dc-addform.item .dc-seg button{flex:1}
+  .dc-order.item{grid-template-columns:1fr auto auto 28px}.dc-order.item .dc-order-qty{display:none}
+}
+.dc-money{min-width:0}
+.dc-money input{width:100%;min-width:0;flex:1}
+.dc-money input::placeholder{text-align:right;font-weight:500;font-size:13px}
+.dc-qty{min-width:0;justify-content:space-between}
+@media (max-width:620px){#pageSub{display:none}}
