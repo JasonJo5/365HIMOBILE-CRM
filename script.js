@@ -9233,6 +9233,7 @@ function renderDailyClosing(){
       <div class="dc-chip total"><b>${a.preCount + a.postN}</b><span>${zh?'合计':'Total'}</span></div>
     </div>
     ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}
+    <div class="dc-sec2">${zh?'今天是谁':'Who today'}</div>
     ${dcWhoListHtml(dcDay)}`;
 
   // ---- step 2: other sales — same as a top-up: choose the item, quantity, price, payment, press Add
@@ -9318,33 +9319,43 @@ function dcMonthRows(month){
    tagged, and the same customer twice on one day is flagged (often a plan entered twice). */
 function dcWhoListHtml(day){
   const zh = LANG==='zh';
-  const svcs = DB.services.filter(s=> isSubscriptionType(s.type) && s.activationDate===day)
-    .sort((x,y)=> (x.type===y.type ? 0 : x.type==='prepaid' ? -1 : 1));
-  if(!svcs.length) return '';
+  const svcs = DB.services.filter(s=> isSubscriptionType(s.type) && s.activationDate===day);
+  if(!svcs.length) return `<div class="dc-who-empty">${zh?'这天没有开通的套餐':'No plans activated on this day'}</div>`;
   const seen = {}; svcs.filter(s=>!dcReplacedSameDay(s)).forEach(s=>{ const k = s.customerId+'|'+s.type; seen[k] = (seen[k]||0) + 1; });
-  const dupes = svcs.filter(s=> seen[s.customerId+'|'+s.type] > 1).length;
   const tag = s=>{
     if(dcReplacedSameDay(s)) return `<span class="dc-tag bad">${zh?'当天换了套餐 — 不计算':'Changed the same day — not counted'}</span>`;
     if(s.isActive) return '';
     if(CANCEL_REASONS.includes(s.changeReason)) return `<span class="dc-tag bad">${zh?'已取消':'Cancelled'}</span>`;
     return `<span class="dc-tag">${zh?'已换套餐':'Replaced'}</span>`;
   };
-  const rows = svcs.map(s=>{
-    const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid';
+  const payTag = s=>{ const k = dcPayKey(s.paymentMethod);
+    return k==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>` : `<span class="dc-paypill ${k==='rmb'?'rmb':k}">${dcPayName(k)}</span>`; };
+  const row = s=>{
+    const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid', skip = dcReplacedSameDay(s);
     const plan = pre ? planLengthLabel(s)[1] : (s.plan || (zh?'后付':'Postpaid'));
-    const money = pre ? (dcPayKey(s.paymentMethod)==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>` : `${fmtWon(Number(s.sellingPrice)||0)} · ${dcPayName(dcPayKey(s.paymentMethod)==='rmb'?'rmb':dcPayKey(s.paymentMethod))}`)
-                      : fmtWon((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
-    const dup = !dcReplacedSameDay(s) && seen[s.customerId+'|'+s.type] > 1;
-    return `<div class="dc-cl wl ${dup?'dup':''} ${dcReplacedSameDay(s)?'skip':''}" data-open-customer="${s.customerId}" title="${zh?'打开客户':'Open customer'}">
-      <span class="dc-typ ${pre?'pre':'post'}">${pre?(zh?'先付':'Pre'):(zh?'后付':'Post')}</span>
-      <span class="tx"><b>${escapeHtml(c.name||'—')}</b> · ${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
-      <b>${money}</b></div>`;
-  }).join('');
-  return `<details class="dc-cashlist dc-wholist" ${dupes ? 'open' : ''}>
-    <summary><span>${zh?`看是谁（${svcs.length - svcs.filter(dcReplacedSameDay).length}）`:`See who (${svcs.length - svcs.filter(dcReplacedSameDay).length})`}</span>${dupes ? `<b class="dc-warn">${zh?'有重复，请检查':'Possible duplicate — check'}</b>` : ''}</summary>
-    ${rows}
-    <div class="dc-cl none">${zh?'点名字打开客户资料。已取消或已换套餐的也算当天的业务。':'Tap a name to open the customer. Plans later cancelled or replaced still count as a sale on their day.'}</div>
-  </details>`;
+    const dup = !skip && seen[s.customerId+'|'+s.type] > 1;
+    const amt = pre ? (Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
+    return `<div class="dc-wr ${dup?'dup':''} ${skip?'skip':''}" data-open-customer="${s.customerId}" title="${zh?'打开客户':'Open customer'}">
+      <span class="nm"><b>${escapeHtml(c.name||'—')}</b>${c.phone?`<small>${escapeHtml(c.phone)}</small>`:''}</span>
+      <span class="pl">${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
+      <span class="py">${pre ? payTag(s) : ''}</span>
+      <b class="am">${fmtWon(amt)}</b></div>`;
+  };
+  const isRc = s=> s.type==='prepaid' && planLengthLabel(s)[0]==='rc';
+  const groups = [
+    {key:'pre',  title: zh?'先付':'Prepaid',  list: svcs.filter(s=> s.type==='prepaid' && !isRc(s))},
+    {key:'rc',   title: zh?'充值（另计）':'Recharge (separate)', list: svcs.filter(isRc)},
+    {key:'post', title: zh?'后付':'Postpaid', list: svcs.filter(s=> s.type==='postpaid')},
+  ].filter(g=> g.list.length);
+  return `<div class="dc-people">${groups.map(g=>{
+    const counted = g.list.filter(s=>!dcReplacedSameDay(s));
+    const sum = counted.reduce((x,s)=> x + (s.type==='prepaid' ? (dcPayKey(s.paymentMethod)==='unpaid' ? 0 : Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0)), 0);
+    return `<div class="dc-wg ${g.key}">
+      <div class="dc-wg-h"><span class="dot"></span><b>${g.title}</b><span class="n">${counted.length}</span><span class="sum">${fmtWon(sum)}</span></div>
+      ${g.list.sort((a2,b2)=> (Number(b2.sellingPrice||b2.expectedProfit)||0) - (Number(a2.sellingPrice||a2.expectedProfit)||0)).map(row).join('')}
+    </div>`; }).join('')}
+    <div class="dc-who-foot">${zh?'点名字打开客户资料 · 已取消或之后换了套餐的，仍算在开通那天':'Tap a name to open the customer · plans cancelled or changed later still count on the day they started'}</div>
+  </div>`;
 }
 /* the two pop-ups: add a sale / add a top-up — same look as the other CRM windows */
 function dcPayName(k){ const zh = LANG==='zh'; return ({cash:zh?'现金':'Cash', card:zh?'刷卡':'Card', transfer:zh?'转账':'Transfer', rmb:zh?'人民币':'RMB', free:zh?'免费':'Free'})[k]; }
@@ -9555,7 +9566,7 @@ function exportDailyMonth(){
   page.addEventListener('change', e=> edit(e, true));
   roots.forEach(root=> root.addEventListener('click', e=>{
     const t2 = e.target;
-    const oc = t2.closest('.dc-cl[data-open-customer]'); if(oc){ openCustomerDetail(oc.dataset.openCustomer); return; }
+    const oc = t2.closest('.dc-cl[data-open-customer], .dc-wr[data-open-customer]'); if(oc){ openCustomerDetail(oc.dataset.openCustomer); return; }
     if(t2.closest('#dcOpenItem')){ dcOpenItemModal(); return; }
     if(t2.closest('#dcOpenTop')){ dcOpenTopModal(); return; }
     const mn = t2.closest('[data-dc-month]'); if(mn){

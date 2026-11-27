@@ -1762,3 +1762,27 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .hist-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
 .hist-del .ui-ic{margin:0}
 .dc-aside{top:calc(var(--topbar-h,84px) + 14px);max-height:calc(100vh - var(--topbar-h,84px) - 28px);overflow:auto;border-radius:var(--radius)}
+/* Daily closing: who signed up today, grouped like the daily report */
+.dc-sec2{margin:16px 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-soft)}
+.dc-people{display:flex;flex-direction:column;gap:10px}
+.dc-wg{background:var(--dc-soft);border-radius:var(--dc-r);padding:4px 4px 6px}
+.dc-wg-h{display:flex;align-items:center;gap:8px;padding:9px 12px 7px;font-size:13px}
+.dc-wg-h .dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.dc-wg.rc .dc-wg-h .dot{background:#ea580c}.dc-wg.post .dc-wg-h .dot{background:#7c3aed}
+.dc-wg-h .n{min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;font-size:11.5px;font-weight:800;background:rgba(37,99,235,.12);color:var(--blue)}
+.dc-wg.rc .dc-wg-h .n{background:rgba(234,88,12,.12);color:#c2410c}.dc-wg.post .dc-wg-h .n{background:rgba(124,58,237,.12);color:#7c3aed}
+.dc-wg-h .sum{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.dc-wr{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 78px 100px;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;transition:background .15s}
+.dc-wr+.dc-wr{box-shadow:0 -1px 0 var(--dc-line)}
+.dc-wr:hover{background:var(--card)}
+.dc-wr .nm{display:flex;flex-direction:column;min-width:0}
+.dc-wr .nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-wr .nm small{font-size:11.5px;color:var(--text-soft)}
+.dc-wr .pl{color:var(--text-soft);min-width:0}
+.dc-wr .py{text-align:center}
+.dc-wr .am{text-align:right;font-variant-numeric:tabular-nums}
+.dc-wr.dup{background:rgba(234,88,12,.06)}
+.dc-wr.skip{opacity:.55}.dc-wr.skip .nm b{text-decoration:line-through}
+.dc-who-foot{font-size:11.5px;color:var(--text-soft);padding:2px 4px}
+.dc-who-empty{font-size:13px;color:var(--text-soft);padding:14px;text-align:center;background:var(--dc-soft);border-radius:var(--dc-r)}
+@media (max-width:720px){.dc-wr{grid-template-columns:1fr auto;}.dc-wr .pl{grid-column:1/-1;order:3}.dc-wr .py{order:4;text-align:left}}

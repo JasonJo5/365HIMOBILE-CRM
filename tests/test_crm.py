@@ -452,14 +452,14 @@ def run(b):
         const sh = books[0] && books[0][1][0][1];
         out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
         // "See who": every plan of the day by name; the same customer's postpaid twice is flagged
-        out.who1 = [document.querySelectorAll('.dc-wholist .dc-cl.wl').length, !!document.querySelector('.dc-wholist .dc-cl.dup')];
+        out.who1 = [document.querySelectorAll('.dc-people .dc-wr').length, !!document.querySelector('.dc-people .dc-wr.dup'), [...document.querySelectorAll('.dc-wg-h b')].map(x=>x.textContent)];
         add(cs[5], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000}); renderDailyClosing();
-        out.who2 = [document.querySelectorAll('.dc-wholist .dc-cl.wl').length, document.querySelectorAll('.dc-wholist .dc-cl.dup').length, document.querySelector('.dc-wholist').open];
+        out.who2 = [document.querySelectorAll('.dc-people .dc-wr').length, document.querySelectorAll('.dc-people .dc-wr.dup').length, true];
         DB.services.pop(); ids.pop();
         // a postpaid plan changed to another one on the same day counts once
         add(cs[5], {type:'postpaid', durationDays:365, plan:'5G EASY L', expectedProfit:179000, isActive:true});
         { const old = DB.services.find(x=>x.customerId===cs[5].id && x.type==='postpaid' && x.plan==='PLAN A' && x.activationDate===day); old.isActive=false; old.endedAt=day; old.endedSeq=Date.now(); old.changeReason='plan_change';
-          const aa = dcAuto(day); renderDailyClosing(); out.sameDay = [aa.postN, aa.postAmt, !!document.querySelector('.dc-wholist .dc-cl.skip'), !document.querySelector('.dc-wholist .dc-cl.dup')];
+          const aa = dcAuto(day); renderDailyClosing(); out.sameDay = [aa.postN, aa.postAmt, !!document.querySelector('.dc-people .dc-wr.skip'), !document.querySelector('.dc-people .dc-wr.dup')];
           old.isActive=false; DB.services.pop(); ids.pop(); delete old.endedAt; delete old.changeReason; }
         renderDailyClosing();
         // a day with only unpaid 1-month plans (like Nov 13) still shows in the month table, with plans and 'Not paid'
@@ -486,8 +486,8 @@ def run(b):
           dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
     check("today's cash one by one: the 90-day cash sale, the screen protector, the store-money top-up",
           dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000"], dc["cashDetail"])
-    check("'See who' lists every plan of the day by name, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
-          dc["who1"] == [6, False] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
+    check("'Who today' lists every plan by name in Prepaid / Recharge / Postpaid groups, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
+          dc["who1"] == [6, False, ["Prepaid", "Recharge (separate)", "Postpaid"]] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
     check("a postpaid plan changed on the same day is counted once (the newer plan), marked 'not counted'",
           dc["sameDay"] == [1, 179000, True, True], dc["sameDay"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
