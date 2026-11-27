@@ -9084,7 +9084,7 @@ function dcPayKey(m){
 /* everything the CRM already knows about that day */
 function dcAuto(day){
   const a = {cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
-             postN:0, postAmt:0, rc36:0, rcOther:0};
+             postN:0, postAmt:0, rc36:0, rcOther:0, rcAmt:0};
   DB.services.forEach(s=>{
     if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
     if(s.type==='prepaid'){
@@ -9095,12 +9095,15 @@ function dcAuto(day){
       const amt = Number(s.sellingPrice)||0, k = dcPayKey(s.paymentMethod);
       if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; } else a[k] += amt;
       if(k==='cash') a.cashList.push({name: (getCustomer(s.customerId)||{}).name || '', plan: planLengthLabel(s)[1], amt, cid: s.customerId});
-      if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; }
+      if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; if(k!=='unpaid' && k!=='rmb') a.rcAmt += amt; }
     } else if(s.type==='postpaid'){
       a.postN++; a.postAmt += (s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit)) || 0;
     }
   });
+  // money in by method (₩) still includes recharges — that's what is in the drawer / bank.
+  // Recharges are kept apart from the income: prePlans = prepaid money without recharges.
   a.preTotal = a.cash + a.transfer + a.card;   // ₩ only — RMB is kept separately
+  a.prePlans = a.preTotal - a.rcAmt;
   return a;
 }
 /* Top-ups are paid in advance by Jason, Jihan, or with store money (cash from the drawer).
@@ -9123,7 +9126,7 @@ function dcCalc(day, d){
   const byWho = {}; d.topups.forEach(t=>{ const w = dcWho(t); byWho[w] = (byWho[w]||0) + amt(t); });
   const topStore = byWho.Store || 0;
   const topAll = d.topups.reduce((x,t)=> x + amt(t), 0), topPaid = 0, topOwed = 0;
-  const income = a.preTotal + a.postAmt + o.total;
+  const income = a.prePlans + a.postAmt + o.total;   // recharges are not part of the income
   const drawerOut = topStore;
   // today's cash only: what should have been added to the drawer today
   const cashToday = a.cash + o.cash - drawerOut;
@@ -9164,7 +9167,8 @@ function renderDailyClosing(){
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(a.cash)}</b></div>
         <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(a.transfer)}</b></div>
         <div><span><i class="dcdot dc-card"></i>${zh?'刷卡':'Card'}</span><b>${W(a.card)}</b></div>
-        <div class="sub"><span>${zh?'先付合计':'Prepaid'}</span><b>${W(a.preTotal)}</b></div>
+        <div class="sub"><span>${zh?'先付（不含充值）':'Prepaid (no recharge)'}</span><b>${W(a.prePlans)}</b></div>
+        ${a.rcAmt || a.rc ? `<div class="sub rcline"><span>${zh?`充值 ${a.rc} 笔（另计，不算收入）`:`Recharge × ${a.rc} (separate, not income)`}</span><b>${W(a.rcAmt)}</b></div>` : ''}
         <div class="sub"><span>${zh?'后付':'Postpaid'}</span><b>${W(a.postAmt)}</b></div>
         <div class="sub"><span>${zh?'其他（贴膜等）':'Other (screen protector…)'}</span><b>${W(c.o.total)}</b></div>
         ${(a.rmb + c.o.rmb) ? `<div class="sub muted"><span>${zh?'人民币（另计）':'RMB (separate)'}</span><b>${dcFmtY(a.rmb + c.o.rmb)}</b></div>` : ''}
@@ -9331,7 +9335,8 @@ function renderDailyMonth(){
     {h: zh?'现金':'Cash', v: r=> r.a.cash, k:'w', grp:'money'},
     {h: zh?'转账':'Transfer', v: r=> r.a.transfer, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.a.card, k:'w'},
-    {h: zh?'先付合计':'Prepaid ₩', v: r=> r.a.preTotal, k:'w', grp:'sum'},
+    {h: zh?'先付合计':'Prepaid ₩', v: r=> r.a.prePlans, k:'w', grp:'sum', t: zh?'不含充值':'Without recharges'},
+    {h: zh?'充值金额':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'单独计算，不算在收入里':'Kept separate — not in the income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
     {h: zh?'其他':'Other', v: r=> r.c.o.total, k:'w', t: zh?'贴膜等':'Screen protectors etc.'},
     ...(anyUnpaid ? [{h: zh?'未付款':'Not paid', v: r=> r.a.unpaidAmt, k:'u', t: zh?'还没付款 / 没选付款方式 — 不算在收入里':'Not paid yet / no payment method — not in the income'}] : []),
@@ -9343,7 +9348,8 @@ function renderDailyMonth(){
   const sumTiles = [
     [zh?'本月收入':'Month income', fmtWon(tot(r=>r.c.income)), 'main'],
     [zh?'现金':'Cash', fmtWon(tot(r=>r.a.cash))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.a.transfer))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.a.card))],
-    [zh?'先付 / 充值':'Plans / recharge', `${tot(r=>r.a.preCount - r.a.rc)} / ${tot(r=>r.a.rc)}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
+    [zh?'充值（另计）':'Recharge (separate)', `${tot(r=>r.a.rc)} · ${fmtWon(tot(r=>r.a.rcAmt))}`, 'rc'],
+    [zh?'先付':'Plans', `${tot(r=>r.a.preCount - r.a.rc)} · ${fmtWon(tot(r=>r.a.prePlans))}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
   ];
   const [yy, mm] = month.split('-').map(Number);
   const monthName = new Date(yy, mm-1, 1).toLocaleDateString(zh?'zh-CN':'en-US', {year:'numeric', month:'long'});
@@ -9363,15 +9369,15 @@ function renderDailyMonth(){
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
 function exportDailyMonth(){
   const month = dcDay.slice(0,7), rows = dcMonthRows(month);
-  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总','充值36','','贴膜','','','垫付合计','备注'];
-  const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','36/363','其他','数量','收费','未收费','',''];
-  const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.preTotal,
-    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
+  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','当日先付合计','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总（不含充值）','充值','','','贴膜','','','垫付合计','备注'];
+  const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','36/363','其他','充值金额','数量','收费','未收费','',''];
+  const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.a.cash, r.a.transfer, r.a.card, r.a.prePlans,
+    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
   const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
-  const total = ['合计', ...Array.from({length:21}, (_,k)=> sumCol(k+1)), ''];
+  const total = ['合计', ...Array.from({length:22}, (_,k)=> sumCol(k+1)), ''];
   const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data, total]);
-  ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:6}}, ...[7,8,9,10,11,12,13,14,15,21,22].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:16},e:{r:0,c:17}}, {s:{r:0,c:18},e:{r:0,c:20}}];
-  ws['!cols'] = [12,6,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,6,10,8,12,24].map(w=>({wch:w}));
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:6}}, ...[7,8,9,10,11,12,13,14,15,22,23].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:16},e:{r:0,c:18}}, {s:{r:0,c:19},e:{r:0,c:21}}];
+  ws['!cols'] = [12,6,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,12,6,10,8,12,24].map(w=>({wch:w}));
   // staff top-ups listed one by one on a second sheet
   const tops = [['日期','谁付的','金额','给谁充的']];
   rows.forEach(r=> r.d.topups.forEach(t2=>{ const w = dcWho(t2); tops.push([r.day, w==='Store'?'店里的钱':w, Number(t2.amount)||0, t2.note||'']); }));

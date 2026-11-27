@@ -1733,3 +1733,15 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .dc-wt.store{background:rgba(234,88,12,.07)}.dc-wt.store span{color:#c2410c}
 .dc-wt.all{background:var(--blue)}.dc-wt.all span,.dc-wt.all b{color:#fff}
 @media (max-width:620px){.dc-order.top2{grid-template-columns:auto 1fr 28px}.dc-order.top2 .dc-order-note{grid-column:1/-1;order:5}.dc-whototals{justify-content:stretch}.dc-wt{flex:1}}
+/* recharges: shown on their own, not part of the income */
+.dc-mtiles{grid-template-columns:repeat(7,minmax(0,1fr))}
+.dc-mtile.rc{background:rgba(234,88,12,.08)}.dc-mtile.rc span,.dc-mtile.rc b{color:#c2410c}
+.dc-table td.rcw{color:#c2410c}
+.dc-table th.rcw{color:#c2410c}
+.dc-sum-rows .rcline span,.dc-sum-rows .rcline b{color:#c2410c}
+@media (max-width:1280px){.dc-mtiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:620px){.dc-mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dc-table{font-size:12.5px}
+.dc-table td,.dc-table th{padding-left:7px;padding-right:7px}
+.dc-table th.n{min-width:34px}
+.dc-cnt{min-width:20px;padding:1px 6px;font-size:12px}

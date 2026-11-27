@@ -403,6 +403,8 @@ def run(b):
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
+        out.rc = [c.a.rcAmt, c.a.prePlans, c.income];
+        out.rcCol = /Recharge ₩/.test(document.querySelector('#dcMonthCard thead').textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
         addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));
         addTop('Jason', '3000'); await new Promise(r=>setTimeout(r, 30));
@@ -438,8 +440,10 @@ def run(b):
         return out; })()""")
     check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
           dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
+    check("recharge kept apart: Recharge ₩36,000 shown on its own; income = prepaid without recharge 75,000 + postpaid 100,000 + other 10,000",
+          dc["rc"] == [36000, 75000, 185000] and dc["rcCol"], dc["rc"])
     check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
-          dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 221000] and dc["kpiOk"], dc["calc"])
+          dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185000] and dc["kpiOk"], dc["calc"])
     check("Jason / Jihan top-ups: a total for each person, no 'paid back', and they don't change the drawer",
           dc["noPaidBack"] and dc["who"] == [30000, 8000, 7000, 35000, 4] and dc["short"]
           and dc["totals"] == ["Jason ₩8,000", "Jihan ₩7,000", "Store money ₩30,000", "Total ₩45,000"], [dc["who"], dc["totals"]])
