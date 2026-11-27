@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261127n">
+<link rel="stylesheet" href="style.css?v=20261127p">
 </head>
 <body>
 
@@ -951,6 +951,20 @@
 </div>
 
 <!-- cancel subscription modal -->
+<div class="overlay" id="dcItemModal">
+  <div class="modal dc-modal">
+    <div class="modal-head"><div class="modal-title" id="dcItemTitle">Add sale</div><button class="modal-close" data-close>×</button></div>
+    <div class="modal-body" id="dcItemBody"></div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close id="dcItemCancel">Cancel</button><button class="btn btn-primary" id="dcItemAdd">Save</button></div>
+  </div>
+</div>
+<div class="overlay" id="dcTopModal">
+  <div class="modal dc-modal">
+    <div class="modal-head"><div class="modal-title" id="dcTopTitle">Add top-up</div><button class="modal-close" data-close>×</button></div>
+    <div class="modal-body" id="dcTopBody"></div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close id="dcTopCancel">Cancel</button><button class="btn btn-primary" id="dcTopAdd">Save</button></div>
+  </div>
+</div>
 <div class="overlay" id="ageCheckModalOverlay">
   <div class="modal" style="max-width:460px;">
     <div class="modal-head">
@@ -1141,6 +1155,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261127n"></script>
+<script src="script.js?v=20261127p"></script>
 </body>
 </html>

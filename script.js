@@ -9188,17 +9188,8 @@ function renderDailyClosing(){
     ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}`;
 
   // ---- step 2: other sales — same as a top-up: choose the item, quantity, price, payment, press Add
-  const it0 = dcItemDraft, presets = dcItemPresets();
   const s2 = `
-    <div class="dc-addform item">
-      <div class="dc-presets">${presets.map(p=>`<button type="button" class="dc-preset ${it0.name===p?'on':''}" data-preset="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}</div>
-      <input class="dc-in dc-draft" id="dcItemName" value="${escapeHtml(it0.name||'')}" placeholder="${zh?'或者自己输入…':'or type it yourself…'}" list="dcItemList">
-      <datalist id="dcItemList">${presets.map(p=>`<option value="${escapeHtml(p)}">`).join('')}</datalist>
-      <div class="dc-qty"><button type="button" data-dqty="-1" aria-label="Less">−</button><input class="dc-draft" id="dcItemQty" type="number" min="1" step="1" value="${escapeHtml(String(it0.qty||1))}"><button type="button" data-dqty="1" aria-label="More">+</button></div>
-      <div class="dc-money"><span>₩</span><input class="dc-draft" id="dcItemAmt" type="number" min="0" step="1000" value="${escapeHtml(String(it0.amount||''))}" placeholder="${zh?'价格':'Price'}" ${it0.pay==='free'?'disabled':''}></div>
-      <div class="dc-seg" id="dcItemPay">${['cash','card','transfer','free'].map(k=>`<button type="button" data-dpay="${k}" class="${(it0.pay||'cash')===k?'on':''}">${payName(k)}</button>`).join('')}</div>
-      <button type="button" class="btn btn-primary" id="dcItemAdd">${zh?'添加':'Add'}</button>
-    </div>
+    <div class="dc-listhead"><button type="button" class="btn btn-primary" id="dcOpenItem">+ ${zh?'添加销售':'Add sale'}</button></div>
     <div class="dc-orders">
       ${d.items.map((it,i)=>{ const free = it.pay==='free'; return `<div class="dc-order item" data-i="${i}">
         <span class="dc-order-name">${escapeHtml(it.name||'—')}</span>
@@ -9211,14 +9202,8 @@ function renderDailyClosing(){
     ${d.items.length ? `<div class="dc-adds"><span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.o.total)}</b>${c.o.freeQty?` · ${zh?'免费':'free'} ${c.o.freeQty}`:''}</span></div>` : ''}`;
 
   // ---- step 3: top-ups — pick who paid, type the amount, press Add (like an order)
-  const dr = dcTopDraft;
   const s3 = `
-    <div class="dc-addform">
-      <div class="dc-seg who" id="dcTopWho">${DC_PEOPLE.map(p=>`<button type="button" data-draft-who="${p}" class="${dr.who===p?'on':''}">${whoName(p)}</button>`).join('')}</div>
-      <div class="dc-money"><span>₩</span><input class="dc-draft" id="dcTopAmt" type="number" min="0" step="1000" value="${escapeHtml(String(dr.amount||''))}" placeholder="${zh?'金额':'Amount'}"></div>
-      <input class="dc-in dc-draft" id="dcTopNote" value="${escapeHtml(dr.note||'')}" placeholder="${zh?'给谁充的（号码，可选）':'For whom (number, optional)'}">
-      <button type="button" class="btn btn-primary" id="dcTopAdd">${zh?'添加':'Add'}</button>
-    </div>
+    <div class="dc-listhead"><button type="button" class="btn btn-primary" id="dcOpenTop">+ ${zh?'添加垫付':'Add top-up'}</button></div>
     <div class="dc-orders">
       ${d.topups.map((t2,i)=>{ const who = dcWho(t2), store = who==='Store'; return `<div class="dc-order" data-t="${i}">
         <span class="dc-who ${store?'store':''}">${escapeHtml(whoName(who))}</span>
@@ -9270,6 +9255,49 @@ function dcMonthRows(month){
     rows.push({day, a, c, d});
   }
   return rows;
+}
+/* the two pop-ups: add a sale / add a top-up — same look as the other CRM windows */
+function dcPayName(k){ const zh = LANG==='zh'; return ({cash:zh?'现金':'Cash', card:zh?'刷卡':'Card', transfer:zh?'转账':'Transfer', rmb:zh?'人民币':'RMB', free:zh?'免费':'Free'})[k]; }
+function dcOpenItemModal(){
+  const zh = LANG==='zh', presets = dcItemPresets();
+  dcItemDraft = {name: dcItemDraft.name || presets[0], qty:1, amount:'', pay: dcItemDraft.pay || 'cash'};
+  const it0 = dcItemDraft;
+  document.getElementById('dcItemTitle').textContent = zh ? '添加其他销售' : 'Add a sale';
+  document.getElementById('dcItemAdd').textContent = zh ? '保存' : 'Save';
+  document.getElementById('dcItemCancel').textContent = zh ? '取消' : 'Cancel';
+  document.getElementById('dcItemBody').innerHTML = `
+    <div class="form-field full"><label>${zh?'卖了什么？':'What was sold?'}</label>
+      <div class="dc-presets">${presets.map(p=>`<button type="button" class="dc-preset ${it0.name===p?'on':''}" data-preset="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}</div>
+      <input class="dc-in" id="dcItemName" value="${escapeHtml(it0.name||'')}" placeholder="${zh?'或者自己输入…':'or type it yourself…'}" list="dcItemList" style="margin-top:8px">
+      <datalist id="dcItemList">${presets.map(p=>`<option value="${escapeHtml(p)}">`).join('')}</datalist></div>
+    <div class="dc-form2">
+      <div class="form-field"><label>${zh?'数量':'Quantity'}</label>
+        <div class="dc-qty"><button type="button" data-dqty="-1" aria-label="Less">−</button><input id="dcItemQty" type="number" min="1" step="1" value="1"><button type="button" data-dqty="1" aria-label="More">+</button></div></div>
+      <div class="form-field"><label>${zh?'价格（合计）':'Price (total)'}</label>
+        <div class="dc-money"><span>₩</span><input id="dcItemAmt" type="number" min="0" step="1000" value="" placeholder="0" ${it0.pay==='free'?'disabled':''}></div></div>
+    </div>
+    <div class="form-field full"><label>${zh?'付款方式':'Payment method'}</label>
+      <div class="dc-seg wide" id="dcItemPay">${['cash','card','transfer','free'].map(k=>`<button type="button" data-dpay="${k}" class="${it0.pay===k?'on':''}">${dcPayName(k)}</button>`).join('')}</div></div>`;
+  document.getElementById('dcItemModal').classList.add('show');
+  setTimeout(()=>{ const a = document.getElementById('dcItemAmt'); (a.disabled ? document.getElementById('dcItemName') : a).focus(); }, 60);
+}
+function dcOpenTopModal(){
+  const zh = LANG==='zh', who = dcTopDraft.who || 'Jason';
+  dcTopDraft = {who, amount:'', note:''};
+  const whoName = w=> w==='Store' ? (zh?'店里的钱':'Store money') : w;
+  document.getElementById('dcTopTitle').textContent = zh ? '添加垫付充值' : 'Add a top-up';
+  document.getElementById('dcTopAdd').textContent = zh ? '保存' : 'Save';
+  document.getElementById('dcTopCancel').textContent = zh ? '取消' : 'Cancel';
+  document.getElementById('dcTopBody').innerHTML = `
+    <div class="form-field full"><label>${zh?'谁先付的？':'Who paid?'}</label>
+      <div class="dc-seg who wide" id="dcTopWho">${DC_PEOPLE.map(p=>`<button type="button" data-draft-who="${p}" class="${who===p?'on':''}">${whoName(p)}</button>`).join('')}</div>
+      <div class="dc-hint" id="dcTopHint">${who==='Store' ? (zh?'店里的钱 — 直接从抽屉里出':'Store money — comes straight out of the drawer') : (zh?'员工自己的钱 — 公司之后还给他':'Their own money — the company pays it back')}</div></div>
+    <div class="form-field full"><label>${zh?'金额':'Amount'}</label>
+      <div class="dc-money big"><span>₩</span><input id="dcTopAmt" type="number" min="0" step="1000" value="" placeholder="0"></div></div>
+    <div class="form-field full"><label>${zh?'给谁充的（号码，可选）':'For whom (number, optional)'}</label>
+      <input class="dc-in" id="dcTopNote" value="" placeholder="010-0000-0000"></div>`;
+  document.getElementById('dcTopModal').classList.add('show');
+  setTimeout(()=> document.getElementById('dcTopAmt').focus(), 60);
 }
 function renderDailyMonth(){
   const zh = LANG==='zh', month = dcDay.slice(0,7), rows = dcMonthRows(month);
@@ -9340,6 +9368,7 @@ function exportDailyMonth(){
 }
 (function(){
   const page = document.getElementById('page-daily'); if(!page) return;
+  const roots = [page, document.getElementById('dcItemModal'), document.getElementById('dcTopModal')];
   const go = day=>{ if(isIsoDate(day)){ dcDay = day; renderDailyClosing(); } };
   document.getElementById('dcPrev').addEventListener('click', ()=> go(addDaysISO(dcDay, -1)));
   document.getElementById('dcNext').addEventListener('click', ()=> go(addDaysISO(dcDay, 1)));
@@ -9387,9 +9416,10 @@ function exportDailyMonth(){
     const d = dcLoad(dcDay);
     d.topups.push({id: uid('t'), who: dcTopDraft.who, amount: amt, note: document.getElementById('dcTopNote').value.trim(), repaid:false});
     dcStore(dcDay, d);
-    dcTopDraft = {who: dcTopDraft.who, amount:'', note:''};   // keep the same person for the next one
+    dcTopDraft = {who: dcTopDraft.who, amount:'', note:''};   // same person next time
+    document.getElementById('dcTopModal').classList.remove('show');
     renderDailyClosing();
-    const el = document.getElementById('dcTopAmt'); if(el) el.focus();
+    toast(LANG==='zh' ? '已添加' : 'Added');
   }
   function dcAddItem(){
     const zh = LANG==='zh', name = document.getElementById('dcItemName').value.trim();
@@ -9400,26 +9430,29 @@ function exportDailyMonth(){
     const d = dcLoad(dcDay);
     d.items.push({id: uid('i'), name, qty, amount: amt, pay: dcItemDraft.pay||'cash'});
     dcStore(dcDay, d);
-    dcItemDraft = {name, qty:1, amount:'', pay: dcItemDraft.pay||'cash'};   // same item and payment ready for the next one
+    dcItemDraft = {name, qty:1, amount:'', pay: dcItemDraft.pay||'cash'};   // same item and payment next time
+    document.getElementById('dcItemModal').classList.remove('show');
     renderDailyClosing();
-    const el = document.getElementById('dcItemAmt'); if(el && !el.disabled) el.focus();
+    toast(zh ? '已添加' : 'Added');
   }
-  page.addEventListener('input', e=>{
-    if(e.target.id==='dcItemName'){ dcItemDraft.name = e.target.value; page.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x.dataset.preset===e.target.value)); return; }
+  roots.forEach(root=> root.addEventListener('input', e=>{
+    if(e.target.id==='dcItemName'){ dcItemDraft.name = e.target.value; document.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x.dataset.preset===e.target.value)); return; }
     if(e.target.id==='dcItemQty'){ dcItemDraft.qty = e.target.value; return; }
     if(e.target.id==='dcItemAmt'){ dcItemDraft.amount = e.target.value; return; }
     if(e.target.id==='dcTopAmt'){ dcTopDraft.amount = e.target.value; return; }
     if(e.target.id==='dcTopNote'){ dcTopDraft.note = e.target.value; return; }
-  });
-  page.addEventListener('keydown', e=>{
+  }));
+  roots.forEach(root=> root.addEventListener('keydown', e=>{
     if(e.key==='Enter' && (e.target.id==='dcTopAmt' || e.target.id==='dcTopNote')){ e.preventDefault(); dcAddTopup(); }
     if(e.key==='Enter' && ['dcItemName','dcItemQty','dcItemAmt'].includes(e.target.id)){ e.preventDefault(); dcAddItem(); }
     if(e.key==='Enter' && e.target.matches && e.target.matches('tr[data-dc-day]')){ e.preventDefault(); e.target.click(); }
-  });
+  }));
   page.addEventListener('input', e=> edit(e, false));
   page.addEventListener('change', e=> edit(e, true));
-  page.addEventListener('click', e=>{
+  roots.forEach(root=> root.addEventListener('click', e=>{
     const t2 = e.target;
+    if(t2.closest('#dcOpenItem')){ dcOpenItemModal(); return; }
+    if(t2.closest('#dcOpenTop')){ dcOpenTopModal(); return; }
     const mn = t2.closest('[data-dc-month]'); if(mn){
       const [y2, m2] = dcDay.slice(0,7).split('-').map(Number), dt = new Date(y2, m2-1+Number(mn.dataset.dcMonth), 1);
       const first = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-01`;
@@ -9439,11 +9472,13 @@ function exportDailyMonth(){
       if(last) last.querySelector(sp ? '[data-f="amount"]' : '[data-f="name"]').focus();
       return;
     }
-    const dw = t2.closest('[data-draft-who]'); if(dw){ dcTopDraft.who = dw.dataset.draftWho; page.querySelectorAll('[data-draft-who]').forEach(x=> x.classList.toggle('on', x===dw)); document.getElementById('dcTopAmt').focus(); return; }
+    const dw = t2.closest('[data-draft-who]'); if(dw){ dcTopDraft.who = dw.dataset.draftWho; document.querySelectorAll('[data-draft-who]').forEach(x=> x.classList.toggle('on', x===dw));
+      const zh = LANG==='zh', h = document.getElementById('dcTopHint'); if(h) h.textContent = dcTopDraft.who==='Store' ? (zh?'店里的钱 — 直接从抽屉里出':'Store money — comes straight out of the drawer') : (zh?'员工自己的钱 — 公司之后还给他':'Their own money — the company pays it back');
+      document.getElementById('dcTopAmt').focus(); return; }
     if(t2.closest('#dcTopAdd')){ dcAddTopup(); return; }
-    const pr = t2.closest('[data-preset]'); if(pr){ dcItemDraft.name = pr.dataset.preset; document.getElementById('dcItemName').value = pr.dataset.preset; page.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x===pr)); document.getElementById('dcItemAmt').focus(); return; }
+    const pr = t2.closest('[data-preset]'); if(pr){ dcItemDraft.name = pr.dataset.preset; document.getElementById('dcItemName').value = pr.dataset.preset; document.querySelectorAll('[data-preset]').forEach(x=> x.classList.toggle('on', x===pr)); document.getElementById('dcItemAmt').focus(); return; }
     const dq = t2.closest('[data-dqty]'); if(dq){ const el = document.getElementById('dcItemQty'); dcItemDraft.qty = Math.max(1, (Number(el.value)||1) + Number(dq.dataset.dqty)); el.value = dcItemDraft.qty; return; }
-    const dp = t2.closest('[data-dpay]'); if(dp){ dcItemDraft.pay = dp.dataset.dpay; page.querySelectorAll('[data-dpay]').forEach(x=> x.classList.toggle('on', x===dp)); const am = document.getElementById('dcItemAmt'); am.disabled = dcItemDraft.pay==='free'; if(!am.disabled) am.focus(); return; }
+    const dp = t2.closest('[data-dpay]'); if(dp){ dcItemDraft.pay = dp.dataset.dpay; document.querySelectorAll('[data-dpay]').forEach(x=> x.classList.toggle('on', x===dp)); const am = document.getElementById('dcItemAmt'); am.disabled = dcItemDraft.pay==='free'; if(!am.disabled) am.focus(); return; }
     if(t2.closest('#dcItemAdd')){ dcAddItem(); return; }
     if(t2.closest('[data-add-top]')){
       d.topups.push({id: uid('t'), who: t2.closest('[data-add-top]').dataset.addTop, amount:'', note:'', repaid:false});
@@ -9458,5 +9493,5 @@ function exportDailyMonth(){
     const q = t2.closest('[data-qty]'); if(q){ const i = Number(q.closest('[data-i]').dataset.i); d.items[i].qty = Math.max(0, (Number(d.items[i].qty)||0) + Number(q.dataset.qty)); dcStore(dcDay, d); renderDailyClosing(); return; }
     const di = t2.closest('[data-del-item]'); if(di){ d.items.splice(Number(di.dataset.delItem), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
     const dt = t2.closest('[data-del-top]'); if(dt){ d.topups.splice(Number(dt.dataset.delTop), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
-  });
+  }));
 })();

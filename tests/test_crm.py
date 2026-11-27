@@ -378,21 +378,25 @@ def run(b):
         const a = dcAuto(day);
         out.auto = [a.d90, a.d60, a.d30, a.rc, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
         const ev = (el, v, type) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
-        // other sales: like an order — choose Screen protector, price, payment, Add
+        // other sales: press "Add sale" → pop-up → Screen protector, price, payment → Save
+        document.getElementById('dcOpenItem').click();
+        out.itemModal = document.getElementById('dcItemModal').classList.contains('show');
         document.querySelector('[data-preset="Screen protector"]').click();
         const am = document.getElementById('dcItemAmt'); am.value = '10000'; am.dispatchEvent(new Event('input', {bubbles:true}));
         document.querySelector('[data-dpay="cash"]').click(); document.getElementById('dcItemAdd').click();
         await new Promise(r=>setTimeout(r, 30));
-        out.itemForm = [dcLoad(day).items.length, document.getElementById('dcItemAmt').value, document.getElementById('dcItemName').value, !!document.querySelector('.dc-order.item')];
-        // typed by hand, paid by card / free; an item without a price isn't added
+        out.itemForm = [dcLoad(day).items.length, document.getElementById('dcItemModal').classList.contains('show'), !!document.querySelector('.dc-order.item')];
+        // typed by hand and free; no price (not free) isn't saved and the pop-up stays open
+        document.getElementById('dcOpenItem').click();
         const nm = document.getElementById('dcItemName'); nm.value = 'Phone case'; nm.dispatchEvent(new Event('input', {bubbles:true}));
         document.querySelector('[data-dpay="free"]').click(); document.getElementById('dcItemAdd').click(); await new Promise(r=>setTimeout(r, 30));
-        document.querySelector('[data-dpay="card"]').click(); document.getElementById('dcItemAmt').value=''; document.getElementById('dcItemAdd').click();
+        document.getElementById('dcOpenItem').click(); document.querySelector('[data-dpay="card"]').click(); document.getElementById('dcItemAdd').click();
+        out.stayOpen = document.getElementById('dcItemModal').classList.contains('show'); closeAllModals();
         out.itemForm2 = dcLoad(day).items.map(it=>[it.name, it.amount, it.pay]);
         { const d0 = dcLoad(day); d0.items = d0.items.slice(0,1); dcStore(day, d0); renderDailyClosing(); }
-        const addTop = (who, amt) => { document.querySelector('[data-draft-who="'+who+'"]').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
+        const addTop = (who, amt) => { document.getElementById('dcOpenTop').click(); document.querySelector('[data-draft-who="'+who+'"]').click(); const el = document.getElementById('dcTopAmt'); el.value = amt; el.dispatchEvent(new Event('input', {bubbles:true})); document.getElementById('dcTopAdd').click(); };
         addTop('Jason', '30000'); await new Promise(r=>setTimeout(r, 30));
-        out.formCleared = document.getElementById('dcTopAmt').value === '' && document.querySelector('[data-draft-who="Jason"]').classList.contains('on');
+        out.formCleared = !document.getElementById('dcTopModal').classList.contains('show') && !!document.querySelector('.dc-order [data-repaid="0"]');
         document.querySelector('[data-repaid="0"]').click();
         await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
@@ -403,8 +407,8 @@ def run(b):
         // store money top-up comes out of the drawer straight away; Jihan's not paid back yet is "owed"
         addTop('Store', '5000'); await new Promise(r=>setTimeout(r, 30));
         addTop('Jihan', '7000'); await new Promise(r=>setTimeout(r, 30));
-        const nBefore = dcLoad(day).topups.length; document.getElementById('dcTopAmt').value=''; document.getElementById('dcTopAdd').click();
-        out.noEmpty = dcLoad(day).topups.length === nBefore;
+        const nBefore = dcLoad(day).topups.length; document.getElementById('dcOpenTop').click(); document.getElementById('dcTopAdd').click();
+        out.noEmpty = dcLoad(day).topups.length === nBefore && document.getElementById('dcTopModal').classList.contains('show'); closeAllModals();
         // yesterday's count is today's starting drawer: yesterday 36,000, today 72,000 counted
         const y = addDaysISO(day, -1), t = day;
         DB.reminderState['daily:'+y] = JSON.stringify({items:[], topups:[], deposit:0, counted:36000, note:''});
@@ -438,13 +442,13 @@ def run(b):
     check("top-ups by Jason / Jihan / Store money: store money leaves the drawer, unpaid staff top-ups show as owed",
           dc["who"] == [5000, 7000, 10000, ["Jason", "Store", "Jihan"]] and dc["short"], dc["who"])
     check("yesterday's count (36,000) is today's start; counted 72,000 shows the drawer went up +36,000, compared with today's cash", dc["yday"] == [36000, True, 36000, True] and dc["compare"], [dc["yday"], dc["compare"]])
-    check("other sales work like an order: pick Screen protector, price, payment, Add; form keeps the item, clears the price",
-          dc["itemForm"] == [1, "", "Screen protector", True], dc["itemForm"])
+    check("other sales: Add sale opens a pop-up; Screen protector, price, payment, Save closes it and the sale is listed",
+          dc["itemModal"] and dc["itemForm"] == [1, False, True], [dc["itemModal"], dc["itemForm"]])
     check("an item can be typed by hand and given free; no price means it isn't added",
-          dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]], dc["itemForm2"])
+          dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
     check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
-    check("top-up works like an order: pick who, type amount, Add; form clears and keeps the person; empty amount isn't added", dc["formCleared"] and dc["noEmpty"], dc)
+    check("top-up: Add top-up opens a pop-up; who + amount + Save closes it and lists it; empty amount isn't saved", dc["formCleared"] and dc["noEmpty"], dc)
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 
