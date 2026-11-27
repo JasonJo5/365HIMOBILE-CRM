@@ -1510,3 +1510,53 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 .dc-compare b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin:2px 0}
 .dc-compare small{font-size:11.5px;color:var(--text-soft)}
 .dc-compare .vs{font-size:12px;font-weight:800;color:var(--text-soft)}
+
+/* ---------------- Daily closing: month card polish ---------------- */
+.dc-month{padding:20px 22px}
+.dc-mhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.dc-mnav{display:flex;gap:6px}
+.dc-mnav .btn{width:34px;padding:0;justify-content:center;font-size:16px}
+.dc-mtiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.dc-mtile{border:1px solid var(--border);border-radius:12px;padding:10px 12px;min-width:0}
+.dc-mtile span{display:block;font-size:11.5px;font-weight:600;color:var(--text-soft)}
+.dc-mtile b{display:block;font-size:16px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc-mtile.main{background:var(--blue);border-color:var(--blue)}
+.dc-mtile.main span{color:rgba(255,255,255,.8)}.dc-mtile.main b{color:#fff}
+.dc-table-wrap{overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:12px}
+.dc-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;font-variant-numeric:tabular-nums}
+.dc-table th{position:sticky;top:0;z-index:1;background:var(--card);font-size:11.5px;font-weight:700;color:var(--text-soft);text-transform:none;letter-spacing:0;padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.dc-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.dc-table th.date,.dc-table td.date{text-align:left;font-weight:700;color:var(--text)}
+.dc-table th.n,.dc-table td.n{text-align:center}
+.dc-table .g-money{border-left:1px solid var(--border)}
+.dc-table .g-sum{font-weight:700}
+.dc-table td.inc{font-weight:800;color:var(--blue)}
+.dc-table th.inc{color:var(--blue)}
+.dc-table .z{color:var(--border);font-weight:400}
+.dc-cnt{display:inline-block;min-width:24px;padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.09);color:var(--blue);font-weight:700;font-size:12.5px}
+.dc-table td:nth-child(3) .dc-cnt{background:rgba(234,88,12,.1);color:#c2410c}
+.dc-table td:nth-child(4) .dc-cnt{background:rgba(124,58,237,.1);color:#7c3aed}
+.dc-unpaid{color:#c2410c;font-weight:700}
+.dc-table tbody tr{cursor:pointer;transition:background .15s}
+.dc-table tbody tr:hover td{background:rgba(37,99,235,.04)}
+.dc-table tbody tr:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.dc-table tbody tr.on td{background:rgba(37,99,235,.08)}
+.dc-table tbody tr.on td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+.dc-table tbody tr:last-child td{border-bottom:0}
+.dc-table tfoot td{position:sticky;bottom:0;background:var(--card);font-weight:800;border-top:2px solid var(--border);border-bottom:0}
+.dc-none{text-align:center!important;color:var(--text-soft);padding:24px!important}
+@media (max-width:1100px){.dc-mtiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:620px){.dc-mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------------- Daily closing: general polish ---------------- */
+.dc-toolbar{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+.dc-datebar .btn-sm{min-width:34px;justify-content:center}
+.dc-step{border-radius:16px;transition:box-shadow .2s}
+.dc-step:focus-within{box-shadow:0 0 0 3px rgba(37,99,235,.10),var(--shadow)}
+.dc-chip{border-radius:12px;padding:10px 6px;transition:transform .15s}
+.dc-chip b{font-size:22px;font-weight:800}
+.dc-chip:not(.total):not(.rc) b{color:var(--text)}
+.dc-sum{border-radius:16px}
+.dc-line,.dc-addform,.dc-orders,.dc-calc{border-radius:14px}
+.dc-order{transition:background .15s}
+.dc-order:hover{background:rgba(15,118,110,.04)}

@@ -9260,19 +9260,45 @@ function dcMonthRows(month){
 function renderDailyMonth(){
   const zh = LANG==='zh', month = dcDay.slice(0,7), rows = dcMonthRows(month);
   const tot = k=> rows.reduce((x,r)=> x + (Number(k(r))||0), 0);
-  // only the money columns staff check every day
+  // every day with a sign-up, a recharge or any money — including sales not paid yet
+  const shown = rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preCount || r.a.postN || r.c.o.total || r.c.o.freeQty || r.a.unpaidN);
+  const anyUnpaid = rows.some(r=> r.a.unpaidN);
   const cols = [
-    [zh?'日期':'Date', r=> shortDay(r.day), null],
-    [zh?'现金':'Cash', r=>r.a.cash, 'w'], [zh?'转账':'Transfer', r=>r.a.transfer, 'w'], [zh?'刷卡':'Card', r=>r.a.card, 'w'],
-    [zh?'先付合计':'Prepaid', r=>r.a.preTotal, 'w'], [zh?'后付':'Postpaid', r=>r.a.postAmt, 'w'],
-    [zh?'其他（贴膜等）':'Other (screen protector…)', r=>r.c.o.total, 'w'], [zh?'当日收入总':'Income', r=>r.c.income, 'w'],
+    {h: zh?'日期':'Date', v: r=> shortDay(r.day), k:'date'},
+    {h: zh?'先付':'Plans', v: r=> r.a.preCount - r.a.rc, k:'n', t: zh?'先付（不含充值）':'Prepaid sign-ups (not recharges)'},
+    {h: zh?'充值':'Recharge', v: r=> r.a.rc, k:'n'},
+    {h: zh?'后付':'Postpaid', v: r=> r.a.postN, k:'n', t: zh?'后付卡数量':'Postpaid lines'},
+    {h: zh?'现金':'Cash', v: r=> r.a.cash, k:'w', grp:'money'},
+    {h: zh?'转账':'Transfer', v: r=> r.a.transfer, k:'w'},
+    {h: zh?'刷卡':'Card', v: r=> r.a.card, k:'w'},
+    {h: zh?'先付合计':'Prepaid ₩', v: r=> r.a.preTotal, k:'w', grp:'sum'},
+    {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
+    {h: zh?'其他':'Other', v: r=> r.c.o.total, k:'w', t: zh?'贴膜等':'Screen protectors etc.'},
+    ...(anyUnpaid ? [{h: zh?'未付款':'Not paid', v: r=> r.a.unpaidAmt, k:'u', t: zh?'还没付款 / 没选付款方式 — 不算在收入里':'Not paid yet / no payment method — not in the income'}] : []),
+    {h: zh?'收入':'Income', v: r=> r.c.income, k:'w', cls:'inc'},
   ];
-  const fmt = (v, k)=> k==='w' ? (v ? fmtWon(v) : '—') : k==='y' ? (v ? dcFmtY(v) : '—') : (k==='n' ? (v || '—') : v);
+  const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
+    : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
+    : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
+  const sumTiles = [
+    [zh?'本月收入':'Month income', fmtWon(tot(r=>r.c.income)), 'main'],
+    [zh?'现金':'Cash', fmtWon(tot(r=>r.a.cash))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.a.transfer))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.a.card))],
+    [zh?'先付 / 充值':'Plans / recharge', `${tot(r=>r.a.preCount - r.a.rc)} / ${tot(r=>r.a.rc)}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
+  ];
+  const [yy, mm] = month.split('-').map(Number);
+  const monthName = new Date(yy, mm-1, 1).toLocaleDateString(zh?'zh-CN':'en-US', {year:'numeric', month:'long'});
   document.getElementById('dcMonthCard').innerHTML = `
-    <div class="dc-h"><div class="section-title">${zh?`${month} 每日汇总`:`${month} day by day`}</div><div class="muted dc-sub">${zh?'只列出有记录的日子 · 点一行打开那一天':'Days with activity · click a row to open that day'}</div></div>
-    <div class="dc-table-wrap"><table class="dc-table"><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead>
-    <tbody>${rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preTotal || r.a.postAmt || r.c.o.total ).map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}">${cols.map(c=>`<td>${fmt(c[1](r), c[2])}</td>`).join('')}</tr>`).join('')}</tbody>
-    <tfoot><tr>${cols.map((c,i)=>`<td>${i===0 ? (zh?'本月合计':'Month total') : fmt(tot(c[1]), c[2])}</td>`).join('')}</tr></tfoot></table></div>`;
+    <div class="dc-mhead">
+      <div><div class="dc-step-t">${monthName}</div><div class="dc-step-s">${zh?'点一行就能打开那一天':'Tap a row to open that day'}</div></div>
+      <div class="dc-mnav"><button type="button" class="btn btn-ghost btn-sm" data-dc-month="-1" aria-label="Previous month">‹</button><button type="button" class="btn btn-ghost btn-sm" data-dc-month="1" aria-label="Next month">›</button></div>
+    </div>
+    <div class="dc-mtiles">${sumTiles.map(([l,v,c2])=>`<div class="dc-mtile ${c2||''}"><span>${l}</span><b>${v}</b></div>`).join('')}</div>
+    <div class="dc-table-wrap"><table class="dc-table">
+      <thead><tr>${cols.map(c2=>`<th class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}" ${c2.t?`title="${escapeHtml(c2.t)}"`:''}>${c2.h}</th>`).join('')}</tr></thead>
+      <tbody>${shown.map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}" tabindex="0">${cols.map(c2=>`<td class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}">${cell(c2.v(r), c2.k)}</td>`).join('')}</tr>`).join('')
+        || `<tr><td colspan="${cols.length}" class="dc-none">${zh?'这个月还没有记录':'Nothing this month yet'}</td></tr>`}</tbody>
+      <tfoot><tr>${cols.map((c2,i)=>`<td class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}">${i===0 ? (zh?'合计':'Total') : cell(tot(c2.v), c2.k)}</td>`).join('')}</tr></tfoot>
+    </table></div>`;
 }
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
 function exportDailyMonth(){
@@ -9333,6 +9359,13 @@ function exportDailyMonth(){
       : key.t!=null ? page.querySelector(`[data-t="${key.t}"] [data-f="${key.f}"]`) : null;
     if(el){ el.focus(); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0], sel[1]); }catch(_){} }
   }
+  // re-draw without the page jumping: the month table stays exactly where it was on screen
+  function dcKeepMonthInView(fn){
+    const card = document.getElementById('dcMonthCard'), before = card.getBoundingClientRect().top;
+    fn();
+    const after = document.getElementById('dcMonthCard').getBoundingClientRect().top;
+    window.scrollBy(0, after - before);
+  }
   // the top-up form: remember what's typed (no saving until Add); Enter adds it
   function dcAddTopup(){
     const amt = Number(document.getElementById('dcTopAmt').value)||0;
@@ -9348,12 +9381,24 @@ function exportDailyMonth(){
     if(e.target.id==='dcTopAmt'){ dcTopDraft.amount = e.target.value; return; }
     if(e.target.id==='dcTopNote'){ dcTopDraft.note = e.target.value; return; }
   });
-  page.addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.target.id==='dcTopAmt' || e.target.id==='dcTopNote')){ e.preventDefault(); dcAddTopup(); } });
+  page.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && (e.target.id==='dcTopAmt' || e.target.id==='dcTopNote')){ e.preventDefault(); dcAddTopup(); }
+    if(e.key==='Enter' && e.target.matches && e.target.matches('tr[data-dc-day]')){ e.preventDefault(); e.target.click(); }
+  });
   page.addEventListener('input', e=> edit(e, false));
   page.addEventListener('change', e=> edit(e, true));
   page.addEventListener('click', e=>{
     const t2 = e.target;
-    const row = t2.closest('[data-dc-day]'); if(row){ go(row.dataset.dcDay); window.scrollTo({top:0, behavior:'smooth'}); return; }
+    const mn = t2.closest('[data-dc-month]'); if(mn){
+      const [y2, m2] = dcDay.slice(0,7).split('-').map(Number), dt = new Date(y2, m2-1+Number(mn.dataset.dcMonth), 1);
+      const first = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-01`;
+      if(first > todayISO()) return;
+      const last = new Date(dt.getFullYear(), dt.getMonth()+1, 0); let target = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(last.getDate()).padStart(2,'0')}`;
+      if(target > todayISO()) target = todayISO();
+      dcKeepMonthInView(()=> go(target)); return;
+    }
+    // open that day but stay where you are on the page
+    const row = t2.closest('[data-dc-day]'); if(row){ dcKeepMonthInView(()=> go(row.dataset.dcDay)); return; }
     const d = dcLoad(dcDay), zh = LANG==='zh';
     if(t2.closest('[data-add-item]')){
       const sp = t2.closest('[data-add-item]').dataset.addItem==='sp';

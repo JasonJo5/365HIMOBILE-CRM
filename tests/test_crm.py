@@ -414,6 +414,12 @@ def run(b):
         document.getElementById('dcExport').click(); window.XLSX = keepX;
         const sh = books[0] && books[0][1][0][1];
         out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
+        // a day with only unpaid 1-month plans (like Nov 13) still shows in the month table, with plans and 'Not paid'
+        const d3 = addDaysISO(day, -3); add(cs[0], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3}); add(cs[1], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3});
+        renderDailyClosing(); const r3 = document.querySelector('[data-dc-day="'+d3+'"]');
+        out.unpaidDay = !!r3 && /Not paid/.test(document.querySelector('#dcMonthCard thead').textContent) && /60,000/.test(r3.textContent);
+        window.scrollTo(0, document.body.scrollHeight); const y0 = window.scrollY; r3.click();
+        out.noJump = dcDay===d3 && (y0===0 || window.scrollY > 0);
         DB.services = DB.services.filter(s=>!ids.includes(s.id)); delete DB.reminderState['daily:'+day]; goTo('dashboard');
         return out; })()""")
     check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
@@ -423,6 +429,8 @@ def run(b):
     check("top-ups by Jason / Jihan / Store money: store money leaves the drawer, unpaid staff top-ups show as owed",
           dc["who"] == [5000, 7000, 10000, ["Jason", "Store", "Jihan"]] and dc["short"], dc["who"])
     check("yesterday's count (36,000) is today's start; counted 72,000 shows the drawer went up +36,000, compared with today's cash", dc["yday"] == [36000, True, 36000, True] and dc["compare"], [dc["yday"], dc["compare"]])
+    check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
+    check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
     check("top-up works like an order: pick who, type amount, Add; form clears and keeps the person; empty amount isn't added", dc["formCleared"] and dc["noEmpty"], dc)
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
