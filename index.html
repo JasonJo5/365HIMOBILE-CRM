@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261127d">
+<link rel="stylesheet" href="style.css?v=20261127h">
 </head>
 <body>
 
@@ -350,14 +350,9 @@
             <button class="btn btn-ghost" id="dcExport"></button>
           </div>
         </div>
-        <div class="dc-kpis" id="dcKpis"></div>
-        <div class="dc-grid">
-          <div class="card" id="dcAutoCard"></div>
-          <div class="dc-col">
-            <div class="card" id="dcOtherCard"></div>
-            <div class="card" id="dcTopupCard"></div>
-            <div class="card" id="dcCashCard"></div>
-          </div>
+        <div class="dc-layout">
+          <div class="dc-flow"><div id="dcAutoCard"></div></div>
+          <aside class="dc-aside" id="dcKpis"></aside>
         </div>
         <div class="card dc-month" id="dcMonthCard"></div>
       </section>
@@ -1146,6 +1141,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261127d"></script>
+<script src="script.js?v=20261127h"></script>
 </body>
 </html>

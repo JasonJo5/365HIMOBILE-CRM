@@ -1399,3 +1399,83 @@ html[data-theme="dark"] .plan-tag.post{background:rgba(124,58,237,.2);color:#C4B
 @media (max-width:620px){.dc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-item,.dc-item.dc-top{grid-template-columns:1fr 1fr}.dc-item-head{display:none}}
 .dc-table td,.dc-table th{height:auto;line-height:1.3}
 .dc-table tbody td{padding:6px 8px}
+/* month table: fewer columns — Income stands out */
+.dc-table th:last-child,.dc-table td:last-child{font-weight:800;color:var(--blue)}
+.dc-table{font-size:13.5px}
+
+/* ---------------- Daily closing v2: steps on the left, live summary on the right ---------------- */
+.dc-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start;margin-bottom:18px}
+.dc-flow #dcAutoCard{display:flex;flex-direction:column;gap:14px}
+.dc-aside{position:sticky;top:16px}
+.dc-step{padding:18px 20px}
+.dc-step-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.dc-num{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:rgba(37,99,235,.1);color:var(--blue)}
+.dc-step.done .dc-num{background:rgba(22,163,74,.14);color:#15803d}
+.dc-step-t{font-weight:800;font-size:15px}
+.dc-step-s{font-size:12.5px;color:var(--text-soft);margin-top:2px}
+.dc-chips{grid-template-columns:repeat(6,minmax(0,1fr))}
+.dc-mini{font-size:12.5px;color:var(--text-soft);margin-top:10px}
+.dc-mini b{color:var(--text)}
+.dc-list{display:flex;flex-direction:column;gap:8px}
+.dc-line{display:grid;grid-template-columns:minmax(120px,1.3fr) auto minmax(110px,.9fr) auto 28px;gap:8px;align-items:center;padding:8px;border:1px solid var(--border);border-radius:12px;background:var(--bg,transparent)}
+.dc-line.top{grid-template-columns:auto minmax(110px,.9fr) minmax(120px,1.2fr) auto 28px}
+.dc-qty{display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.dc-qty button{border:0;background:none;width:28px;height:32px;font-size:16px;cursor:pointer;color:var(--text)}
+.dc-qty button:hover{background:rgba(37,99,235,.08)}
+.dc-qty input{width:40px;border:0;border-radius:0;text-align:center;padding:6px 2px;-moz-appearance:textfield}
+.dc-qty input::-webkit-inner-spin-button,.dc-money input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.dc-money{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:0 8px;background:var(--card)}
+.dc-money:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.dc-money>span{color:var(--text-soft);font-size:13px}
+.dc-money input{border:0;padding:7px 0;text-align:right;box-shadow:none!important;-moz-appearance:textfield;background:transparent}
+.dc-money input:disabled{opacity:.45}
+.dc-money.big{max-width:260px}
+.dc-money.big input{font-size:22px;font-weight:800;padding:8px 0}
+.dc-seg{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--card)}
+.dc-seg button{border:0;background:none;padding:7px 10px;font-size:12.5px;font-weight:600;color:var(--text-soft);cursor:pointer;white-space:nowrap}
+.dc-seg button+button{border-left:1px solid var(--border)}
+.dc-seg button.on{background:var(--blue);color:#fff}
+.dc-seg.who button.on{background:#0f766e}
+.dc-paid{border:1px dashed var(--border);background:none;border-radius:8px;padding:7px 10px;font-size:12.5px;font-weight:700;color:#c2410c;cursor:pointer;white-space:nowrap}
+.dc-paid.on{border-style:solid;border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.1);color:#15803d}
+.dc-paid.na{cursor:default;color:var(--text-soft);font-weight:600;border-style:solid}
+.dc-empty{font-size:13px;color:var(--text-soft);padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center}
+.dc-adds{align-items:center}
+.dc-adds-total{margin-left:auto;font-size:13px}
+.dc-calc{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.dc-calc>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;font-size:13.5px}
+.dc-calc>div+div{border-top:1px solid var(--border)}
+.dc-calc b{font-variant-numeric:tabular-nums}
+.dc-calc .in .dc-money{width:170px}
+.dc-calc .eq{background:rgba(37,99,235,.06);font-weight:800}
+.dc-calc .eq b{color:var(--blue);font-size:16px}
+.dc-count{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;font-weight:700;font-size:14px;flex-wrap:wrap}
+.dc-cash-state{margin-top:12px;border-radius:12px;padding:11px 14px;font-weight:800;text-align:center;font-size:14.5px}
+.dc-cash-state.wait{background:rgba(148,163,184,.14);color:var(--text-soft)}
+.dc-cash-state.ok{background:rgba(22,163,74,.12);color:#15803d}
+.dc-cash-state.bad{background:rgba(220,38,38,.1);color:#dc2626}
+/* summary card */
+.dc-sum{padding:20px}
+.dc-sum-l{font-size:12.5px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em}
+.dc-sum-v{font-size:32px;font-weight:900;color:var(--blue);margin:4px 0 12px;font-variant-numeric:tabular-nums}
+.dc-sum-rows>div{display:flex;justify-content:space-between;gap:8px;padding:6px 0;font-size:14px}
+.dc-sum-rows>div b{font-variant-numeric:tabular-nums}
+.dc-sum-rows>div.sub{border-top:1px dashed var(--border);font-size:13px}
+.dc-sum-rows>div.sub:first-of-type{margin-top:4px}
+.dc-sum-rows .dcdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.dcdot.dc-cash{background:#16a34a}.dcdot.dc-tf{background:#7c3aed}.dcdot.dc-card{background:#2563eb}
+.dc-sum-cash{display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-weight:700}
+.dc-sum-cash b{font-size:18px}
+.dc-alert{margin-top:10px;padding:9px 11px;border-radius:10px;background:rgba(234,88,12,.1);color:#c2410c;font-size:12.5px;font-weight:600}
+.dc-alert.soft{background:rgba(234,179,8,.12);color:#a16207}
+.dc-datebar #dcToday.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+@media (max-width:1100px){.dc-layout{grid-template-columns:1fr}.dc-aside{position:static;order:-1}}
+@media (max-width:720px){.dc-line,.dc-line.top{grid-template-columns:1fr 1fr}.dc-line .dc-name{grid-column:1/-1}.dc-chips{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.dc-money.big input::placeholder{font-size:14px;font-weight:600}
+@media (max-width:720px){
+  .dc-line .dc-seg{grid-column:1/-1;order:-1}
+  .dc-line .dc-seg button{flex:1;padding:8px 4px}
+  .dc-line .dc-paid{grid-column:1/2}
+  .dc-adds-total{width:100%;text-align:right}
+}

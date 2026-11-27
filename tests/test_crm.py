@@ -379,20 +379,23 @@ def run(b):
         out.auto = [a.d90, a.d60, a.d30, a.d15, a.preCount, a.cash, a.transfer, a.card, a.preTotal, a.rmb, a.unpaidN, a.postN, a.postAmt, a.rc36];
         const ev = (el, v, type) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
         document.querySelector('[data-add-item="sp"]').click();
-        ev(document.querySelector('#dcOtherCard [data-i="0"] [data-f="amount"]'), '10000');
+        ev(document.querySelector('[data-i="0"] [data-f="amount"]'), '10000');
         await new Promise(r=>setTimeout(r, 30));
-        document.querySelector('[data-add-top]').click();
-        ev(document.querySelector('#dcTopupCard [data-t="0"] [data-f="staff"]'), 'Jason');
+        document.querySelector('[data-add-top="Jason"]').click();
+        ev(document.querySelector('[data-t="0"] [data-f="amount"]'), '30000');
         await new Promise(r=>setTimeout(r, 30));
-        ev(document.querySelector('#dcTopupCard [data-t="0"] [data-f="amount"]'), '30000');
-        await new Promise(r=>setTimeout(r, 30));
-        const cb = document.querySelector('#dcTopupCard [data-t="0"] [data-f="repaid"]'); cb.checked = true; cb.dispatchEvent(new Event('change', {bubbles:true}));
+        document.querySelector('[data-repaid="0"]').click();
         await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcCounted'), '15000'); await new Promise(r=>setTimeout(r, 30));
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
-        out.kpiOk = !!document.querySelector('.dc-kpi.ok');
+        out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
+        // store money top-up comes out of the drawer straight away; Jihan's not paid back yet is "owed"
+        document.querySelector('[data-add-top="Store"]').click(); ev(document.querySelector('[data-t="1"] [data-f="amount"]'), '5000'); await new Promise(r=>setTimeout(r, 30));
+        document.querySelector('[data-add-top="Jihan"]').click(); ev(document.querySelector('[data-t="2"] [data-f="amount"]'), '7000'); await new Promise(r=>setTimeout(r, 30));
+        const c2 = dcCalc(day, dcLoad(day)); out.who = [c2.topStore, c2.topOwed, c2.cashExpected, dcLoad(day).topups.map(dcWho)];
+        out.short = /Over by ₩5,000/.test(document.querySelector('.dc-cash-state').textContent);
         out.stored = !!DB.reminderState['daily:'+day];
         out.untouched = DB.services.length===nSvc && DB.customers.length===nCust;
         out.monthRow = !!document.querySelector('[data-dc-day="'+day+'"]');
@@ -407,6 +410,8 @@ def run(b):
           dc["auto"] == [1, 1, 2, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
     check("screen protector, staff top-up paid back, deposit: cash in drawer 55,000+10,000-30,000-20,000 = 15,000 and it matches",
           dc["calc"] == [1, 10000, 30000, 30000, 15000, 0, 221000] and dc["kpiOk"], dc["calc"])
+    check("top-ups by Jason / Jihan / Store money: store money leaves the drawer, unpaid staff top-ups show as owed",
+          dc["who"] == [5000, 7000, 10000, ["Jason", "Store", "Jihan"]] and dc["short"], dc["who"])
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 

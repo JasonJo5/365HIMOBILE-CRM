@@ -9082,6 +9082,10 @@ function dcAuto(day){
   a.preTotal = a.cash + a.transfer + a.card;   // ₩ only — RMB is kept separately
   return a;
 }
+/* Top-ups are paid in advance by Jason, Jihan, or with store money (cash from the drawer).
+   Jason's and Jihan's are paid back by the company — from the drawer once ticked "Paid back". */
+const DC_PEOPLE = ['Jason','Jihan','Store'];
+function dcWho(t){ const w = t.who || t.staff || ''; return DC_PEOPLE.find(p=> p.toLowerCase()===String(w).trim().toLowerCase()) || (w ? w : 'Jason'); }
 function dcCalc(day, d){
   const a = dcAuto(day);
   const o = {cash:0, transfer:0, card:0, rmb:0, freeQty:0, total:0, spQty:0, spCharged:0, spFree:0};
@@ -9092,12 +9096,17 @@ function dcCalc(day, d){
     else { o[pay] += amt; if(pay!=='rmb') o.total += amt; if(isSp) o.spCharged += amt; }
     if(isSp) o.spQty += qty;
   });
-  const topAll = d.topups.reduce((x,t)=> x + (Number(t.amount)||0), 0);
-  const topPaid = d.topups.filter(t=>t.repaid).reduce((x,t)=> x + (Number(t.amount)||0), 0);
+  const amt = t=> Number(t.amount)||0;
+  const topAll = d.topups.reduce((x,t)=> x + amt(t), 0);
+  const topStore = d.topups.filter(t=> dcWho(t)==='Store').reduce((x,t)=> x + amt(t), 0);
+  const staffTops = d.topups.filter(t=> dcWho(t)!=='Store');
+  const topPaid = staffTops.filter(t=>t.repaid).reduce((x,t)=> x + amt(t), 0);
+  const topOwed = staffTops.filter(t=>!t.repaid).reduce((x,t)=> x + amt(t), 0);
   const income = a.preTotal + a.postAmt + o.total;
-  const cashExpected = a.cash + o.cash - topPaid - (Number(d.deposit)||0);
+  const drawerOut = topPaid + topStore;
+  const cashExpected = a.cash + o.cash - drawerOut - (Number(d.deposit)||0);
   const counted = d.counted==='' || d.counted==null ? null : Number(d.counted)||0;
-  return {a, o, topAll, topPaid, topOwed: topAll - topPaid, income, cashExpected, counted, diff: counted==null ? null : counted - cashExpected};
+  return {a, o, topAll, topPaid, topStore, topOwed, drawerOut, income, cashExpected, counted, diff: counted==null ? null : counted - cashExpected};
 }
 function dcFmtY(n){ n = Math.round((Number(n)||0)*100)/100; return '¥'+n.toLocaleString('en-US'); }
 function renderDailyClosing(){
@@ -9105,84 +9114,109 @@ function renderDailyClosing(){
   if(!dcDay || !isIsoDate(dcDay)) dcDay = todayISO();
   document.getElementById('dcDate').value = dcDay;
   document.getElementById('dcToday').textContent = zh ? '今天' : 'Today';
+  document.getElementById('dcToday').classList.toggle('on', dcDay===todayISO());
   document.getElementById('dcExport').textContent = zh ? '导出本月 Excel' : 'Export month to Excel';
   document.getElementById('dcSaved').textContent = '';
   const d = dcLoad(dcDay), c = dcCalc(dcDay, d), a = c.a;
-  // KPIs
-  const kpi = (lab, val, sub, cls)=> `<div class="dc-kpi ${cls||''}"><div class="dc-kpi-l">${lab}</div><div class="dc-kpi-v">${val}</div>${sub?`<div class="dc-kpi-s">${sub}</div>`:''}</div>`;
-  document.getElementById('dcKpis').innerHTML =
-      kpi(zh?'当日先付合计':'Prepaid total', fmtWon(a.preTotal), zh?`${a.preCount} 笔先付`:`${a.preCount} prepaid`)
-    + kpi(zh?'后付卡总金额':'Postpaid total', fmtWon(a.postAmt), zh?`${a.postN} 张后付卡`:`${a.postN} postpaid`)
-    + kpi(zh?'其他销售':'Other sales', fmtWon(c.o.total), zh?`贴膜 ${c.o.spQty} 张`:`${c.o.spQty} screen protector${c.o.spQty===1?'':'s'}`)
-    + kpi(zh?'当日收入总':'Day income total', fmtWon(c.income), zh?'先付 + 后付 + 其他':'prepaid + postpaid + other', 'main')
-    + kpi(zh?'人民币金额':'RMB (Alipay/WeChat)', dcFmtY(a.rmb + c.o.rmb), zh?'单独计算，不换算':'kept separate, not converted')
-    + kpi(zh?'抽屉应有现金':'Cash in drawer', fmtWon(c.cashExpected), c.diff==null ? (zh?'下面输入点钞结果':'count it below') : (c.diff===0 ? (zh?'✓ 对上了':'✓ matches') : (zh?`差额 ${c.diff>0?'+':''}${fmtWon(c.diff)}`:`difference ${c.diff>0?'+':''}${fmtWon(c.diff)}`)), c.diff==null ? '' : (c.diff===0 ? 'ok' : 'bad'));
-  // automatic card
-  const row = (l, v, cls)=> `<div class="dc-row ${cls||''}"><span>${l}</span><b>${v}</b></div>`;
-  document.getElementById('dcAutoCard').innerHTML = `
-    <div class="dc-h"><div><div class="section-title">${zh?'来自 CRM（自动）':'From the CRM (automatic)'}</div>
-      <div class="muted dc-sub">${zh?'按当天的开通日期统计 — 改客户资料会自动更新':'Counted from plans activated on this day — updates by itself when plans change'}</div></div></div>
-    <div class="dc-sec">${zh?'先付办理数量':'Prepaid sign-ups'}</div>
+  const W = n=> fmtWon(n);
+  const step = (n, title, sub, body, done)=> `<div class="card dc-step ${done?'done':''}">
+      <div class="dc-step-h"><span class="dc-num">${done ? '✓' : n}</span><div><div class="dc-step-t">${title}</div>${sub?`<div class="dc-step-s">${sub}</div>`:''}</div></div>${body}</div>`;
+  const payName = k=> ({cash:zh?'现金':'Cash', card:zh?'刷卡':'Card', transfer:zh?'转账':'Transfer', rmb:zh?'人民币':'RMB', free:zh?'免费':'Free'})[k];
+  const whoName = w=> w==='Store' ? (zh?'店里的钱':'Store money') : w;
+
+  // ---- summary (right side)
+  const cashState = c.diff==null ? `<div class="dc-cash-state wait">${zh?'还没点钞':'Not counted yet'}</div>`
+    : c.diff===0 ? `<div class="dc-cash-state ok">✓ ${zh?'现金对上了':'Cash matches'}</div>`
+    : `<div class="dc-cash-state bad">${c.diff>0 ? (zh?'多了 ':'Over by ') : (zh?'少了 ':'Short by ')}${W(Math.abs(c.diff))}</div>`;
+  document.getElementById('dcKpis').innerHTML = `
+    <div class="card dc-sum">
+      <div class="dc-sum-l">${zh?'当日收入总':'Today\'s income'}</div>
+      <div class="dc-sum-v">${W(c.income)}</div>
+      <div class="dc-sum-rows">
+        <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(a.cash)}</b></div>
+        <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(a.transfer)}</b></div>
+        <div><span><i class="dcdot dc-card"></i>${zh?'刷卡':'Card'}</span><b>${W(a.card)}</b></div>
+        <div class="sub"><span>${zh?'先付合计':'Prepaid'}</span><b>${W(a.preTotal)}</b></div>
+        <div class="sub"><span>${zh?'后付':'Postpaid'}</span><b>${W(a.postAmt)}</b></div>
+        <div class="sub"><span>${zh?'其他（贴膜等）':'Other (screen protector…)'}</span><b>${W(c.o.total)}</b></div>
+        ${(a.rmb + c.o.rmb) ? `<div class="sub muted"><span>${zh?'人民币（另计）':'RMB (separate)'}</span><b>${dcFmtY(a.rmb + c.o.rmb)}</b></div>` : ''}
+      </div>
+      ${a.unpaidN ? `<div class="dc-alert">${zh?`${a.unpaidN} 笔先付还没付款 / 没选付款方式（${W(a.unpaidAmt)}）— 不算在收入里`:`${a.unpaidN} prepaid sale${a.unpaidN===1?'':'s'} not paid yet / no method (${W(a.unpaidAmt)}) — not counted`}</div>` : ''}
+      <div class="dc-sum-cash"><span>${zh?'抽屉应有现金':'Cash in drawer'}</span><b>${W(c.cashExpected)}</b></div>
+      ${cashState}
+      ${c.topOwed ? `<div class="dc-alert soft">${zh?`还欠员工垫付 ${W(c.topOwed)}`:`Still owed to staff: ${W(c.topOwed)}`}</div>` : ''}
+    </div>`;
+
+  // ---- step 1: from the CRM
+  const s1 = `
     <div class="dc-chips">
       <div class="dc-chip"><b>${a.d90}</b><span>${zh?'90天':'90 days'}</span></div>
       <div class="dc-chip"><b>${a.d60}</b><span>${zh?'60天':'60 days'}</span></div>
       <div class="dc-chip"><b>${a.d30}</b><span>${zh?'30天':'30 days'}</span></div>
       <div class="dc-chip"><b>${a.d15}</b><span>${zh?'15天':'15 days'}</span></div>
-      <div class="dc-chip total"><b>${a.preCount}</b><span>${zh?'合计':'Total'}</span></div>
+      <div class="dc-chip"><b>${a.postN}</b><span>${zh?'后付':'Postpaid'}</span></div>
+      <div class="dc-chip total"><b>${a.preCount + a.postN}</b><span>${zh?'合计':'Total'}</span></div>
     </div>
-    <div class="dc-sec">${zh?'先付收款':'Prepaid money'}</div>
-    ${row(zh?'当日现金 (cash)':'Cash', fmtWon(a.cash))}
-    ${row(zh?'转账金额 (tf)':'Bank transfer', fmtWon(a.transfer))}
-    ${row(zh?'刷卡金额 (card)':'Card', fmtWon(a.card))}
-    ${row(zh?'当日先付合计':'Prepaid total', fmtWon(a.preTotal), 'sum')}
-    ${row(zh?'人民币金额 (支付宝/微信)':'RMB (Alipay / WeChat)', dcFmtY(a.rmb))}
-    ${a.unpaidN ? row(`<span class="dc-warn">${zh?`未付款 / 未选付款方式：${a.unpaidN} 笔`:`Not paid yet / no method: ${a.unpaidN}`}</span>`, fmtWon(a.unpaidAmt), 'warn') : ''}
-    <div class="dc-sec">${zh?'充值':'Recharge'}</div>
-    ${row(zh?'充值 36 / 36.3':'Recharge 36,000 / 36,300', a.rc36)}
-    ${row(zh?'其他充值':'Other recharge', a.rcOther)}
-    <div class="dc-sec">${zh?'后付':'Postpaid'}</div>
-    ${row(zh?'后付卡数量':'Postpaid count', a.postN)}
-    ${row(zh?'后付卡总金额（公司价格）':'Postpaid total (company price)', fmtWon(a.postAmt))}`;
-  // other sales
-  const payOpt = v=> DC_PAY.map(k=>`<option value="${k}" ${v===k?'selected':''}>${({cash:zh?'现金':'Cash', transfer:zh?'转账':'Transfer', card:zh?'刷卡':'Card', rmb:zh?'人民币':'RMB', free:zh?'免费/未收费':'Free / not charged'})[k]}</option>`).join('');
-  document.getElementById('dcOtherCard').innerHTML = `
-    <div class="dc-h"><div><div class="section-title">${zh?'其他销售（贴膜等）':'Other sales (screen protectors etc.)'}</div>
-      <div class="muted dc-sub">${zh?'只用于当天结算，不会进入客户记录':'Only for the daily count — never added to customer records'}</div></div></div>
-    <div class="dc-items">${d.items.length ? `<div class="dc-item dc-item-head"><span>${zh?'项目':'Item'}</span><span>${zh?'数量':'Qty'}</span><span>${zh?'金额 ₩':'Amount ₩'}</span><span>${zh?'付款':'Paid by'}</span><span></span></div>` : ''}
-      ${d.items.map((it,i)=>`<div class="dc-item" data-i="${i}">
-        <input class="dc-in" data-f="name" value="${escapeHtml(it.name||'')}" placeholder="${zh?'项目':'Item'}">
-        <input class="dc-in" data-f="qty" type="number" min="0" step="1" value="${escapeHtml(String(it.qty??1))}">
-        <input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(it.amount??''))}" placeholder="0">
-        <select class="dc-in" data-f="pay">${payOpt(it.pay||'cash')}</select>
-        <button class="dc-x" data-del-item="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button></div>`).join('') || `<div class="muted dc-empty">${zh?'今天还没有其他销售':'No other sales today yet'}</div>`}
+    <div class="dc-mini">${zh?`其中充值 36/36.3：<b>${a.rc36}</b> · 其他充值：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other recharges: <b>${a.rcOther}</b>`}</div>`;
+
+  // ---- step 2: other sales
+  const paySeg = (i, v)=> `<div class="dc-seg" data-seg-item="${i}">${['cash','card','transfer','free'].map(k=>`<button type="button" data-pay="${k}" class="${(v||'cash')===k?'on':''}">${payName(k)}</button>`).join('')}</div>`;
+  const s2 = `
+    <div class="dc-list">
+      ${d.items.map((it,i)=>`<div class="dc-line" data-i="${i}">
+        <input class="dc-in dc-name" data-f="name" value="${escapeHtml(it.name||'')}" placeholder="${zh?'卖了什么？':'What was sold?'}">
+        <div class="dc-qty"><button type="button" data-qty="-1" aria-label="Less">−</button><input class="dc-in" data-f="qty" type="number" min="0" step="1" value="${escapeHtml(String(it.qty??1))}"><button type="button" data-qty="1" aria-label="More">+</button></div>
+        <div class="dc-money"><span>₩</span><input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(it.amount??''))}" placeholder="0" ${it.pay==='free'?'disabled':''}></div>
+        ${paySeg(i, it.pay)}
+        <button class="dc-x" data-del-item="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button>
+      </div>`).join('') || `<div class="dc-empty">${zh?'今天没有其他销售 — 用下面的按钮添加':'Nothing yet — add one with the buttons below'}</div>`}
     </div>
-    <div class="dc-adds"><button class="btn btn-ghost btn-sm" data-add-item="sp">+ ${zh?'贴膜':'Screen protector'}</button><button class="btn btn-ghost btn-sm" data-add-item="other">+ ${zh?'其他项目':'Other item'}</button></div>
-    ${d.items.length ? `<div class="dc-foot">${zh?'合计':'Total'} <b>${fmtWon(c.o.total)}</b>${c.o.rmb?` · ${dcFmtY(c.o.rmb)}`:''}${c.o.freeQty?` · ${zh?'未收费':'not charged'} ${c.o.freeQty}`:''}</div>` : ''}`;
-  // staff top-ups
-  document.getElementById('dcTopupCard').innerHTML = `
-    <div class="dc-h"><div><div class="section-title">${zh?'员工垫付充值':'Staff top-ups'}</div>
-      <div class="muted dc-sub">${zh?'员工先用自己的钱充值，下班时公司还给他们':'Staff paid with their own money; the company pays them back at the end of the day'}</div></div></div>
-    <div class="dc-items">${d.topups.length ? `<div class="dc-item dc-top dc-item-head"><span>${zh?'员工':'Staff'}</span><span>${zh?'金额 ₩':'Amount ₩'}</span><span>${zh?'备注':'Note'}</span><span>${zh?'已还':'Paid back'}</span><span></span></div>` : ''}
-      ${d.topups.map((t2,i)=>`<div class="dc-item dc-top" data-t="${i}">
-        <input class="dc-in" data-f="staff" value="${escapeHtml(t2.staff||'')}" placeholder="${zh?'姓名':'Name'}">
-        <input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(t2.amount??''))}" placeholder="0">
-        <input class="dc-in" data-f="note" value="${escapeHtml(t2.note||'')}" placeholder="${zh?'例如客户号码':'e.g. customer number'}">
-        <label class="dc-chk"><input type="checkbox" data-f="repaid" ${t2.repaid?'checked':''}><span>${zh?'从抽屉还':'from drawer'}</span></label>
-        <button class="dc-x" data-del-top="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button></div>`).join('') || `<div class="muted dc-empty">${zh?'今天没有垫付':'No top-ups today'}</div>`}
+    <div class="dc-adds">
+      <button class="btn btn-primary btn-sm" data-add-item="sp">+ ${zh?'贴膜':'Screen protector'}</button>
+      <button class="btn btn-ghost btn-sm" data-add-item="other">+ ${zh?'其他':'Something else'}</button>
+      ${d.items.length ? `<span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.o.total)}</b>${c.o.freeQty?` · ${zh?'免费':'free'} ${c.o.freeQty}`:''}</span>` : ''}
+    </div>`;
+
+  // ---- step 3: top-ups
+  const whoSeg = (i, v)=> `<div class="dc-seg who" data-seg-top="${i}">${DC_PEOPLE.map(p=>`<button type="button" data-who="${p}" class="${v===p?'on':''}">${whoName(p)}</button>`).join('')}</div>`;
+  const s3 = `
+    <div class="dc-list">
+      ${d.topups.map((t2,i)=>{ const who = dcWho(t2), store = who==='Store'; return `<div class="dc-line top" data-t="${i}">
+        ${whoSeg(i, who)}
+        <div class="dc-money"><span>₩</span><input class="dc-in" data-f="amount" type="number" min="0" step="1000" value="${escapeHtml(String(t2.amount??''))}" placeholder="0"></div>
+        <input class="dc-in dc-name" data-f="note" value="${escapeHtml(t2.note||'')}" placeholder="${zh?'给谁充的（号码）':'For whom (number)'}">
+        ${store ? `<span class="dc-paid na">${zh?'从抽屉出':'from the drawer'}</span>`
+          : `<button type="button" class="dc-paid ${t2.repaid?'on':''}" data-repaid="${i}">${t2.repaid ? '✓ '+(zh?'已还':'Paid back') : (zh?'还没还':'Not paid back')}</button>`}
+        <button class="dc-x" data-del-top="${i}" title="${zh?'删除':'Remove'}" aria-label="Remove">×</button>
+      </div>`; }).join('') || `<div class="dc-empty">${zh?'今天没有垫付':'No top-ups today'}</div>`}
     </div>
-    <div class="dc-adds"><button class="btn btn-ghost btn-sm" data-add-top="1">+ ${zh?'垫付':'Top-up'}</button></div>
-    ${d.topups.length ? `<div class="dc-foot">${zh?'垫付合计':'Total'} <b>${fmtWon(c.topAll)}</b> · ${zh?'已还':'paid back'} ${fmtWon(c.topPaid)}${c.topOwed?` · <span class="dc-warn">${zh?'还欠':'still owed'} ${fmtWon(c.topOwed)}</span>`:''}</div>` : ''}`;
-  // cash check
-  document.getElementById('dcCashCard').innerHTML = `
-    <div class="dc-h"><div class="section-title">${zh?'现金核对':'Cash check'}</div></div>
-    ${row(zh?'先付现金':'Prepaid cash', fmtWon(a.cash))}
-    ${row(zh?'其他销售现金':'Other sales cash', fmtWon(c.o.cash))}
-    ${row(zh?'从抽屉还给员工的垫付':'Top-ups paid back from the drawer', '− '+fmtWon(c.topPaid))}
-    <div class="dc-row"><span>${zh?'存现金额（存进银行）':'Cash deposited (to the bank)'}</span><input class="dc-in dc-num" id="dcDeposit" type="number" min="0" step="1000" value="${escapeHtml(String(d.deposit||''))}" placeholder="0"></div>
-    ${row(zh?'抽屉应有现金':'Cash that should be in the drawer', fmtWon(c.cashExpected), 'sum')}
-    <div class="dc-row"><span>${zh?'实际点钞':'Cash counted'}</span><input class="dc-in dc-num" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'点完填写':'type after counting'}"></div>
-    ${c.diff==null ? '' : row(zh?'差额':'Difference', (c.diff>0?'+':'')+fmtWon(c.diff), c.diff===0 ? 'ok' : 'bad')}
+    <div class="dc-adds">
+      <button class="btn btn-ghost btn-sm" data-add-top="Jason">+ Jason</button>
+      <button class="btn btn-ghost btn-sm" data-add-top="Jihan">+ Jihan</button>
+      <button class="btn btn-ghost btn-sm" data-add-top="Store">+ ${zh?'店里的钱':'Store money'}</button>
+      ${d.topups.length ? `<span class="dc-adds-total">${zh?'合计':'Total'} <b>${W(c.topAll)}</b>${c.topOwed?` · <span class="dc-warn">${zh?'还欠':'owed'} ${W(c.topOwed)}</span>`:''}</span>` : ''}
+    </div>`;
+
+  // ---- step 4: close the day
+  const s4 = `
+    <div class="dc-calc">
+      <div><span>${zh?'先付现金':'Prepaid cash'}</span><b>${W(a.cash)}</b></div>
+      <div><span>${zh?'+ 其他销售现金':'+ Other sales cash'}</span><b>${W(c.o.cash)}</b></div>
+      ${c.drawerOut ? `<div><span>${zh?'− 抽屉付出的垫付':'− Top-ups paid from the drawer'}</span><b>${W(c.drawerOut)}</b></div>` : ''}
+      <div class="in"><span>${zh?'− 存进银行的现金':'− Cash deposited to the bank'}</span><div class="dc-money"><span>₩</span><input class="dc-in" id="dcDeposit" type="number" min="0" step="1000" value="${escapeHtml(String(d.deposit||''))}" placeholder="0"></div></div>
+      <div class="eq"><span>${zh?'= 抽屉应有现金':'= Cash that should be in the drawer'}</span><b>${W(c.cashExpected)}</b></div>
+    </div>
+    <label class="dc-count"><span>${zh?'点一下抽屉里的现金，填在这里':'Count the cash in the drawer and type it here'}</span>
+      <div class="dc-money big"><span>₩</span><input class="dc-in" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'输入金额':'amount'}"></div></label>
+    ${cashState}
     <textarea class="dc-in dc-note" id="dcNote" rows="2" placeholder="${zh?'备注（可选）':'Note (optional)'}">${escapeHtml(d.note||'')}</textarea>`;
+
+  document.getElementById('dcAutoCard').outerHTML = `<div id="dcAutoCard">${
+      step(1, zh?'今天的业务（自动）':'Today\'s sales (automatic)', zh?'来自 CRM — 不用输入':'From the CRM — nothing to type', s1, true)
+    + step(2, zh?'其他销售':'Other sales', zh?'贴膜等 — 只用于当天结算，不进客户记录':'Screen protectors etc. — only for the daily count, never in customer records', s2, false)
+    + step(3, zh?'垫付充值':'Top-ups paid in advance', zh?'Jason、Jihan 或店里的钱先付的充值':'Paid first by Jason, Jihan or with store money', s3, false)
+    + step(4, zh?'结束今天 — 点钞':'Close the day — count the cash', '', s4, c.diff===0)
+  }</div>`;
   renderDailyMonth();
 }
 /* one row per day of the month, the same columns as the old Excel sheet */
@@ -9198,20 +9232,18 @@ function dcMonthRows(month){
 function renderDailyMonth(){
   const zh = LANG==='zh', month = dcDay.slice(0,7), rows = dcMonthRows(month);
   const tot = k=> rows.reduce((x,r)=> x + (Number(k(r))||0), 0);
+  // only the money columns staff check every day
   const cols = [
     [zh?'日期':'Date', r=> shortDay(r.day), null],
-    ['90', r=>r.a.d90, 'n'], ['60', r=>r.a.d60, 'n'], ['30', r=>r.a.d30, 'n'], ['15', r=>r.a.d15, 'n'], [zh?'合计':'Total', r=>r.a.preCount, 'n'],
-    [zh?'现金':'Cash', r=>r.a.cash, 'w'], [zh?'转账':'Transfer', r=>r.a.transfer, 'w'], [zh?'刷卡':'Card', r=>r.a.card, 'w'], [zh?'先付合计':'Prepaid', r=>r.a.preTotal, 'w'],
-    [zh?'存现':'Deposited', r=>Number(r.d.deposit)||0, 'w'], [zh?'人民币':'RMB', r=>r.a.rmb + r.c.o.rmb, 'y'],
-    [zh?'后付数':'Post #', r=>r.a.postN, 'n'], [zh?'后付金额':'Postpaid', r=>r.a.postAmt, 'w'], [zh?'收入总':'Income', r=>r.c.income, 'w'],
-    ['36/363', r=>r.a.rc36, 'n'], [zh?'其他充值':'Other rc', r=>r.a.rcOther, 'n'],
-    [zh?'贴膜':'Prot.', r=>r.c.o.spQty, 'n'], [zh?'贴膜收费':'Prot. ₩', r=>r.c.o.spCharged, 'w'], [zh?'未收费':'Free', r=>r.c.o.spFree, 'n'],
+    [zh?'现金':'Cash', r=>r.a.cash, 'w'], [zh?'转账':'Transfer', r=>r.a.transfer, 'w'], [zh?'刷卡':'Card', r=>r.a.card, 'w'],
+    [zh?'先付合计':'Prepaid', r=>r.a.preTotal, 'w'], [zh?'后付':'Postpaid', r=>r.a.postAmt, 'w'],
+    [zh?'其他（贴膜等）':'Other (screen protector…)', r=>r.c.o.total, 'w'], [zh?'当日收入总':'Income', r=>r.c.income, 'w'],
   ];
   const fmt = (v, k)=> k==='w' ? (v ? fmtWon(v) : '—') : k==='y' ? (v ? dcFmtY(v) : '—') : (k==='n' ? (v || '—') : v);
   document.getElementById('dcMonthCard').innerHTML = `
     <div class="dc-h"><div class="section-title">${zh?`${month} 每日汇总`:`${month} day by day`}</div><div class="muted dc-sub">${zh?'只列出有记录的日子 · 点一行打开那一天':'Days with activity · click a row to open that day'}</div></div>
     <div class="dc-table-wrap"><table class="dc-table"><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead>
-    <tbody>${rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preCount || r.a.postN || r.d.items.length || r.d.topups.length || Number(r.d.deposit) || r.d.counted!=='' ).map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}">${cols.map(c=>`<td>${fmt(c[1](r), c[2])}</td>`).join('')}</tr>`).join('')}</tbody>
+    <tbody>${rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preTotal || r.a.postAmt || r.c.o.total ).map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}">${cols.map(c=>`<td>${fmt(c[1](r), c[2])}</td>`).join('')}</tr>`).join('')}</tbody>
     <tfoot><tr>${cols.map((c,i)=>`<td>${i===0 ? (zh?'本月合计':'Month total') : fmt(tot(c[1]), c[2])}</td>`).join('')}</tr></tfoot></table></div>`;
 }
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
@@ -9227,8 +9259,8 @@ function exportDailyMonth(){
   ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:5}}, ...[6,7,8,9,10,11,12,13,14,20,21].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:15},e:{r:0,c:16}}, {s:{r:0,c:17},e:{r:0,c:19}}];
   ws['!cols'] = [12,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,6,10,8,12,24].map(w=>({wch:w}));
   // staff top-ups listed one by one on a second sheet
-  const tops = [['日期','员工','金额','备注','已还']];
-  rows.forEach(r=> r.d.topups.forEach(t2=> tops.push([r.day, t2.staff||'', Number(t2.amount)||0, t2.note||'', t2.repaid?'是':'否'])));
+  const tops = [['日期','谁付的','金额','备注','已还']];
+  rows.forEach(r=> r.d.topups.forEach(t2=>{ const w = dcWho(t2); tops.push([r.day, w==='Store'?'店里的钱':w, Number(t2.amount)||0, t2.note||'', w==='Store'?'—':(t2.repaid?'是':'否')]); }));
   const items = [['日期','项目','数量','金额','付款']];
   rows.forEach(r=> r.d.items.forEach(it=> items.push([r.day, it.name||'', Number(it.qty)||0, Number(it.amount)||0, it.pay||'cash'])));
   const wb = XLSX.utils.book_new();
@@ -9282,17 +9314,21 @@ function exportDailyMonth(){
       const sp = t2.closest('[data-add-item]').dataset.addItem==='sp';
       d.items.push({id: uid('i'), name: sp ? (zh?'贴膜':'Screen protector') : '', qty:1, amount:'', pay:'cash'});
       dcStore(dcDay, d); renderDailyClosing();
-      const ins = document.querySelectorAll('#dcOtherCard .dc-item:not(.dc-item-head)'); const last = ins[ins.length-1];
+      const ins = page.querySelectorAll('.dc-line:not(.top)'); const last = ins[ins.length-1];
       if(last) last.querySelector(sp ? '[data-f="amount"]' : '[data-f="name"]').focus();
       return;
     }
     if(t2.closest('[data-add-top]')){
-      d.topups.push({id: uid('t'), staff:'', amount:'', note:'', repaid:false});
+      d.topups.push({id: uid('t'), who: t2.closest('[data-add-top]').dataset.addTop, amount:'', note:'', repaid:false});
       dcStore(dcDay, d); renderDailyClosing();
-      const ins = document.querySelectorAll('#dcTopupCard .dc-item:not(.dc-item-head)'); const last = ins[ins.length-1];
-      if(last) last.querySelector('[data-f="staff"]').focus();
+      const ins = page.querySelectorAll('.dc-line.top'); const last = ins[ins.length-1];
+      if(last) last.querySelector('[data-f="amount"]').focus();
       return;
     }
+    const pay = t2.closest('[data-pay]'); if(pay){ const i = Number(pay.closest('[data-seg-item]').dataset.segItem); d.items[i].pay = pay.dataset.pay; if(pay.dataset.pay==='free') d.items[i].amount = 0; dcStore(dcDay, d); renderDailyClosing(); return; }
+    const who = t2.closest('[data-who]'); if(who){ const i = Number(who.closest('[data-seg-top]').dataset.segTop); d.topups[i].who = who.dataset.who; delete d.topups[i].staff; if(who.dataset.who==='Store') d.topups[i].repaid = false; dcStore(dcDay, d); renderDailyClosing(); return; }
+    const rp = t2.closest('[data-repaid]'); if(rp){ const i = Number(rp.dataset.repaid); d.topups[i].repaid = !d.topups[i].repaid; dcStore(dcDay, d); renderDailyClosing(); return; }
+    const q = t2.closest('[data-qty]'); if(q){ const i = Number(q.closest('[data-i]').dataset.i); d.items[i].qty = Math.max(0, (Number(d.items[i].qty)||0) + Number(q.dataset.qty)); dcStore(dcDay, d); renderDailyClosing(); return; }
     const di = t2.closest('[data-del-item]'); if(di){ d.items.splice(Number(di.dataset.delItem), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
     const dt = t2.closest('[data-del-top]'); if(dt){ d.topups.splice(Number(dt.dataset.delTop), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
   });
