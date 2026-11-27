@@ -1718,3 +1718,4 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .dc-cl.tot{margin-top:4px;border-top:1px solid var(--dc-line);border-radius:0;padding-top:10px;font-weight:700}
 .dc-cl.tot .tx{color:var(--text-soft);font-weight:600}
 .dc-cl.none{grid-template-columns:1fr;color:var(--text-soft);text-align:center}
+.dc-order.top2{grid-template-columns:minmax(0,1fr) auto 28px}
