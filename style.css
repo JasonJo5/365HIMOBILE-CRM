@@ -1761,3 +1761,4 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .hist-del{color:var(--text-soft)}
 .hist-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
 .hist-del .ui-ic{margin:0}
+.dc-aside{top:calc(var(--topbar-h,84px) + 14px);max-height:calc(100vh - var(--topbar-h,84px) - 28px);overflow:auto;border-radius:var(--radius)}

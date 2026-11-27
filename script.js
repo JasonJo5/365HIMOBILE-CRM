@@ -9600,3 +9600,11 @@ function exportDailyMonth(){
     const dt = t2.closest('[data-del-top]'); if(dt){ d.topups.splice(Number(dt.dataset.delTop), 1); dcStore(dcDay, d); renderDailyClosing(); return; }
   }));
 })();
+
+/* Keep sticky panels (Daily closing summary) below the sticky top bar, whatever its height */
+(function(){
+  const bar = document.querySelector('.topbar'); if(!bar) return;
+  const set = ()=> document.documentElement.style.setProperty('--topbar-h', Math.ceil(bar.getBoundingClientRect().height)+'px');
+  set(); window.addEventListener('resize', set);
+  if(window.ResizeObserver) new ResizeObserver(set).observe(bar);
+})();
