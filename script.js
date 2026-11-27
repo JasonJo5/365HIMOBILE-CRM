@@ -1429,6 +1429,7 @@ function loadDB(){
       const db = JSON.parse(raw);
       if(!db.templates) db.templates = [];
       if(!db.reminderState) db.reminderState = {};
+      dropDeletedPlans(db);
       ensurePreetiTemplate(db);
       migrateIdChangeTemplatePairs(db);
       repairInvalidDates(db);
@@ -1761,6 +1762,7 @@ async function pullFromServer(opts){
       }
       syncBaseline.reminders = new Map(Object.entries(data.reminderState));
     }
+    dropDeletedPlans(DB);
     ensurePreetiTemplate(DB);
     migrateIdChangeTemplatePairs(DB);
     repairInvalidDates(DB);
@@ -4096,6 +4098,35 @@ function deleteCustomerById(id){
   renderNav();
 }
 
+/* ---------------- Delete a plan from history ----------------
+   A wrong or duplicate plan in a customer's history can be deleted. The server only adds
+   and updates plans (it never deletes one through sync), so the deleted plan is remembered
+   in reminderState as 'svcdel:<planId>' — synced to every PC — and left out whenever data
+   is loaded or pulled. Undo brings it back. */
+function svcDelKey(id){ return 'svcdel:'+id; }
+function dropDeletedPlans(db){
+  const rs = db.reminderState || {};
+  if(!Object.keys(rs).some(k=> k.startsWith('svcdel:') && rs[k])) return;
+  db.services = (db.services||[]).filter(x=> !rs[svcDelKey(x.id)]);
+}
+function deleteHistoryPlan(serviceId){
+  const s = DB.services.find(x=>x.id===serviceId); if(!s) return;
+  const zh = LANG==='zh', c = getCustomer(s.customerId) || {};
+  if(s.isActive){ toast(zh?'当前套餐不能在这里删除':'The current plan can\'t be deleted here'); return; }
+  const what = `${s.type==='postpaid' ? (s.plan||'Postpaid') : planLengthLabel(s)[1]} · ${fmtDateHuman(s.activationDate)}`;
+  if(!confirm(zh ? `删除这条套餐历史？\n${what}\n\n删除后不会再计入报表和每日结算。可以马上点「撤销」恢复。`
+                 : `Delete this plan from the history?\n${what}\n\nIt will no longer count in reports or the daily closing. You can undo it right after.`)) return;
+  const snap = undoSnapshot([s.customerId]);
+  DB.services = DB.services.filter(x=> x.id!==serviceId);
+  DB.reminderState = DB.reminderState || {};
+  DB.reminderState[svcDelKey(serviceId)] = todayISO();
+  if(syncBaseline) syncBaseline.services.delete(serviceId);
+  saveDB(DB);
+  offerUndo((zh ? '已删除套餐 — ' : 'Plan deleted — ') + (c.name||''), snap, []);
+  openCustomerDetail(s.customerId);
+  renderPage(currentPage); renderNav();
+}
+
 /* customer detail */
 let detailCustomerId = null;
 /* ---- Customer profile building blocks (the profile is drawn in its final card layout
@@ -4281,6 +4312,7 @@ function extClosedNote(s){
 }
 /* Small line icons for markup built in JS (same style as the rest of the app) */
 const UI_ICON = {
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
   copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
   freeze:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M9 4.5l3 2 3-2M9 19.5l3-2 3 2"/>',
   merge:'<path d="M6 4v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v2M18 4v6"/>',
@@ -4552,6 +4584,7 @@ function openCustomerDetail(id){
   const btnReprintIdChange = document.getElementById('btnReprintIdChange');
   if(btnReprintIdChange) btnReprintIdChange.addEventListener('click', ()=> printIdChangeForm(id));
   detailBody.querySelectorAll('[data-idchange-reprint]').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); printIdChangeForm(id); }));
+  detailBody.querySelectorAll('[data-del-plan]').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); deleteHistoryPlan(b.dataset.delPlan); }));
   const btnCompleteIdChange = document.getElementById('btnCompleteIdChange');
   if(btnCompleteIdChange) btnCompleteIdChange.addEventListener('click', ()=>{
     completeIdChangeRequest(id, ()=> openCustomerDetail(id));
@@ -4744,6 +4777,7 @@ function historyItemHtml(s){
         <span class="pill pill-gray">${reasonLabel}</span>
         ${s.type==='prepaid' ? `<button class="btn btn-sm btn-ghost" data-print-service="${s.id}" title="${t('btn.print')}">${pfBtnIcon('print')}</button>` : ''}
         <button class="btn btn-sm btn-ghost" data-edit-order="${s.id}">${t('btn.editRecord')}</button>
+        ${s.isActive ? '' : `<button class="btn btn-sm btn-ghost hist-del" data-del-plan="${s.id}" title="${LANG==='zh'?'删除这条历史':'Delete this plan from the history'}" aria-label="${LANG==='zh'?'删除':'Delete'}">${uiIcon('trash')}</button>`}
       </div>
     </div>
     <div class="muted" style="font-size:12px;margin-top:8px;font-weight:600;">${fmtDateHuman(s.activationDate)} → ${fmtDateHuman(s.endedAt||s.expiryDate)}</div>
@@ -7815,6 +7849,7 @@ async function runUndo(entry){
   // make the next sync send every restored record (they may be gone from the server)
   if(syncBaseline){ ids.forEach(id=> syncBaseline.customers.delete(id)); svcIds.forEach(id=> syncBaseline.services.delete(id)); }
   ids.forEach(forgetCancelUndo);
+  svcIds.forEach(id=>{ if(DB.reminderState && DB.reminderState[svcDelKey(id)]) DB.reminderState[svcDelKey(id)] = ''; });   // un-delete
   saveDB(DB);
   toast(LANG==='zh' ? '已撤销' : 'Undone — restored as it was');
   const overlay = document.getElementById('detailModalOverlay');
@@ -9082,11 +9117,19 @@ function dcPayKey(m){
   return 'unpaid';
 }
 /* everything the CRM already knows about that day */
+/* A plan swapped for another one on the very same day (e.g. postpaid PLAN A changed to 5G EASY L
+   right after signing up) is one sale, not two: only the newer plan is counted. */
+function dcReplacedSameDay(s){
+  if(s.isActive || CANCEL_REASONS.includes(s.changeReason) || !s.endedAt) return false;
+  return DB.services.some(o=> o!==s && o.customerId===s.customerId && o.type===s.type && o.activationDate===s.activationDate
+    && (o.isActive || (Number(o.endedSeq)||0) > (Number(s.endedSeq)||0)));
+}
 function dcAuto(day){
   const a = {cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
              postN:0, postAmt:0, rc36:0, rcOther:0, rcAmt:0};
   DB.services.forEach(s=>{
     if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
+    if(dcReplacedSameDay(s)){ a.skipped = (a.skipped||0) + 1; return; }
     if(s.type==='prepaid'){
       a.preCount++;
       const dd = Number(s.durationDays)||0, isRc = planLengthLabel(s)[0]==='rc';
@@ -9189,7 +9232,8 @@ function renderDailyClosing(){
       <div class="dc-chip"><b>${a.postN}</b><span>${zh?'后付':'Postpaid'}</span></div>
       <div class="dc-chip total"><b>${a.preCount + a.postN}</b><span>${zh?'合计':'Total'}</span></div>
     </div>
-    ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}`;
+    ${a.rc ? `<div class="dc-mini">${zh?`充值里 36/36.3：<b>${a.rc36}</b> · 其他：<b>${a.rcOther}</b>`:`Recharges at 36,000 / 36,300: <b>${a.rc36}</b> · other: <b>${a.rcOther}</b>`}</div>` : ''}
+    ${dcWhoListHtml(dcDay)}`;
 
   // ---- step 2: other sales — same as a top-up: choose the item, quantity, price, payment, press Add
   const s2 = `
@@ -9268,6 +9312,39 @@ function dcMonthRows(month){
     rows.push({day, a, c, d});
   }
   return rows;
+}
+/* Every plan counted on that day, by name — so a number that looks wrong can be checked.
+   Plans that were later cancelled or replaced still count as a sale on their day; they are
+   tagged, and the same customer twice on one day is flagged (often a plan entered twice). */
+function dcWhoListHtml(day){
+  const zh = LANG==='zh';
+  const svcs = DB.services.filter(s=> isSubscriptionType(s.type) && s.activationDate===day)
+    .sort((x,y)=> (x.type===y.type ? 0 : x.type==='prepaid' ? -1 : 1));
+  if(!svcs.length) return '';
+  const seen = {}; svcs.filter(s=>!dcReplacedSameDay(s)).forEach(s=>{ const k = s.customerId+'|'+s.type; seen[k] = (seen[k]||0) + 1; });
+  const dupes = svcs.filter(s=> seen[s.customerId+'|'+s.type] > 1).length;
+  const tag = s=>{
+    if(dcReplacedSameDay(s)) return `<span class="dc-tag bad">${zh?'当天换了套餐 — 不计算':'Changed the same day — not counted'}</span>`;
+    if(s.isActive) return '';
+    if(CANCEL_REASONS.includes(s.changeReason)) return `<span class="dc-tag bad">${zh?'已取消':'Cancelled'}</span>`;
+    return `<span class="dc-tag">${zh?'已换套餐':'Replaced'}</span>`;
+  };
+  const rows = svcs.map(s=>{
+    const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid';
+    const plan = pre ? planLengthLabel(s)[1] : (s.plan || (zh?'后付':'Postpaid'));
+    const money = pre ? (dcPayKey(s.paymentMethod)==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>` : `${fmtWon(Number(s.sellingPrice)||0)} · ${dcPayName(dcPayKey(s.paymentMethod)==='rmb'?'rmb':dcPayKey(s.paymentMethod))}`)
+                      : fmtWon((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
+    const dup = !dcReplacedSameDay(s) && seen[s.customerId+'|'+s.type] > 1;
+    return `<div class="dc-cl wl ${dup?'dup':''} ${dcReplacedSameDay(s)?'skip':''}" data-open-customer="${s.customerId}" title="${zh?'打开客户':'Open customer'}">
+      <span class="dc-typ ${pre?'pre':'post'}">${pre?(zh?'先付':'Pre'):(zh?'后付':'Post')}</span>
+      <span class="tx"><b>${escapeHtml(c.name||'—')}</b> · ${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
+      <b>${money}</b></div>`;
+  }).join('');
+  return `<details class="dc-cashlist dc-wholist" ${dupes ? 'open' : ''}>
+    <summary><span>${zh?`看是谁（${svcs.length - svcs.filter(dcReplacedSameDay).length}）`:`See who (${svcs.length - svcs.filter(dcReplacedSameDay).length})`}</span>${dupes ? `<b class="dc-warn">${zh?'有重复，请检查':'Possible duplicate — check'}</b>` : ''}</summary>
+    ${rows}
+    <div class="dc-cl none">${zh?'点名字打开客户资料。已取消或已换套餐的也算当天的业务。':'Tap a name to open the customer. Plans later cancelled or replaced still count as a sale on their day.'}</div>
+  </details>`;
 }
 /* the two pop-ups: add a sale / add a top-up — same look as the other CRM windows */
 function dcPayName(k){ const zh = LANG==='zh'; return ({cash:zh?'现金':'Cash', card:zh?'刷卡':'Card', transfer:zh?'转账':'Transfer', rmb:zh?'人民币':'RMB', free:zh?'免费':'Free'})[k]; }

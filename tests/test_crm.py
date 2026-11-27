@@ -364,6 +364,27 @@ def run(b):
           [r[1:] for r in px["rows"]] == [[36000, "", 32400, 3600], [60000, 5000, "", ""], [100000, "", 18000, 82000]] and px["rows"][0][0].startswith("Recharge") and px["rows"][2][0] == "PLAN A", px["rows"])
     check("totals row, and a note when a cost is missing", px["total"][7] == 196000 and px["total"][10] == 85600 and px["note"], px)
 
+    print("Delete a plan from history")
+    dh = pg.evaluate("""(async()=>{ const s = DB.services.find(x=> !x.isActive && isSubscriptionType(x.type) && getCustomer(x.customerId)); const out = {};
+        if(!s) return {none:true};
+        await pushToServer(); const keepConfirm = window.confirm; window.confirm = ()=> true;
+        closeAllModals(); openCustomerDetail(s.customerId);
+        const btn = document.querySelector('#detailBody [data-del-plan="'+s.id+'"]');
+        out.btn = !!btn && !document.querySelector('#detailBody [data-del-plan="'+(activeSubscriptionFor(s.customerId)||{}).id+'"]');
+        btn.click();
+        out.gone = !DB.services.some(x=>x.id===s.id) && !!DB.reminderState['svcdel:'+s.id];
+        await pushToServer(); await pullFromServer();
+        out.staysGone = !DB.services.some(x=>x.id===s.id);
+        await runUndo();
+        out.back = DB.services.some(x=>x.id===s.id) && !DB.reminderState['svcdel:'+s.id];
+        await pushToServer(); await pullFromServer();
+        out.backAfterPull = DB.services.some(x=>x.id===s.id);
+        window.confirm = keepConfirm; closeAllModals();
+        return out; })()""")
+    check("history plans have a delete button (not the current plan)", dh.get("btn") is True, dh)
+    check("deleting removes it, and it stays deleted after syncing with the server", dh.get("gone") and dh.get("staysGone"), dh)
+    check("Undo brings the deleted plan back, also after syncing", dh.get("back") and dh.get("backAfterPull"), dh)
+
     print("Daily closing")
     dc = pg.evaluate("""(async()=>{ const cs = DB.customers.slice(0,6), day = '2020-02-11', ids = [], out = {};
         const add = (c, o) => { const s = Object.assign({id: uid('s'), customerId: c.id, isActive:false, activationDate: day, endedAt: day, endedSeq: 1}, o); DB.services.push(s); ids.push(s.id); };
@@ -399,7 +420,7 @@ def run(b):
         addTop('Store', '30000'); await new Promise(r=>setTimeout(r, 30));
         out.formCleared = !document.getElementById('dcTopModal').classList.contains('show') && !!document.querySelector('.dc-order.top2');
         ev(document.getElementById('dcCounted'), '35000'); await new Promise(r=>setTimeout(r, 30));
-        out.cashDetail = [...document.querySelectorAll('.dc-cashlist .dc-cl:not(.tot):not(.none)')].map(x=> x.querySelector('.sg').textContent + x.querySelector(':scope > b').textContent);
+        out.cashDetail = [...document.querySelectorAll('.dc-cashlist:not(.dc-wholist) .dc-cl:not(.tot):not(.none)')].map(x=> x.querySelector('.sg').textContent + x.querySelector(':scope > b').textContent);
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
@@ -430,6 +451,17 @@ def run(b):
         document.getElementById('dcExport').click(); window.XLSX = keepX;
         const sh = books[0] && books[0][1][0][1];
         out.export = sh ? [books[0][0], sh[0][1], sh[1][1], sh.find(r=>r[0]===day)] : null;
+        // "See who": every plan of the day by name; the same customer's postpaid twice is flagged
+        out.who1 = [document.querySelectorAll('.dc-wholist .dc-cl.wl').length, !!document.querySelector('.dc-wholist .dc-cl.dup')];
+        add(cs[5], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000}); renderDailyClosing();
+        out.who2 = [document.querySelectorAll('.dc-wholist .dc-cl.wl').length, document.querySelectorAll('.dc-wholist .dc-cl.dup').length, document.querySelector('.dc-wholist').open];
+        DB.services.pop(); ids.pop();
+        // a postpaid plan changed to another one on the same day counts once
+        add(cs[5], {type:'postpaid', durationDays:365, plan:'5G EASY L', expectedProfit:179000, isActive:true});
+        { const old = DB.services.find(x=>x.customerId===cs[5].id && x.type==='postpaid' && x.plan==='PLAN A' && x.activationDate===day); old.isActive=false; old.endedAt=day; old.endedSeq=Date.now(); old.changeReason='plan_change';
+          const aa = dcAuto(day); renderDailyClosing(); out.sameDay = [aa.postN, aa.postAmt, !!document.querySelector('.dc-wholist .dc-cl.skip'), !document.querySelector('.dc-wholist .dc-cl.dup')];
+          old.isActive=false; DB.services.pop(); ids.pop(); delete old.endedAt; delete old.changeReason; }
+        renderDailyClosing();
         // a day with only unpaid 1-month plans (like Nov 13) still shows in the month table, with plans and 'Not paid'
         const d3 = addDaysISO(day, -3); add(cs[0], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3}); add(cs[1], {type:'prepaid', durationDays:30, price:30000, sellingPrice:30000, paymentMethod:'', activationDate:d3});
         renderDailyClosing(); const r3 = document.querySelector('[data-dc-day="'+d3+'"]');
@@ -454,6 +486,10 @@ def run(b):
           dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
     check("today's cash one by one: the 90-day cash sale, the screen protector, the store-money top-up",
           dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000"], dc["cashDetail"])
+    check("'See who' lists every plan of the day by name, and flags the same customer twice (e.g. 3 postpaid when there were 2)",
+          dc["who1"] == [6, False] and dc["who2"] == [7, 2, True], [dc["who1"], dc["who2"]])
+    check("a postpaid plan changed on the same day is counted once (the newer plan), marked 'not counted'",
+          dc["sameDay"] == [1, 179000, True, True], dc["sameDay"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
     check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
     check("top-up: Add top-up opens a pop-up; who + amount + Save closes it and lists it; empty amount isn't saved", dc["formCleared"] and dc["noEmpty"], dc)

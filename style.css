@@ -1745,3 +1745,19 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .dc-table td,.dc-table th{padding-left:7px;padding-right:7px}
 .dc-table th.n{min-width:34px}
 .dc-cnt{min-width:20px;padding:1px 6px;font-size:12px}
+/* Daily closing: who was counted that day */
+.dc-wholist{margin-top:12px}
+.dc-cl.wl{grid-template-columns:40px minmax(0,1fr) auto}
+.dc-typ{font-size:11px;font-weight:800;text-align:center;border-radius:6px;padding:2px 0}
+.dc-typ.pre{background:rgba(37,99,235,.1);color:var(--blue)}
+.dc-typ.post{background:rgba(124,58,237,.1);color:#7c3aed}
+.dc-tag{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(100,116,139,.14);color:var(--text-soft)}
+.dc-tag.bad{background:rgba(220,38,38,.1);color:#dc2626}
+.dc-tag.warn{background:rgba(234,88,12,.12);color:#c2410c}
+.dc-cl.dup{background:rgba(234,88,12,.06)}
+.dc-wholist .dc-cl.none{font-size:11.5px;text-align:left;padding-top:8px}
+.dc-cl.wl.skip{opacity:.55}
+.dc-cl.wl.skip .tx b{text-decoration:line-through}
+.hist-del{color:var(--text-soft)}
+.hist-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
+.hist-del .ui-ic{margin:0}
