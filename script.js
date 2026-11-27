@@ -9109,12 +9109,17 @@ function dcStore(day, d){
   const el = document.getElementById('dcSaved'); if(el) el.textContent = LANG==='zh' ? '保存中…' : 'Saving…';
   dcSaveTimer = setTimeout(()=>{ saveDB(DB); const e2 = document.getElementById('dcSaved'); if(e2) e2.textContent = LANG==='zh' ? '已保存' : 'Saved'; }, 500);
 }
+/* payment method → cash / card / transfer / rmb, however it was written (Card, 카드, 刷卡,
+   bank transfer, 이체 …). Something else that was filled in (e.g. kakaopay) is 'other' —
+   only an empty method is 'unpaid'. */
 function dcPayKey(m){
-  if(m==='cash') return 'cash';
-  if(m==='card') return 'card';
-  if(m==='bank transfer' || m==='transfer') return 'transfer';
-  if(m==='alipay' || m==='wechat') return 'rmb';
-  return 'unpaid';
+  const v = String(m||'').trim().toLowerCase();
+  if(!v) return 'unpaid';
+  if(/^(cash|현금|现金)$/.test(v)) return 'cash';
+  if(/card|카드|刷卡|信用卡|credit/.test(v)) return 'card';
+  if(/transfer|이체|송금|계좌|转账|^tf$|bank/.test(v)) return 'transfer';
+  if(/alipay|wechat|支付宝|微信|rmb|人民币/.test(v)) return 'rmb';
+  return 'other';
 }
 /* everything the CRM already knows about that day */
 /* A plan swapped for another one on the very same day (e.g. postpaid PLAN A changed to 5G EASY L
@@ -9125,18 +9130,20 @@ function dcReplacedSameDay(s){
     && (o.isActive || (Number(o.endedSeq)||0) > (Number(s.endedSeq)||0)));
 }
 function dcAuto(day){
-  const a = {cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
+  const a = {otherPayN:0, otherPayAmt:0, otherPayNames:new Set(), cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
              postN:0, postAmt:0, rc36:0, rcOther:0, rcAmt:0};
   DB.services.forEach(s=>{
     if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
-    if(dcReplacedSameDay(s)){ a.skipped = (a.skipped||0) + 1; return; }
+    if(dcReplacedSameDay(s)){ a.skipped = (a.skipped||0) + 1; a.skippedAmt = (a.skippedAmt||0) + (Number(s.sellingPrice)||0); return; }
     if(s.type==='prepaid'){
       a.preCount++;
       const dd = Number(s.durationDays)||0, isRc = planLengthLabel(s)[0]==='rc';
       // a recharge is counted on its own, not as a 1-month plan
       if(isRc) a.rc++; else if(dd===90) a.d90++; else if(dd===60) a.d60++; else if(dd===30) a.d30++; else if(dd===15 || dd===14) a.d15++; else a.dOther++;
       const amt = Number(s.sellingPrice)||0, k = dcPayKey(s.paymentMethod);
-      if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; } else a[k] += amt;
+      if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; }
+      else if(k==='other'){ a.otherPayN++; a.otherPayAmt += amt; a.otherPayNames.add(String(s.paymentMethod)); }
+      else a[k] += amt;
       if(k==='cash') a.cashList.push({name: (getCustomer(s.customerId)||{}).name || '', plan: planLengthLabel(s)[1], amt, cid: s.customerId});
       if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; if(k!=='unpaid' && k!=='rmb') a.rcAmt += amt; }
     } else if(s.type==='postpaid'){
@@ -9216,6 +9223,8 @@ function renderDailyClosing(){
         <div class="sub"><span>${zh?'其他（贴膜等）':'Other (screen protector…)'}</span><b>${W(c.o.total)}</b></div>
         ${(a.rmb + c.o.rmb) ? `<div class="sub muted"><span>${zh?'人民币（另计）':'RMB (separate)'}</span><b>${dcFmtY(a.rmb + c.o.rmb)}</b></div>` : ''}
       </div>
+      ${a.otherPayN ? `<div class="dc-alert">${zh?`${a.otherPayN} 笔用了其他付款方式（${escapeHtml([...a.otherPayNames].join(', '))}）${W(a.otherPayAmt)} — 没算进现金/转账/刷卡`:`${a.otherPayN} sale${a.otherPayN===1?'':'s'} paid by another method (${escapeHtml([...a.otherPayNames].join(', '))}) ${W(a.otherPayAmt)} — not in cash / transfer / card`}</div>` : ''}
+      ${a.skipped ? `<div class="dc-alert soft">${zh?`${a.skipped} 笔当天换了套餐，只算新的那笔`:`${a.skipped} plan${a.skipped===1?'':'s'} changed the same day — only the new one counts`}</div>` : ''}
       ${a.unpaidN ? `<div class="dc-alert">${zh?`${a.unpaidN} 笔先付还没付款 / 没选付款方式（${W(a.unpaidAmt)}）— 不算在收入里`:`${a.unpaidN} prepaid sale${a.unpaidN===1?'':'s'} not paid yet / no method (${W(a.unpaidAmt)}) — not counted`}</div>` : ''}
       <div class="dc-sum-cash"><span>${zh?'抽屉应有现金':'Cash in drawer'}</span><b>${W(c.cashExpected)}</b></div>
       ${cashState}
@@ -9328,7 +9337,9 @@ function dcWhoListHtml(day){
     return `<span class="dc-tag">${zh?'已换套餐':'Replaced'}</span>`;
   };
   const payTag = s=>{ const k = dcPayKey(s.paymentMethod);
-    return k==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>` : `<span class="dc-paypill ${k==='rmb'?'rmb':k}">${dcPayName(k)}</span>`; };
+    return k==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>`
+         : k==='other' ? `<span class="dc-paypill other" title="${zh?'没算进现金/转账/刷卡':'Not in cash / transfer / card'}">${escapeHtml(String(s.paymentMethod))}</span>`
+         : `<span class="dc-paypill ${k==='rmb'?'rmb':k}">${dcPayName(k)}</span>`; };
   const row = s=>{
     const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid', skip = dcReplacedSameDay(s);
     const plan = pre ? planLengthLabel(s)[1] : (s.plan || (zh?'后付':'Postpaid'));

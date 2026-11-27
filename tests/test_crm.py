@@ -503,6 +503,11 @@ def run(b):
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 
+    print("Daily closing: payment methods however written")
+    pk = pg.evaluate("['card','Card',' CARD ','카드','刷卡','cash','현금','bank transfer','Transfer','이체','alipay','WeChat','kakaopay','',null].map(dcPayKey)")
+    check("Card / 카드 / 刷卡 count as card, 현금 as cash, 이체 as transfer; kakaopay is 'other' (shown), only empty is not paid",
+          pk == ["card","card","card","card","card","cash","cash","transfer","transfer","transfer","rmb","rmb","other","unpaid","unpaid"], pk)
+
     print("Payment method starts blank")
     pm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';});
         const a = activeSubscriptionFor(c.id), keep = a.paymentMethod, out = {}; a.paymentMethod = 'card';
