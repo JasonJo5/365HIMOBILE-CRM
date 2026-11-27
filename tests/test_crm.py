@@ -401,6 +401,7 @@ def run(b):
         await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcDeposit'), '20000'); await new Promise(r=>setTimeout(r, 30));
         ev(document.getElementById('dcCounted'), '15000'); await new Promise(r=>setTimeout(r, 30));
+        out.cashDetail = [...document.querySelectorAll('.dc-cashlist .dc-cl:not(.tot):not(.none)')].map(x=> x.querySelector('.sg').textContent + x.querySelector(':scope > b').textContent);
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
@@ -446,6 +447,8 @@ def run(b):
           dc["itemModal"] and dc["itemForm"] == [1, False, True], [dc["itemModal"], dc["itemForm"]])
     check("an item can be typed by hand and given free; no price means it isn't added",
           dc["itemForm2"] == [["Screen protector", 10000, "cash"], ["Phone case", 0, "free"]] and dc["stayOpen"], dc["itemForm2"])
+    check("today's cash one by one: the 90-day cash sale, the screen protector, the top-up paid back, the deposit",
+          dc["cashDetail"] == ["+₩55,000", "+₩10,000", "−₩30,000", "−₩20,000"], dc["cashDetail"])
     check("days with only unpaid plans still show in the month table (Plans + Not paid)", dc["unpaidDay"], dc)
     check("clicking a day in the table opens it without jumping to the top", dc["noJump"], dc)
     check("top-up: Add top-up opens a pop-up; who + amount + Save closes it and lists it; empty amount isn't saved", dc["formCleared"] and dc["noEmpty"], dc)

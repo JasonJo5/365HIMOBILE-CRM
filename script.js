@@ -9083,7 +9083,7 @@ function dcPayKey(m){
 }
 /* everything the CRM already knows about that day */
 function dcAuto(day){
-  const a = {d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
+  const a = {cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
              postN:0, postAmt:0, rc36:0, rcOther:0};
   DB.services.forEach(s=>{
     if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
@@ -9094,6 +9094,7 @@ function dcAuto(day){
       if(isRc) a.rc++; else if(dd===90) a.d90++; else if(dd===60) a.d60++; else if(dd===30) a.d30++; else if(dd===15 || dd===14) a.d15++; else a.dOther++;
       const amt = Number(s.sellingPrice)||0, k = dcPayKey(s.paymentMethod);
       if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; } else a[k] += amt;
+      if(k==='cash') a.cashList.push({name: (getCustomer(s.customerId)||{}).name || '', plan: planLengthLabel(s)[1], amt, cid: s.customerId});
       if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; }
     } else if(s.type==='postpaid'){
       a.postN++; a.postAmt += (s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit)) || 0;
@@ -9230,6 +9231,19 @@ function renderDailyClosing(){
     </div>
     <label class="dc-count"><span>${zh?'点一下抽屉里的现金，填在这里':'Count the cash in the drawer and type it here'}</span>
       <div class="dc-money big"><span>₩</span><input class="dc-in" id="dcCounted" type="number" step="1000" value="${escapeHtml(String(d.counted??''))}" placeholder="${zh?'输入金额':'amount'}"></div></label>
+    ${(()=>{ // today's cash, one by one — to match against what's in the drawer
+      const lines = [];
+      a.cashList.forEach(x=> lines.push(['+', x.amt, `<b>${escapeHtml(x.plan)}</b> · ${escapeHtml(x.name||'—')}`, 'pre', x.cid]));
+      d.items.filter(it=> (it.pay||'cash')==='cash' && Number(it.amount)).forEach(it=> lines.push(['+', Number(it.amount)||0, `<b>${escapeHtml(it.name||'—')}</b> × ${Number(it.qty)||1}`, 'oth']));
+      d.topups.forEach(t2=>{ const w = dcWho(t2); if(w==='Store') lines.push(['−', Number(t2.amount)||0, (zh?'垫付 · 店里的钱':'Top-up · store money')+(t2.note?` · ${escapeHtml(t2.note)}`:''), 'out']);
+        else if(t2.repaid) lines.push(['−', Number(t2.amount)||0, (zh?`垫付还给 ${escapeHtml(w)}`:`Top-up paid back to ${escapeHtml(w)}`)+(t2.note?` · ${escapeHtml(t2.note)}`:''), 'out']); });
+      if(Number(d.deposit)) lines.push(['−', Number(d.deposit), zh?'存进银行':'Deposited to the bank', 'out']);
+      return `<details class="dc-cashlist" ${lines.length ? 'open' : ''}>
+        <summary><span>${zh?'今天的现金明细':'Today\'s cash, one by one'}</span><b>${c.cashToday>=0?'+':'−'}${W(Math.abs(c.cashToday))}</b></summary>
+        ${lines.length ? lines.map(([sg, v, txt, cls, cid])=>`<div class="dc-cl ${cls}" ${cid?`data-open-customer="${cid}" title="${zh?'打开客户':'Open customer'}"`:''}><span class="sg">${sg}</span><span class="tx">${txt}</span><b>${W(v)}</b></div>`).join('')
+          : `<div class="dc-cl none">${zh?'今天没有现金':'No cash today'}</div>`}
+        <div class="dc-cl tot"><span class="sg">=</span><span class="tx">${zh?`${a.cashList.length} 笔先付现金 · ${d.items.filter(it=>(it.pay||'cash')==='cash'&&Number(it.amount)).length} 笔其他现金`:`${a.cashList.length} prepaid in cash · ${d.items.filter(it=>(it.pay||'cash')==='cash'&&Number(it.amount)).length} other sale${d.items.filter(it=>(it.pay||'cash')==='cash'&&Number(it.amount)).length===1?'':'s'} in cash`}</span><b>${c.cashToday>=0?'+':'−'}${W(Math.abs(c.cashToday))}</b></div>
+      </details>`; })()}
     ${c.counted==null ? '' : `<div class="dc-compare">
       <div><span>${zh?'抽屉今天多了':'Drawer went up today'}</span><b>${c.grew>=0?'+':'−'}${W(Math.abs(c.grew))}</b><small>${W(c.counted)} − ${W(c.start)}</small></div>
       <div class="vs">${zh?'对比':'vs'}</div>
@@ -9455,6 +9469,7 @@ function exportDailyMonth(){
   page.addEventListener('change', e=> edit(e, true));
   roots.forEach(root=> root.addEventListener('click', e=>{
     const t2 = e.target;
+    const oc = t2.closest('.dc-cl[data-open-customer]'); if(oc){ openCustomerDetail(oc.dataset.openCustomer); return; }
     if(t2.closest('#dcOpenItem')){ dcOpenItemModal(); return; }
     if(t2.closest('#dcOpenTop')){ dcOpenTopModal(); return; }
     const mn = t2.closest('[data-dc-month]'); if(mn){
