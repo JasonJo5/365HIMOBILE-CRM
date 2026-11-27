@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261126b">
+<link rel="stylesheet" href="style.css?v=20261127a">
 </head>
 <body>
 
@@ -344,7 +344,13 @@
             <select class="select-input" id="repPlanFilter" title="Which plans to count"></select>
             <select class="select-input" id="repMonthSelect"></select>
             <input type="date" max="9999-12-31" class="select-input" id="repDaySelect">
-            <button class="btn btn-ghost" id="btnExportReport" data-i18n="btn.exportMonthExcel">导出该月份 Excel</button>
+            <div class="rep-export-wrap">
+              <button class="btn btn-ghost" id="btnExportReport" data-i18n="btn.exportMonthExcel">导出该月份 Excel</button>
+              <div class="rep-export-menu" id="repExportMenu" hidden>
+                <button type="button" data-rep-export="profit"><b id="repExpProfitT">Profit summary</b><span id="repExpProfitD">Only what you need to count money: plan, paid, tax, cost, profit</span></button>
+                <button type="button" data-rep-export="full"><b id="repExpFullT">Full details</b><span id="repExpFullD">Every field, as before</span></button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1116,6 +1122,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261126b"></script>
+<script src="script.js?v=20261127a"></script>
 </body>
 </html>

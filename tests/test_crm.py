@@ -336,6 +336,34 @@ def run(b):
     check("monthly report uses the same filter", "99,000" in rf["month"] and "135,000" in rf["monthAll"], [rf["month"], rf["monthAll"]])
     check("the filter is highlighted when it is not All plans, and remembered", rf["hl"] is True and rf["saved"] == "all", rf)
 
+    print("Profit summary export")
+    px = pg.evaluate("""(()=>{ const cs = DB.customers.slice(0,3), day = '2031-04-08', ids = [];
+        const add = (c, o) => { const s = Object.assign({id: uid('s'), customerId: c.id, isActive:false, activationDate: day, endedAt: day, endedSeq: 1}, o); DB.services.push(s); ids.push(s.id); };
+        add(cs[0], {type:'prepaid', durationDays:30, price:36000, discount:0, sellingPrice:36000, cost:32400, changeReason:'recharge', paymentMethod:'cash'});
+        add(cs[1], {type:'prepaid', durationDays:90, price:55000, discount:0, sellingPrice:60000, paymentMethod:'card'});
+        add(cs[2], {type:'postpaid', durationDays:365, plan:'PLAN A', expectedProfit:100000, discountPerMonth:5000, discountMonths:2, usimFee:8000});
+        const keep = [repPlanFilter, reportView, repSelectedDay, window.XLSX], out = {}, books = [];
+        window.XLSX = {utils:{book_new:()=>({s:[]}), aoa_to_sheet:a=>({a}), book_append_sheet:(wb,ws,n)=>wb.s.push([n,ws.a])}, writeFile:(wb,f)=>books.push([f,wb.s])};
+        goTo('reports'); repPlanFilter = 'all'; reportView = 'daily'; repSelectedDay = day; renderReports();
+        out.btnShown = document.getElementById('btnExportReport').offsetParent !== null;
+        document.getElementById('btnExportReport').click(); out.menu = !document.getElementById('repExportMenu').hidden;
+        document.querySelector('[data-rep-export="profit"]').click();
+        const [file, sheets] = books[0] || [];
+        out.file = file; out.sheetNames = (sheets||[]).map(x=>x[0]);
+        const sales = (sheets||[]).find(x=>x[0]==='Sales')[1];
+        out.header = sales[0].length; out.rows = sales.slice(1, 4).map(r=>[r[4], r[7], r[8], r[9], r[10]]);
+        out.total = sales[sales.length-1];
+        const sum = (sheets||[]).find(x=>x[0]==='Summary')[1];
+        out.note = sum.some(r=>/no cost filled in/.test(String(r[0]||'')));
+        window.XLSX = keep[3]; DB.services = DB.services.filter(s=>!ids.includes(s.id));
+        repPlanFilter = keep[0]; reportView = keep[1]; repSelectedDay = keep[2]; goTo('dashboard');
+        return out; })()""")
+    check("export menu: Profit summary, also in Daily view", px["btnShown"] and px["menu"], px)
+    check("profit summary has 12 short columns plus a Summary sheet", px["header"] == 12 and px["sheetNames"] == ["Summary", "Sales"] and px["file"] == "Himobile_Profit_2031-04-08.xlsx", px)
+    check("recharge 36,000 with cost 32,400 = profit 3,600; card tax 5,000 shown; postpaid 100,000 - 18,000 = 82,000",
+          [r[1:] for r in px["rows"]] == [[36000, "", 32400, 3600], [60000, 5000, "", ""], [100000, "", 18000, 82000]] and px["rows"][0][0].startswith("Recharge") and px["rows"][2][0] == "PLAN A", px["rows"])
+    check("totals row, and a note when a cost is missing", px["total"][7] == 196000 and px["total"][10] == 85600 and px["note"], px)
+
     print("Payment method starts blank")
     pm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';});
         const a = activeSubscriptionFor(c.id), keep = a.paymentMethod, out = {}; a.paymentMethod = 'card';

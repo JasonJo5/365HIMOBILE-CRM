@@ -5807,7 +5807,7 @@ function renderReports(){
   document.getElementById('reportViewTabs').innerHTML = tabs.map(tb=>`<button class="rem-tab ${reportView===tb.key?'on':''}" data-reportview="${tb.key}">${t(tb.label)}</button>`).join('');
   // the toolbar shows the picker for the current view; export is per month
   document.getElementById('repMonthSelect').style.display = reportView==='monthly' ? '' : 'none';
-  document.getElementById('btnExportReport').style.display = reportView==='monthly' ? '' : 'none';
+  document.getElementById('btnExportReport').style.display = '';
   document.getElementById('repDaySelect').style.display = reportView==='daily' ? '' : 'none';
   document.querySelectorAll('[data-reportview]').forEach(b=> b.addEventListener('click', ()=>{ reportView=b.dataset.reportview; renderReports(); }));
   document.getElementById('repMonthlyView').style.display = reportView==='monthly' ? '' : 'none';
@@ -6325,6 +6325,70 @@ function exportAll(){
    currently selected there, since a monthly report is usually what someone actually wants
    to hand off or file away, not the entire history every time. "All time" exports
    everything, same as the general export. */
+/* ---------------- Profit summary export ----------------
+   A short Excel with only what is needed to count money — one row per sale:
+   date, customer, plan, payment, what came in, card tax, cost, profit, staff — plus a
+   Summary sheet with totals by plan and by payment method.
+   Follows the report on screen: the chosen month (or the chosen day in Daily view) and the
+   plan filter. Prepaid profit = paid − cost, left empty while the cost isn't filled in yet;
+   postpaid profit = company payout − discount − USIM fee (as everywhere in the CRM). */
+function profitRowsForReport(){
+  const daily = reportView==='daily';
+  const inScope = s=>{
+    if(!isSubscriptionType(s.type) || !isIsoDate(s.activationDate) || !repPlanMatch(s)) return false;
+    if(daily) return s.activationDate===repSelectedDay;
+    return repSelectedMonth==='all' || !repSelectedMonth || s.activationDate.slice(0,7)===repSelectedMonth;
+  };
+  const rows = [];
+  DB.services.filter(inScope).sort((a,b)=> a.activationDate.localeCompare(b.activationDate)).forEach(s=>{
+    const c = getCustomer(s.customerId) || {};
+    const pre = s.type==='prepaid';
+    const lab = pre ? planLengthLabel(s)[1] : (s.plan || 'Postpaid');
+    let paidIn, tax = 0, cost = null, profit = null;
+    if(pre){
+      paidIn = Number(s.sellingPrice)||0; tax = taxFromSaved(s);
+      cost = Number(s.cost)>0 ? Number(s.cost) : null;
+      profit = cost!=null ? paidIn - cost : null;
+    } else {
+      paidIn = s.actualProfit ? Number(s.actualProfit) : (Number(s.expectedProfit)||0);   // company payout
+      cost = discountTotalFor(s) + (Number(s.usimFee)||0);                                // discount + USIM
+      profit = netProfitFor(s);
+    }
+    rows.push({date:s.activationDate, name:c.name||'', phone:s.number||c.phone||'', type: pre?'Prepaid':'Postpaid', plan:lab,
+      company:s.company||'', pay: pre ? (s.paymentMethod||'Not paid yet') : '', paidIn, tax, cost, profit, staff:c.handlerName||''});
+  });
+  return rows;
+}
+function exportProfitSummary(){
+  const zh = LANG==='zh', rows = profitRowsForReport();
+  if(!rows.length){ toast(zh?'没有可导出的记录':'No sales to export for this period'); return; }
+  const H = ['Date','Customer','Phone','Type','Plan','Company','Payment','Paid / Payout','Card tax','Cost / Deductions','Profit','Staff'];
+  const sum = k=> rows.reduce((a,r)=> a + (Number(r[k])||0), 0);
+  const noCost = rows.filter(r=> r.type==='Prepaid' && r.cost==null).length;
+  const sales = [H, ...rows.map(r=>[r.date, r.name, r.phone, r.type, r.plan, r.company, r.pay, r.paidIn, r.tax||'', r.cost==null?'':r.cost, r.profit==null?'':r.profit, r.staff]),
+    [], ['TOTAL','','','','','','', sum('paidIn'), sum('tax'), sum('cost'), sum('profit'), '']];
+  // Summary: by plan and by payment method
+  const group = (key)=>{ const m = new Map(); rows.forEach(r=>{ const k = r[key] || '—'; const o = m.get(k) || {n:0, paid:0, profit:0}; o.n++; o.paid += r.paidIn; o.profit += Number(r.profit)||0; m.set(k, o); }); return [...m.entries()].sort((a,b)=> b[1].paid - a[1].paid); };
+  const period = reportView==='daily' ? repSelectedDay : (repSelectedMonth==='all'||!repSelectedMonth ? 'All time' : repSelectedMonth);
+  const summary = [['Period', period], ['Plans', repPlanFilterLabel()], [],
+    ['', 'Sales', 'Paid / Payout', 'Profit'],
+    ['All', rows.length, sum('paidIn'), sum('profit')],
+    ['Prepaid', rows.filter(r=>r.type==='Prepaid').length, rows.filter(r=>r.type==='Prepaid').reduce((a,r)=>a+r.paidIn,0), rows.filter(r=>r.type==='Prepaid').reduce((a,r)=>a+(Number(r.profit)||0),0)],
+    ['Postpaid', rows.filter(r=>r.type==='Postpaid').length, rows.filter(r=>r.type==='Postpaid').reduce((a,r)=>a+r.paidIn,0), rows.filter(r=>r.type==='Postpaid').reduce((a,r)=>a+(Number(r.profit)||0),0)],
+    [], ['By plan', 'Sales', 'Paid / Payout', 'Profit'], ...group('plan').map(([k,o])=>[k, o.n, o.paid, o.profit]),
+    [], ['By payment (prepaid)', 'Sales', 'Paid', ''], ...group('pay').filter(([k])=>k!=='—').map(([k,o])=>[k, o.n, o.paid, '']),
+    [], ['Card tax collected', sum('tax')]];
+  if(noCost) summary.push([], [`Note: ${noCost} prepaid sale(s) have no cost filled in yet, so their profit is left empty.`]);
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(sales), ws2 = XLSX.utils.aoa_to_sheet(summary);
+  ws1['!cols'] = [12,22,15,10,20,14,14,14,10,16,12,12].map(w=>({wch:w}));
+  ws2['!cols'] = [{wch:26},{wch:10},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+  XLSX.utils.book_append_sheet(wb, ws1, 'Sales');
+  const suffix = ({norc:'_NoRecharge', rc:'_RechargeOnly', m3:'_3Months', ext:'_3MonthExtension', m2:'_2Months', m1:'_1Month', m0:'_15Days', pre:'_PrepaidOnly', post:'_PostpaidOnly'}[repPlanFilter]||'');
+  XLSX.writeFile(wb, `Himobile_Profit_${String(period).replace(/\s+/g,'')}${suffix}.xlsx`);
+  toast(t('toast.exported'));
+}
 function exportReportForMonth(){
   const isAllTime = repSelectedMonth==='all' || !repSelectedMonth;
   const prepaidRows = [PREPAID_EXPORT_HEADERS];
@@ -7987,7 +8051,21 @@ document.getElementById('btnFormatData').addEventListener('click', async ()=>{
   renderPage(currentPage);
   renderNav();
 });
-document.getElementById('btnExportReport').addEventListener('click', exportReportForMonth);
+document.getElementById('btnExportReport').addEventListener('click', e=>{
+  e.stopPropagation();
+  const m = document.getElementById('repExportMenu'), zh = LANG==='zh';
+  document.getElementById('repExpProfitT').textContent = zh ? '利润汇总' : 'Profit summary';
+  document.getElementById('repExpProfitD').textContent = zh ? '只含算钱需要的：套餐、实收、税、成本、利润' : 'Only what you need to count money: plan, paid, tax, cost, profit';
+  document.getElementById('repExpFullT').textContent = zh ? '全部明细' : 'Full details';
+  document.getElementById('repExpFullD').textContent = zh ? '所有字段（和以前一样）' : 'Every field, as before';
+  m.hidden = !m.hidden;
+});
+document.getElementById('repExportMenu').addEventListener('click', e=>{
+  const b = e.target.closest('[data-rep-export]'); if(!b) return;
+  document.getElementById('repExportMenu').hidden = true;
+  if(b.dataset.repExport==='profit') exportProfitSummary(); else exportReportForMonth();
+});
+document.addEventListener('click', e=>{ const m = document.getElementById('repExportMenu'); if(m && !m.hidden && !e.target.closest('.rep-export-wrap')) m.hidden = true; });
 document.getElementById('planCheckIncludeHistory').addEventListener('change', renderPlanCheck);
 document.getElementById('btnPlanCheckExport').addEventListener('click', ()=>{
   const rows = (lastPlanCheck||[]).map(r=>({
