@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>365Himobile 客户管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20261128s">
+<link rel="stylesheet" href="style.css?v=20261128u">
 </head>
 <body>
 
@@ -430,7 +430,6 @@
           </div>
           <div class="dc-tools">
             <span class="dc-saved" id="dcSaved"></span>
-            <label class="dc-rate" title="₩ per ¥1"><span id="dcRateLbl">RMB rate</span> ₩<input id="dcRate" type="number" min="1" step="1"> = ¥1</label>
             <button class="btn btn-ghost" id="dcExport"></button>
           </div>
         </div>
@@ -678,7 +677,10 @@
             <div class="form-field full"><label data-i18n="print.template">打印模板</label><select id="p3_template"></select></div>
             <div class="form-field full" id="p3_paymentMethodField"><label data-i18n="f.paymentMethod">付款方式 Payment method</label><div class="tile-radio-group" id="p3_paymentMethod_group" data-field="paymentMethod"></div></div>
             <div class="form-field full rmb-paid" id="p3_rmbRow" hidden><label id="p3_rmbLabel">Paid in RMB (Alipay / WeChat)</label>
-              <div class="rmb-paid-row"><div class="currency-input-wrap"><span class="currency-badge">¥</span><input id="p3_rmb" type="number" min="0" step="1"></div><span class="rmb-hint" id="p3_rmbHint"></span></div></div>
+              <div class="rmb-paid-row">
+                <div class="rmb-cell"><small id="p3_rmbYLbl">RMB</small><div class="currency-input-wrap"><span class="currency-badge">¥</span><input id="p3_rmb" type="number" min="0" step="1" placeholder="0"></div></div>
+                <div class="rmb-cell"><small id="p3_rmbWLbl">KRW</small><div class="currency-input-wrap"><span class="currency-badge">₩</span><input id="p3_rmbKrw" type="number" min="0" step="100"></div></div>
+              </div><span class="rmb-hint" id="p3_rmbHint"></span></div>
           </div>
         </div>
 
@@ -946,7 +948,10 @@
         <div class="form-field full"><label data-i18n="f.notes">备注</label><textarea id="pa_notes"></textarea></div>
         <div class="form-field full"><label data-i18n="f.paymentMethod">付款方式 Payment method</label><div class="tile-radio-group" id="pa_paymentMethod_group" data-field="paymentMethod"></div></div>
             <div class="form-field full rmb-paid" id="pa_rmbRow" hidden><label id="pa_rmbLabel">Paid in RMB (Alipay / WeChat)</label>
-              <div class="rmb-paid-row"><div class="currency-input-wrap"><span class="currency-badge">¥</span><input id="pa_rmb" type="number" min="0" step="1"></div><span class="rmb-hint" id="pa_rmbHint"></span></div></div>
+              <div class="rmb-paid-row">
+                <div class="rmb-cell"><small id="pa_rmbYLbl">RMB</small><div class="currency-input-wrap"><span class="currency-badge">¥</span><input id="pa_rmb" type="number" min="0" step="1" placeholder="0"></div></div>
+                <div class="rmb-cell"><small id="pa_rmbWLbl">KRW</small><div class="currency-input-wrap"><span class="currency-badge">₩</span><input id="pa_rmbKrw" type="number" min="0" step="100"></div></div>
+              </div><span class="rmb-hint" id="pa_rmbHint"></span></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1161,6 +1166,6 @@
   <div id="statBreakdownBody" style="padding:4px 2px;"></div>
 </div>
 
-<script src="script.js?v=20261128s"></script>
+<script src="script.js?v=20261128u"></script>
 </body>
 </html>

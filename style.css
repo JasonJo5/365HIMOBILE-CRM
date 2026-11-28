@@ -1838,3 +1838,10 @@ html[data-theme="dark"] .dc-sum-all{background:rgba(148,163,184,.1)}
 .rmb-paid-row .currency-input-wrap{max-width:200px}
 .rmb-hint{font-size:12.5px;color:var(--text-soft);font-weight:600}
 .rmb-paid{background:rgba(185,28,28,.05);border-radius:12px;padding:10px 12px}
+/* Alipay / WeChat box: only when one of them is chosen (the [hidden] attribute must win) */
+.rmb-paid[hidden]{display:none!important}
+.rmb-paid-row{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:12px}
+.rmb-cell small{display:block;font-size:11.5px;font-weight:700;color:var(--text-soft);margin-bottom:4px}
+.rmb-cell .currency-input-wrap{max-width:none}
+.rmb-paid .rmb-hint{display:block;margin-top:6px}
+@media (max-width:520px){.rmb-paid-row{grid-template-columns:1fr 1fr}}

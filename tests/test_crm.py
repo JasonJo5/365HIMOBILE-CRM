@@ -434,7 +434,7 @@ def run(b):
         out.rc = [c.a.rcAmt, c.a.prePlans, c.income, c.allIn, /All total [(]incl[.] recharge[)]/.test(document.querySelector('.dc-sum').textContent)];
         { const tr = document.querySelector('[data-dc-day="'+day+'"]'), hd = [...document.querySelectorAll('#dcMonthCard thead th')].map(x=>x.textContent.trim());
           const val = h=> Number((tr.children[hd.indexOf(h)].textContent||'').replace(/[^0-9]/g,''))||0;
-          out.rmbCol = hd.includes('RMB') && /¥2/.test(tr.children[hd.indexOf('RMB')].textContent) && /₩300/.test(tr.children[hd.indexOf('RMB')].textContent);
+          out.rmbCol = hd.includes('RMB') && /¥ \\?/.test(tr.children[hd.indexOf('RMB')].textContent) && /₩300/.test(tr.children[hd.indexOf('RMB')].textContent);
           out.rowAdds = val('Cash') + val('Transfer') + val('Card') + 300 === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Prepaid + Postpaid + Other') && val('Cash') === 55000 + 10000; }
         out.rcCol = /Recharge ₩/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
@@ -487,7 +487,7 @@ def run(b):
           dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111300, 300, 1, 1, 100000, 1], dc["auto"])
     check("recharge kept apart: income 185,000 without it; 'All total (incl. recharge)' 221,000 = income + 36,000",
           dc["rc"] == [36000, 75300, 185300, 221300, True] and dc["rcCol"], dc["rc"])
-    check("month table RMB column shows yuan and the won price (₩300 at ₩200 = ¥1 → ≈¥2), counted in the total", dc["rmbCol"], dc)
+    check("month table RMB column shows the won amount (yuan '?' when not typed), counted in the total", dc["rmbCol"], dc)
     check("month table adds up: Cash + Transfer + Card + RMB (won) = Total (other sales included); Total − recharge + Postpaid = Income", dc["rowAdds"], dc)
     check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
           dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185300] and dc["kpiOk"], dc["calc"])
@@ -524,21 +524,26 @@ def run(b):
     print("Paid in RMB")
     rm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';}); const out = {};
         closeAllModals(); openPrepaidAssignModal(c.id, 'recharge');
-        out.hiddenFirst = document.getElementById('pa_rmbRow').hidden;
+        const vis = ()=> document.getElementById('pa_rmbRow').offsetParent !== null;
+        out.hiddenFirst = !vis();
         const pr = document.getElementById('pa_price'); pr.value = 36000; pr.dispatchEvent(new Event('input', {bubbles:true}));
         document.querySelector('#pa_paymentMethod_group [data-val="alipay"]').click();
         return new Promise(r=> setTimeout(()=>{
-          out.shown = !document.getElementById('pa_rmbRow').hidden; out.auto = document.getElementById('pa_rmb').value;
-          out.badge = document.getElementById('pa_currencyBadge').textContent;
-          const y = document.getElementById('pa_rmb'); y.value = '175'; y.dispatchEvent(new Event('input', {bubbles:true}));
-          document.getElementById('pa_company_group').querySelector('[data-val]')?.click();
-          document.getElementById('pa_svcCarrierType_group').querySelector('[data-val]')?.click();
-          document.getElementById('savePrepaidAssignBtn').click();
-          const n = activeSubscriptionFor(c.id); out.saved = [n.paymentMethod, n.sellingPrice, DB.reminderState['rmb:'+n.id], rmbOf(n).yuan];
-          closeAllModals(); r(out); }, 50)); })()""")
-    check("Alipay / WeChat: a 'Paid in RMB' box appears, filled from the rate (₩36,000 ÷ 200 = ¥180); price stays in ₩",
-          rm["hiddenFirst"] and rm["shown"] and rm["auto"] == "180" and rm["badge"] == "₩", rm)
-    check("the yuan typed (¥175) is saved with the plan; the plan keeps its won price", rm["saved"] == ["alipay", 36000, "175", 175], rm["saved"])
+          out.shown = vis(); out.emptyY = document.getElementById('pa_rmb').value === '';
+          document.querySelector('#pa_paymentMethod_group [data-val="cash"]').click();
+          setTimeout(()=>{ out.hiddenOnCash = !vis();
+            document.querySelector('#pa_paymentMethod_group [data-val="wechat"]').click();
+            setTimeout(()=>{
+              const y = document.getElementById('pa_rmb'), w = document.getElementById('pa_rmbKrw');
+              y.value = '175'; w.value = '35000';
+              document.getElementById('pa_company_group').querySelector('[data-val]')?.click();
+              document.getElementById('pa_svcCarrierType_group').querySelector('[data-val]')?.click();
+              document.getElementById('savePrepaidAssignBtn').click();
+              const n = activeSubscriptionFor(c.id); const rr = rmbOf(n); out.saved = [n.paymentMethod, n.sellingPrice, rr.yuan, rr.won];
+              closeAllModals(); r(out); }, 30); }, 30); }, 50)); })()""")
+    check("the RMB / KRW boxes show only for Alipay or WeChat (hidden again for cash); nothing is filled in automatically",
+          rm["hiddenFirst"] and rm["shown"] and rm["emptyY"] and rm["hiddenOnCash"], rm)
+    check("RMB ¥175 and KRW ₩35,000 typed by hand are saved; reports use the KRW amount", rm["saved"] == ["wechat", 36000, 175, 35000], rm["saved"])
 
     print("Daily closing: payment methods however written")
     pk = pg.evaluate("['card','Card',' CARD ','카드','刷卡','cash','현금','bank transfer','Transfer','이체','alipay','WeChat','kakaopay','',null].map(dcPayKey)")

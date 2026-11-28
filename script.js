@@ -558,16 +558,20 @@ function updateCurrencyBadgeFor(groupId){
   rmbRowUpdate(groupId.slice(0,2));
 }
 /* ---------------- Paid in RMB (Alipay / WeChat) ----------------
-   The plan price stays in won (e.g. ₩36,000). When the customer pays with Alipay or WeChat,
-   a "Paid in RMB" box appears, filled in from the exchange rate (₩36,000 ÷ 200 = ¥180) and
-   editable. The yuan amount is kept in reminderState as 'rmb:<planId>' (synced everywhere),
-   so reports can show both: ¥180 · ₩36,000. */
-function rmbRate(){ return Number(DB.reminderState && DB.reminderState['setting:rmbRate']) || 200; }
+   Only when Alipay or WeChat is chosen, two boxes appear: how much RMB (¥) the customer paid
+   and how much that is in KRW (₩) — staff work out the rate themselves. Saved in reminderState
+   as 'rmb:<planId>' = {"y":180,"w":36000} (synced everywhere). Reports count the KRW amount
+   (or the plan price when no KRW was typed) and show the yuan next to it: ¥180 · ₩36,000. */
 function isRmbMethod(m){ return /alipay|wechat|支付宝|微信/i.test(String(m||'')); }
-function rmbOf(s){   // yuan paid for a plan: what staff typed, else worked out from the won price
-  const v = DB.reminderState && DB.reminderState['rmb:'+s.id];
-  if(v!=null && v!=='' && !isNaN(Number(v))) return {yuan: Number(v), typed: true};
-  return {yuan: Math.round((Number(s.sellingPrice)||0) / rmbRate()), typed: false};
+function rmbOf(s){
+  const raw = DB.reminderState && DB.reminderState['rmb:'+s.id];
+  let y = null, w = null;
+  if(raw!=null && raw!==''){
+    try{ const o = JSON.parse(raw); if(o && typeof o==='object'){ y = o.y==null||o.y==='' ? null : Number(o.y); w = o.w==null||o.w==='' ? null : Number(o.w); } else y = Number(o); }catch(e){ y = Number(raw); }
+  }
+  if(y!=null && isNaN(y)) y = null;
+  if(w==null || isNaN(w) || !(w>0)) w = Number(s.sellingPrice)||0;
+  return {yuan: y, won: w, typed: y!=null};
 }
 function rmbRowUpdate(prefix){
   const row = document.getElementById(prefix+'_rmbRow'), grp = document.getElementById(prefix+'_paymentMethod_group');
@@ -575,31 +579,34 @@ function rmbRowUpdate(prefix){
   const on = isRmbMethod(grp.dataset.selected);
   row.hidden = !on;
   if(!on) return;
-  const zh = LANG==='zh', inp = document.getElementById(prefix+'_rmb'), won = prepaidTotal(prefix), rate = rmbRate();
-  document.getElementById(prefix+'_rmbLabel').textContent = zh ? '人民币实收（支付宝 / 微信）' : 'Paid in RMB (Alipay / WeChat)';
-  if(!inp.dataset.touched) inp.value = won ? Math.round(won / rate) : '';
-  document.getElementById(prefix+'_rmbHint').textContent = zh ? `= ${fmtWon(won)} · 汇率 ₩${rate} = ¥1` : `= ${fmtWon(won)} · rate ₩${rate} = ¥1`;
+  const zh = LANG==='zh', won = prepaidTotal(prefix);
+  document.getElementById(prefix+'_rmbLabel').textContent = zh ? '支付宝 / 微信付款' : 'Paid by Alipay / WeChat';
+  document.getElementById(prefix+'_rmbYLbl').textContent = zh ? '人民币（实收）' : 'RMB received';
+  document.getElementById(prefix+'_rmbWLbl').textContent = zh ? '折合韩元（算进报表）' : 'In KRW (counted in reports)';
+  const kw = document.getElementById(prefix+'_rmbKrw'); kw.placeholder = won ? String(won) : '0';
+  document.getElementById(prefix+'_rmbHint').textContent = zh ? `韩元不填就按套餐价格 ${fmtWon(won)} 计算` : `Leave KRW empty to use the plan price ${fmtWon(won)}`;
 }
 function rmbRowReset(prefix, svc){
-  const inp = document.getElementById(prefix+'_rmb'); if(!inp) return;
-  delete inp.dataset.touched; inp.value = '';
-  if(svc){ const v = DB.reminderState && DB.reminderState['rmb:'+svc.id]; if(v!=null && v!==''){ inp.value = v; inp.dataset.touched = '1'; } }
+  const y = document.getElementById(prefix+'_rmb'), w = document.getElementById(prefix+'_rmbKrw'); if(!y || !w) return;
+  y.value = ''; w.value = '';
+  if(svc){ const r = rmbOf(svc), raw = DB.reminderState && DB.reminderState['rmb:'+svc.id];
+    if(raw){ if(r.yuan!=null) y.value = r.yuan; try{ const o = JSON.parse(raw); if(o && o.w) w.value = o.w; }catch(e){} } }
   rmbRowUpdate(prefix);
 }
 function rmbFromForm(prefix){
-  const grp = document.getElementById(prefix+'_paymentMethod_group'), inp = document.getElementById(prefix+'_rmb');
-  if(!grp || !inp || !isRmbMethod(grp.dataset.selected) || inp.value==='') return null;
-  return Number(inp.value)||0;
+  const grp = document.getElementById(prefix+'_paymentMethod_group');
+  if(!grp || !isRmbMethod(grp.dataset.selected)) return null;
+  const y = document.getElementById(prefix+'_rmb').value, w = document.getElementById(prefix+'_rmbKrw').value;
+  if(y==='' && w==='') return null;
+  return {y: y==='' ? null : Number(y), w: w==='' ? null : Number(w)};
 }
-function rmbStore(serviceId, yuan){
+function rmbStore(serviceId, v){
   DB.reminderState = DB.reminderState || {};
-  if(yuan==null){ if(DB.reminderState['rmb:'+serviceId]) DB.reminderState['rmb:'+serviceId] = ''; return; }
-  DB.reminderState['rmb:'+serviceId] = String(yuan);
+  if(v==null){ if(DB.reminderState['rmb:'+serviceId]) DB.reminderState['rmb:'+serviceId] = ''; return; }
+  DB.reminderState['rmb:'+serviceId] = JSON.stringify(v);
 }
 document.addEventListener('input', e=>{
-  const id = e.target.id || '';
-  if(id==='p3_rmb' || id==='pa_rmb'){ e.target.dataset.touched = '1'; return; }
-  const m = id.match(/^(p3|pa)_(price|discount|tax)$/); if(m) rmbRowUpdate(m[1]);
+  const m = (e.target.id || '').match(/^(p3|pa)_(price|discount|tax)$/); if(m) rmbRowUpdate(m[1]);
 });
 document.addEventListener('click', e=>{
   const tile = e.target.closest('.tile-radio-group[id$="paymentMethod_group"] .tile-radio');
@@ -9246,11 +9253,12 @@ function dcAuto(day){
       const dd = Number(s.durationDays)||0, isRc = planLengthLabel(s)[0]==='rc';
       // a recharge is counted on its own, not as a 1-month plan
       if(isRc) a.rc++; else if(dd===90) a.d90++; else if(dd===60) a.d60++; else if(dd===30) a.d30++; else if(dd===15 || dd===14) a.d15++; else a.dOther++;
-      const amt = Number(s.sellingPrice)||0, k = dcPayKey(s.paymentMethod);
+      let amt = Number(s.sellingPrice)||0; const k = dcPayKey(s.paymentMethod);
+      if(k==='rmb') amt = rmbOf(s).won;   // the KRW amount typed for an Alipay / WeChat sale
       if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; }
       else if(k==='other'){ a.otherPayN++; a.otherPayAmt += amt; a.otherPayNames.add(String(s.paymentMethod)); }
       else a[k] += amt;
-      if(k==='rmb'){ const r = rmbOf(s); a.rmbY += r.yuan; if(!r.typed) a.rmbEst = true; }
+      if(k==='rmb'){ const r = rmbOf(s); if(r.yuan!=null) a.rmbY += r.yuan; else a.rmbEst = true; }
       if(k==='cash') a.cashList.push({name: (getCustomer(s.customerId)||{}).name || '', plan: planLengthLabel(s)[1], amt, cid: s.customerId});
       if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; if(k!=='unpaid' && k!=='other') a.rcAmt += amt; }
     } else if(s.type==='postpaid'){
@@ -9309,8 +9317,7 @@ function renderDailyClosing(){
   document.getElementById('dcToday').classList.toggle('on', dcDay===todayISO());
   document.getElementById('dcExport').textContent = zh ? '导出本月 Excel' : 'Export month to Excel';
   document.getElementById('dcSaved').textContent = '';
-  { const ri = document.getElementById('dcRate'); if(ri && document.activeElement!==ri) ri.value = rmbRate();
-    const rl = document.getElementById('dcRateLbl'); if(rl) rl.textContent = zh ? '人民币汇率' : 'RMB rate'; }
+
   const d = dcLoad(dcDay), c = dcCalc(dcDay, d), a = c.a;
   const W = n=> fmtWon(n);
   const step = (n, title, sub, body, done)=> `<div class="card dc-step ${done?'done':''}">
@@ -9332,7 +9339,7 @@ function renderDailyClosing(){
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(c.cashAll)}</b></div>
         <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(c.tfAll)}</b></div>
         <div><span><i class="dcdot dc-card"></i>${zh?'刷卡':'Card'}</span><b>${W(c.cardAll)}</b></div>
-        ${a.rmb ? `<div><span><i class="dcdot dc-rmb"></i>${zh?'人民币':'RMB'} <small class="incl" style="display:inline">${a.rmbEst?'≈ ':''}${dcFmtY(a.rmbY)}</small></span><b>${W(a.rmb)}</b></div>` : ''}
+        ${a.rmb ? `<div><span><i class="dcdot dc-rmb"></i>${zh?'人民币':'RMB'} <small class="incl" style="display:inline">${dcFmtY(a.rmbY)}${a.rmbEst?(zh?' + 未填':' + ? not typed'):''}</small></span><b>${W(a.rmb)}</b></div>` : ''}
         <div class="sub"><span><b>${zh?'合计':'Total'}</b>${c.o.total ? `<small class="incl">${zh?`含其他销售 ${W(c.o.total)}`:`incl. other sales ${W(c.o.total)}`}</small>` : ''}</span><b>${W(c.total)}</b></div>
         ${a.rcAmt || a.rc ? `<div class="sub rcline"><span>${zh?`− 其中充值 ${a.rc} 笔`:`− of which recharge × ${a.rc}`}<small class="incl">${zh?'不算收入':'not counted as income'}</small></span><b>${W(a.rcAmt)}</b></div>` : ''}
         <div class="sub"><span>${zh?'+ 后付':'+ Postpaid'}</span><b>${W(a.postAmt)}</b></div>
@@ -9453,13 +9460,13 @@ function dcWhoListHtml(day){
   const payTag = s=>{ const k = dcPayKey(s.paymentMethod);
     return k==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>`
          : k==='other' ? `<span class="dc-paypill other" title="${zh?'没算进现金/转账/刷卡':'Not in cash / transfer / card'}">${escapeHtml(String(s.paymentMethod))}</span>`
-         : k==='rmb' ? `<span class="dc-paypill rmb">${escapeHtml(String(s.paymentMethod))} ${rmbOf(s).typed?'':'≈'}${dcFmtY(rmbOf(s).yuan)}</span>`
+         : k==='rmb' ? `<span class="dc-paypill rmb">${escapeHtml(String(s.paymentMethod))}${rmbOf(s).yuan!=null ? ' '+dcFmtY(rmbOf(s).yuan) : ''}</span>`
          : `<span class="dc-paypill ${k}">${dcPayName(k)}</span>`; };
   const row = s=>{
     const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid', skip = dcReplacedSameDay(s);
     const plan = pre ? planLengthLabel(s)[1] : (s.plan || (zh?'后付':'Postpaid'));
     const dup = !skip && seen[s.customerId+'|'+s.type] > 1;
-    const amt = pre ? (Number(s.sellingPrice)||0) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
+    const amt = pre ? (dcPayKey(s.paymentMethod)==='rmb' ? rmbOf(s).won : (Number(s.sellingPrice)||0)) : ((s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit))||0);
     return `<div class="dc-wr ${dup?'dup':''} ${skip?'skip':''}" data-open-customer="${s.customerId}" title="${zh?'打开客户':'Open customer'}">
       <span class="nm"><b>${escapeHtml(c.name||'—')}</b>${c.phone?`<small>${escapeHtml(c.phone)}</small>`:''}</span>
       <span class="pl ${pre && planLengthLabel(s)[0]==='rc' ? 'rc' : ''}">${escapeHtml(plan)} ${tag(s)} ${dup?`<span class="dc-tag warn">${zh?'同一客户两次':'Same customer twice'}</span>`:''}</span>
@@ -9568,7 +9575,7 @@ function renderDailyMonth(){
   ];
   const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
     : k==='y' ? (v ? dcFmtY(v) : '<span class="z">–</span>')
-    : k==='rmb' ? (v && v.a.rmb ? `${v.a.rmbEst?'≈':''}${dcFmtY(v.a.rmbY)}<small class="won">${fmtWon(v.a.rmb)}</small>` : '<span class="z">–</span>')
+    : k==='rmb' ? (v && v.a.rmb ? `${v.a.rmbY ? dcFmtY(v.a.rmbY) : '¥ ?'}${v.a.rmbEst && v.a.rmbY ? '+' : ''}<small class="won">${fmtWon(v.a.rmb)}</small>` : '<span class="z">–</span>')
     : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
     : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
   const sumTiles = [
@@ -9630,12 +9637,7 @@ function exportDailyMonth(){
   document.getElementById('dcToday').addEventListener('click', ()=> go(todayISO()));
   document.getElementById('dcDate').addEventListener('change', e=> go(e.target.value));
   document.getElementById('dcExport').addEventListener('click', exportDailyMonth);
-  // RMB exchange rate (won per 1 yuan) — used to fill in "Paid in RMB" and for older sales
-  document.getElementById('dcRate').addEventListener('change', e=>{
-    const v = Math.round(Number(e.target.value)); if(!(v>0)){ e.target.value = rmbRate(); return; }
-    DB.reminderState = DB.reminderState || {}; DB.reminderState['setting:rmbRate'] = String(v); saveDB(DB); renderDailyClosing();
-    toast(LANG==='zh' ? `汇率已改为 ₩${v} = ¥1` : `Rate set to ₩${v} = ¥1`);
-  });
+
   // typing: save right away, refresh the totals once the field is left (so the cursor isn't lost)
   const edit = (e, rerender)=>{
     const el = e.target; if(!el.classList || !el.classList.contains('dc-in') && !(el.type==='checkbox' && el.dataset.f)) return;
