@@ -1821,3 +1821,10 @@ html[data-theme="dark"] .dc-sum-all{background:rgba(148,163,184,.1)}
 .dc-table td.allin,.dc-table th.allin{font-weight:800}
 .dc-sum-cap{font-size:11.5px;color:var(--text-soft);margin:-8px 0 12px}
 .dc-table th.inc{white-space:normal;min-width:96px;line-height:1.25}
+.dc-table td.rmb,.dc-table th.rmb{color:#b91c1c}
+.dc-mtile.rmb span,.dc-mtile.rmb b{color:#b91c1c}
+.dc-mtiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:1300px){.dc-mtiles{grid-template-columns:repeat(9,minmax(0,1fr))}}
+@media (min-width:1300px) and (max-width:1700px){.dc-mtiles{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:620px){.dc-mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1600px){.dc-table{font-size:12px}.dc-table td,.dc-table th{padding-left:5px;padding-right:5px}.dc-table th.inc{min-width:84px}.dc-cnt{padding:1px 5px}}

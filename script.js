@@ -9492,7 +9492,7 @@ function renderDailyMonth(){
   const zh = LANG==='zh', month = dcDay.slice(0,7), rows = dcMonthRows(month);
   const tot = k=> rows.reduce((x,r)=> x + (Number(k(r))||0), 0);
   // every day with a sign-up, a recharge or any money — including sales not paid yet
-  const shown = rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preCount || r.a.postN || r.c.o.total || r.c.o.freeQty || r.a.unpaidN);
+  const shown = rows.slice().reverse().filter(r=> r.day===dcDay || r.a.preCount || r.a.postN || r.c.o.total || r.c.o.freeQty || r.a.unpaidN || r.c.o.rmb);
   const anyUnpaid = rows.some(r=> r.a.unpaidN);
   const cols = [
     {h: zh?'日期':'Date', v: r=> shortDay(r.day), k:'date'},
@@ -9506,6 +9506,7 @@ function renderDailyMonth(){
     {h: zh?'现金':'Cash', v: r=> r.c.cashAll, k:'w', grp:'money', t: zh?'先付 + 其他销售':'Prepaid + other sales'},
     {h: zh?'转账':'Transfer', v: r=> r.c.tfAll, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.c.cardAll, k:'w'},
+    {h: zh?'人民币':'RMB ¥', v: r=> r.a.rmb + r.c.o.rmb, k:'y', cls:'rmb', t: zh?'支付宝 / 微信（人民币，不算进韩元合计）':'Alipay / WeChat in yuan — not added to the ₩ totals'},
     {h: zh?'合计':'Total', v: r=> r.c.total, k:'w', grp:'sum', t: zh?'现金 + 转账 + 刷卡（含充值和其他销售）':'Cash + transfer + card (incl. recharge and other sales)'},
     {h: zh?'其中充值':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在合计里，但不算收入':'Part of the total, but not counted as income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
@@ -9514,12 +9515,14 @@ function renderDailyMonth(){
     {h: zh?'全部':'All total', v: r=> r.c.allIn, k:'w', cls:'allin', t: zh?'全部合计（含充值）= 收入 + 充值':'Everything incl. recharge = income + recharge'},
   ];
   const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
+    : k==='y' ? (v ? dcFmtY(v) : '<span class="z">–</span>')
     : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
     : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
   const sumTiles = [
     [zh?'先付+后付+其他':'Prepaid + Postpaid + Other', fmtWon(tot(r=>r.c.income)), 'main'],
     [zh?'全部（含充值）':'All incl. recharge', fmtWon(tot(r=>r.c.allIn)), 'allin'],
     [zh?'现金':'Cash', fmtWon(tot(r=>r.c.cashAll))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.c.tfAll))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.c.cardAll))],
+    [zh?'人民币':'RMB ¥', dcFmtY(tot(r=>r.a.rmb + r.c.o.rmb)), 'rmb'],
     [zh?'充值（另计）':'Recharge (separate)', `${tot(r=>r.a.rc)} · ${fmtWon(tot(r=>r.a.rcAmt))}`, 'rc'],
     [zh?'先付':'Plans', `${tot(r=>r.a.preCount - r.a.rc)} · ${fmtWon(tot(r=>r.a.prePlans))}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
   ];
