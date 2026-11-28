@@ -434,7 +434,7 @@ def run(b):
         out.rc = [c.a.rcAmt, c.a.prePlans, c.income, c.allIn, /All total [(]incl[.] recharge[)]/.test(document.querySelector('.dc-sum').textContent)];
         { const tr = document.querySelector('[data-dc-day="'+day+'"]'), hd = [...document.querySelectorAll('#dcMonthCard thead th')].map(x=>x.textContent.trim());
           const val = h=> Number((tr.children[hd.indexOf(h)].textContent||'').replace(/[^0-9]/g,''))||0;
-          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Income') && val('Cash') === 55000 + 10000; }
+          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Prepaid + Postpaid + Other') && val('Cash') === 55000 + 10000; }
         out.rcCol = /Recharge ₩/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
         addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));

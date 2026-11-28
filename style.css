@@ -1819,3 +1819,5 @@ html[data-theme="dark"] .dc-sum-all{background:rgba(148,163,184,.1)}
 .dc-table td:last-child,.dc-table th:last-child{color:var(--text)}
 .dc-table td.inc,.dc-table th.inc{color:var(--blue)}
 .dc-table td.allin,.dc-table th.allin{font-weight:800}
+.dc-sum-cap{font-size:11.5px;color:var(--text-soft);margin:-8px 0 12px}
+.dc-table th.inc{white-space:normal;min-width:96px;line-height:1.25}

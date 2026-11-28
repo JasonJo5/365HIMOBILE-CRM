@@ -9275,6 +9275,7 @@ function renderDailyClosing(){
     <div class="card dc-sum">
       <div class="dc-sum-l">${zh?'当日收入总':'Today\'s income'}</div>
       <div class="dc-sum-v">${W(c.income)}</div>
+      <div class="dc-sum-cap">${zh?'先付 + 后付 + 其他（不含充值）':'Prepaid + Postpaid + Other (no recharge)'}</div>
       <div class="dc-sum-all"><span>${zh?'全部合计（含充值）':'All total (incl. recharge)'}</span><b>${W(c.allIn)}</b></div>
       <div class="dc-sum-rows">
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(c.cashAll)}</b></div>
@@ -9509,14 +9510,14 @@ function renderDailyMonth(){
     {h: zh?'其中充值':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在合计里，但不算收入':'Part of the total, but not counted as income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
     ...(anyUnpaid ? [{h: zh?'未付款':'Not paid', v: r=> r.a.unpaidAmt, k:'u', t: zh?'还没付款 / 没选付款方式 — 不算在收入里':'Not paid yet / no payment method — not in the income'}] : []),
-    {h: zh?'收入':'Income', v: r=> r.c.income, k:'w', cls:'inc', t: zh?'不含充值':'Without recharges'},
+    {h: zh?'先付+后付+其他':'Prepaid + Postpaid + Other', v: r=> r.c.income, k:'w', cls:'inc', t: zh?'收入：先付（不含充值）+ 后付 + 其他销售':'Income: prepaid (no recharge) + postpaid + other sales'},
     {h: zh?'全部':'All total', v: r=> r.c.allIn, k:'w', cls:'allin', t: zh?'全部合计（含充值）= 收入 + 充值':'Everything incl. recharge = income + recharge'},
   ];
   const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
     : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
     : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
   const sumTiles = [
-    [zh?'本月收入':'Month income', fmtWon(tot(r=>r.c.income)), 'main'],
+    [zh?'先付+后付+其他':'Prepaid + Postpaid + Other', fmtWon(tot(r=>r.c.income)), 'main'],
     [zh?'全部（含充值）':'All incl. recharge', fmtWon(tot(r=>r.c.allIn)), 'allin'],
     [zh?'现金':'Cash', fmtWon(tot(r=>r.c.cashAll))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.c.tfAll))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.c.cardAll))],
     [zh?'充值（另计）':'Recharge (separate)', `${tot(r=>r.a.rc)} · ${fmtWon(tot(r=>r.a.rcAmt))}`, 'rc'],
