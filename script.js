@@ -88,7 +88,7 @@ const I18N = {
     'rem.dueIn':'天后到期','rem.overdue':'天前已到期','rem.today':'今日到期','rem.auto':'自动生成','rem.empty.title':'暂无提醒','rem.empty.desc':'当有客户即将到期或需要跟进时，会显示在这里',
     'orders.title':'业务订单','orders.desc':'记录先付、后付、号码移动、充值和名义变更','orders.showHistory':'显示已变更的历史记录',
     'rep.byCarrier':'按通信社的营收 / 收入','rep.byType':'按业务类型的营收 / 收入','rep.popularPlans':'热门套餐 Top 5','rep.rates':'续约率 / 回头客率','rep.monthly':'全部月份对账','rep.renewalRate':'续约率','rep.repeatRate':'回头客率','rep.totalOrders':'累计订单数','rep.avgProfit':'平均单笔收入',
-    'rep.view.monthly':'月度报表','rep.view.daily':'每日报表','rep.monthlyComparison':'月度对比 — 先付 / 后付收入','rep.prepaidIncome':'先付总收入','rep.postpaidExpected':'后付预期收入','rep.postpaidActual':'后付实际收入','rep.accumulated':'累计总收入',
+    'rep.view.monthly':'月度报表','rep.view.daily':'每日报表','rep.view.closing':'日结','rep.monthlyComparison':'月度对比 — 先付 / 后付收入','rep.prepaidIncome':'先付总收入','rep.postpaidExpected':'后付预期收入','rep.postpaidActual':'后付实际收入','rep.accumulated':'累计总收入',
     'rep.daily.title':'每日报表','rep.daily.desc':'按日期查看先付 / 后付客户数与收入','rep.daily.recent':'近期每日记录','rep.daily.prepaidCustomers':'先付客户数','rep.daily.postpaidCustomers':'后付客户数',
     'col.prepaidCustomers':'先付客户数','col.postpaidCustomers':'后付客户数','col.prepaidIncome':'先付收入','col.postpaidExpected':'后付预期收入','col.postpaidActual':'后付实际收入','col.monthTotal':'合计','col.date':'日期','col.accumulated':'累计总收入',
     'rep.daily.prepaidListTitle':'先付客户明细（本日）','rep.daily.postpaidListTitle':'后付客户明细（本日）','rep.daily.paymentBreakdownTitle':'付款方式汇总（先付，本日）','rep.daily.paymentBreakdownDesc':'按付款方式统计当日先付客户数与收入合计','rep.daily.notSet':'未填写','rep.monthly.paymentBreakdownTitle':'付款方式汇总（先付）','rep.monthly.paymentBreakdownDesc':'按付款方式统计所选月份先付客户数与收入合计',
@@ -188,7 +188,7 @@ const I18N = {
     'rem.dueIn':'days left','rem.overdue':'days overdue','rem.today':'due today','rem.auto':'auto-generated','rem.empty.title':'No reminders','rem.empty.desc':'Reminders will appear here once customers are expiring or need follow-up',
     'orders.title':'Service orders','orders.desc':'Prepaid, postpaid, porting, top-up and ownership-transfer records','orders.showHistory':'Show replaced/history records',
     'rep.byCarrier':'Revenue / income by carrier','rep.byType':'Revenue / income by service type','rep.popularPlans':'Top 5 popular plans','rep.rates':'Renewal rate / repeat-customer rate','rep.monthly':'All months reconciliation','rep.renewalRate':'Renewal rate','rep.repeatRate':'Repeat-customer rate','rep.totalOrders':'Total orders','rep.avgProfit':'Avg. income / order',
-    'rep.view.monthly':'Monthly','rep.view.daily':'Daily','rep.monthlyComparison':'Month-to-month comparison — Prepaid / Postpaid income','rep.prepaidIncome':'Prepaid total income','rep.postpaidExpected':'Postpaid expected income','rep.postpaidActual':'Postpaid actual income','rep.accumulated':'Accumulated income',
+    'rep.view.monthly':'Monthly','rep.view.daily':'Daily','rep.view.closing':'Closing','rep.monthlyComparison':'Month-to-month comparison — Prepaid / Postpaid income','rep.prepaidIncome':'Prepaid total income','rep.postpaidExpected':'Postpaid expected income','rep.postpaidActual':'Postpaid actual income','rep.accumulated':'Accumulated income',
     'rep.daily.title':'Daily Report','rep.daily.desc':'View prepaid / postpaid customer counts and income by date','rep.daily.recent':'Recent daily records','rep.daily.prepaidCustomers':'Prepaid customers','rep.daily.postpaidCustomers':'Postpaid customers',
     'col.prepaidCustomers':'Prepaid customers','col.postpaidCustomers':'Postpaid customers','col.prepaidIncome':'Prepaid income','col.postpaidExpected':'Postpaid expected','col.postpaidActual':'Postpaid actual','col.monthTotal':'Total','col.date':'Date','col.accumulated':'Accumulated total',
     'rep.daily.prepaidListTitle':'Prepaid customers (today)','rep.daily.postpaidListTitle':'Postpaid customers (today)','rep.daily.paymentBreakdownTitle':'Payment method breakdown (prepaid, today)','rep.daily.paymentBreakdownDesc':'Customer count and income total for each payment method used today','rep.daily.notSet':'Not set','rep.monthly.paymentBreakdownTitle':'Payment method breakdown (prepaid)','rep.monthly.paymentBreakdownDesc':'Customer count and income total for each payment method used in the selected month',
@@ -2462,7 +2462,6 @@ const NAV_ITEMS = [
   {key:'ai', icon:'sparkle', label:'nav.ai'},
   {key:'reminders', icon:'clock', label:'nav.reminders'},
   // (Orders page retired 2026-11-11 — Sheet View lists every plan; other services and edits live in each customer's profile)
-  {key:'daily', icon:'calc', label:'nav.daily'},
   {key:'reports', icon:'chart', label:'nav.reports'},
   {key:'templates', icon:'printer', label:'nav.templates'},
   {key:'io', icon:'cloud', label:'nav.io'},
@@ -2499,6 +2498,7 @@ function renderNav(){
 
 function goTo(page){
   if(page==='orders') page = 'sheet'; // Orders page retired 2026-11-11 — old links/saved state land on Sheet View
+  if(page==='daily'){ reportView = 'closing'; page = 'reports'; } // Daily closing lives in Reports now (Closing tab)
   currentPage = page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
@@ -5881,8 +5881,21 @@ function expectedIncomeFor(s){
   return Math.max(0, (Number(s.expectedProfit)||0) - discountTotalFor(s) - (Number(s.usimFee)||0));
 }
 function renderReports(){
-  const tabs = [{key:'monthly', label:'rep.view.monthly'}, {key:'daily', label:'rep.view.daily'}];
+  const tabs = [{key:'monthly', label:'rep.view.monthly'}, {key:'daily', label:'rep.view.daily'}, {key:'closing', label:'rep.view.closing'}];
   document.getElementById('reportViewTabs').innerHTML = tabs.map(tb=>`<button class="rem-tab ${reportView===tb.key?'on':''}" data-reportview="${tb.key}">${t(tb.label)}</button>`).join('');
+  // Closing (the old "Daily closing" page) has its own date bar and export, so the report
+  // pickers are hidden there
+  const closing = reportView==='closing';
+  document.querySelector('#page-reports .rep-tools').style.display = closing ? 'none' : '';
+  document.getElementById('page-daily').style.display = closing ? '' : 'none';
+  document.getElementById('pageSub').textContent = closing ? t('sub.daily') : t('sub.reports');
+  if(closing){
+    document.querySelectorAll('[data-reportview]').forEach(b=> b.addEventListener('click', ()=>{ reportView=b.dataset.reportview; renderReports(); }));
+    document.getElementById('repMonthlyView').style.display = 'none';
+    document.getElementById('repDailyView').style.display = 'none';
+    renderDailyClosing();
+    return;
+  }
   // the toolbar shows the picker for the current view; export is per month
   document.getElementById('repMonthSelect').style.display = reportView==='monthly' ? '' : 'none';
   document.getElementById('btnExportReport').style.display = '';

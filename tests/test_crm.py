@@ -510,6 +510,15 @@ def run(b):
     check("typed-in daily entries are saved apart from customers and plans", dc["stored"] and dc["untouched"] and dc["monthRow"], dc)
     check("month export has the old sheet's layout (先付办理数量 / 90天 ...)", dc["export"] and dc["export"][0] == "Himobile_Daily_2020-02.xlsx" and dc["export"][1] == "先付办理数量" and dc["export"][2] == "90天" and dc["export"][3][1] == 1, dc["export"])
 
+    print("Closing lives in Reports")
+    cl = pg.evaluate("""(()=>{ goTo('daily'); const out = [currentPage, reportView, document.getElementById('page-daily').offsetParent!==null,
+        [...document.querySelectorAll('#reportViewTabs .rem-tab')].map(b=>b.textContent), !document.querySelector('.nav-item[data-nav="daily"]') && !!document.querySelector('.nav-item[data-nav="reports"]'),
+        document.querySelector('#page-reports .rep-tools').style.display];
+        document.querySelector('[data-reportview="monthly"]').click(); out.push(document.getElementById('page-daily').offsetParent===null, document.getElementById('repMonthlyView').style.display);
+        goTo('dashboard'); return out; })()""")
+    check("Daily closing is the 'Closing' tab in Reports (next to Monthly / Daily), not a separate menu item",
+          cl == ["reports", "closing", True, ["Monthly", "Daily", "Closing"], True, "none", True, ""], cl)
+
     print("Daily closing: payment methods however written")
     pk = pg.evaluate("['card','Card',' CARD ','카드','刷卡','cash','현금','bank transfer','Transfer','이체','alipay','WeChat','kakaopay','',null].map(dcPayKey)")
     check("Card / 카드 / 刷卡 count as card, 현금 as cash, 이체 as transfer; kakaopay is 'other' (shown), only empty is not paid",
