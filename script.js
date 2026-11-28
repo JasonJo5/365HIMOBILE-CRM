@@ -9225,6 +9225,7 @@ function dcCalc(day, d){
   const cashAll = a.cash + o.cash, tfAll = a.transfer + o.transfer, cardAll = a.card + o.card;
   const total = cashAll + tfAll + cardAll;
   const income = total - a.rcAmt + a.postAmt;   // recharges are not part of the income
+  const allIn = total + a.postAmt;              // everything together, recharges included
   const drawerOut = topStore;
   // today's cash only: what should have been added to the drawer today
   const cashToday = a.cash + o.cash - drawerOut;
@@ -9234,7 +9235,7 @@ function dcCalc(day, d){
   const start = startTyped ? (Number(d.start)||0) : (prev ? prev.amount : 0);
   const cashExpected = start + cashToday;
   const counted = d.counted==='' || d.counted==null ? null : Number(d.counted)||0;
-  return {cashAll, tfAll, cardAll, total, a, o, byWho, topAll, topPaid, topStore, topOwed, drawerOut, income, cashToday, start, startTyped, prev, cashExpected, counted,
+  return {cashAll, tfAll, cardAll, total, allIn, a, o, byWho, topAll, topPaid, topStore, topOwed, drawerOut, income, cashToday, start, startTyped, prev, cashExpected, counted,
           grew: counted==null ? null : counted - start, diff: counted==null ? null : counted - cashExpected};
 }
 function dcFmtY(n){ n = Math.round((Number(n)||0)*100)/100; return '¥'+n.toLocaleString('en-US'); }
@@ -9261,6 +9262,7 @@ function renderDailyClosing(){
     <div class="card dc-sum">
       <div class="dc-sum-l">${zh?'当日收入总':'Today\'s income'}</div>
       <div class="dc-sum-v">${W(c.income)}</div>
+      <div class="dc-sum-all"><span>${zh?'全部合计（含充值）':'All total (incl. recharge)'}</span><b>${W(c.allIn)}</b></div>
       <div class="dc-sum-rows">
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(c.cashAll)}</b></div>
         <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(c.tfAll)}</b></div>
@@ -9491,16 +9493,18 @@ function renderDailyMonth(){
     {h: zh?'转账':'Transfer', v: r=> r.c.tfAll, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.c.cardAll, k:'w'},
     {h: zh?'合计':'Total', v: r=> r.c.total, k:'w', grp:'sum', t: zh?'现金 + 转账 + 刷卡（含充值和其他销售）':'Cash + transfer + card (incl. recharge and other sales)'},
-    {h: zh?'其中充值':'of which recharge', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在合计里，但不算收入':'Part of the total, but not counted as income'},
+    {h: zh?'其中充值':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在合计里，但不算收入':'Part of the total, but not counted as income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
     ...(anyUnpaid ? [{h: zh?'未付款':'Not paid', v: r=> r.a.unpaidAmt, k:'u', t: zh?'还没付款 / 没选付款方式 — 不算在收入里':'Not paid yet / no payment method — not in the income'}] : []),
-    {h: zh?'收入':'Income', v: r=> r.c.income, k:'w', cls:'inc'},
+    {h: zh?'收入':'Income', v: r=> r.c.income, k:'w', cls:'inc', t: zh?'不含充值':'Without recharges'},
+    {h: zh?'全部':'All total', v: r=> r.c.allIn, k:'w', cls:'allin', t: zh?'全部合计（含充值）= 收入 + 充值':'Everything incl. recharge = income + recharge'},
   ];
   const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
     : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
     : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
   const sumTiles = [
     [zh?'本月收入':'Month income', fmtWon(tot(r=>r.c.income)), 'main'],
+    [zh?'全部（含充值）':'All incl. recharge', fmtWon(tot(r=>r.c.allIn)), 'allin'],
     [zh?'现金':'Cash', fmtWon(tot(r=>r.c.cashAll))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.c.tfAll))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.c.cardAll))],
     [zh?'充值（另计）':'Recharge (separate)', `${tot(r=>r.a.rc)} · ${fmtWon(tot(r=>r.a.rcAmt))}`, 'rc'],
     [zh?'先付':'Plans', `${tot(r=>r.a.preCount - r.a.rc)} · ${fmtWon(tot(r=>r.a.prePlans))}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
@@ -9523,15 +9527,15 @@ function renderDailyMonth(){
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
 function exportDailyMonth(){
   const month = dcDay.slice(0,7), rows = dcMonthRows(month);
-  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','合计（含其他）','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总（不含充值）','充值','','','贴膜','','','垫付合计','备注'];
-  const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','36/363','其他','充值金额','数量','收费','未收费','',''];
+  const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','合计（含其他）','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总（不含充值）','全部合计（含充值）','充值','','','贴膜','','','垫付合计','备注'];
+  const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','','36/363','其他','充值金额','数量','收费','未收费','',''];
   const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.c.cashAll, r.c.tfAll, r.c.cardAll, r.c.total,
-    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
+    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.c.allIn, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
   const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
-  const total = ['合计', ...Array.from({length:22}, (_,k)=> sumCol(k+1)), ''];
+  const total = ['合计', ...Array.from({length:23}, (_,k)=> sumCol(k+1)), ''];
   const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data, total]);
-  ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:6}}, ...[7,8,9,10,11,12,13,14,15,22,23].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:16},e:{r:0,c:18}}, {s:{r:0,c:19},e:{r:0,c:21}}];
-  ws['!cols'] = [12,6,6,6,6,6,6,14,14,14,14,12,12,10,14,14,8,8,12,6,10,8,12,24].map(w=>({wch:w}));
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:0,c:6}}, ...[7,8,9,10,11,12,13,14,15,16,23,24].map(c=>({s:{r:0,c},e:{r:1,c}})), {s:{r:0,c:17},e:{r:0,c:19}}, {s:{r:0,c:20},e:{r:0,c:22}}];
+  ws['!cols'] = [12,6,6,6,6,6,6,14,14,14,14,12,12,10,14,14,16,8,8,12,6,10,8,12,24].map(w=>({wch:w}));
   // staff top-ups listed one by one on a second sheet
   const tops = [['日期','谁付的','金额','给谁充的']];
   rows.forEach(r=> r.d.topups.forEach(t2=>{ const w = dcWho(t2); tops.push([r.day, w==='Store'?'店里的钱':w, Number(t2.amount)||0, t2.note||'']); }));

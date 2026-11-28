@@ -431,11 +431,11 @@ def run(b):
         const c = dcCalc(day, dcLoad(day));
         out.calc = [c.o.spQty, c.o.spCharged, c.topAll, c.topPaid, c.cashExpected, c.diff, c.income];
         out.kpiOk = !!document.querySelector('.dc-cash-state.ok');
-        out.rc = [c.a.rcAmt, c.a.prePlans, c.income];
+        out.rc = [c.a.rcAmt, c.a.prePlans, c.income, c.allIn, /All total [(]incl[.] recharge[)]/.test(document.querySelector('.dc-sum').textContent)];
         { const tr = document.querySelector('[data-dc-day="'+day+'"]'), hd = [...document.querySelectorAll('#dcMonthCard thead th')].map(x=>x.textContent.trim());
           const val = h=> Number((tr.children[hd.indexOf(h)].textContent||'').replace(/[^0-9]/g,''))||0;
-          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Total') && val('Total') - val('of which recharge') + val('Postpaid ₩') === val('Income') && val('Cash') === 55000 + 10000; }
-        out.rcCol = /of which recharge/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
+          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Income') && val('Cash') === 55000 + 10000; }
+        out.rcCol = /Recharge ₩/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
         addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));
         addTop('Jason', '3000'); await new Promise(r=>setTimeout(r, 30));
@@ -484,8 +484,8 @@ def run(b):
         return out; })()""")
     check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
           dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
-    check("recharge kept apart: Recharge ₩36,000 shown on its own; income = prepaid without recharge 75,000 + postpaid 100,000 + other 10,000",
-          dc["rc"] == [36000, 75000, 185000] and dc["rcCol"], dc["rc"])
+    check("recharge kept apart: income 185,000 without it; 'All total (incl. recharge)' 221,000 = income + 36,000",
+          dc["rc"] == [36000, 75000, 185000, 221000, True] and dc["rcCol"], dc["rc"])
     check("month table adds up: Cash + Transfer + Card = Total (other sales included); Total − recharge + Postpaid = Income", dc["rowAdds"], dc)
     check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
           dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185000] and dc["kpiOk"], dc["calc"])

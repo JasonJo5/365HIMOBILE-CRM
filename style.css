@@ -1806,3 +1806,16 @@ html[data-theme="dark"] #page-daily{--dc-soft:rgba(148,163,184,.07);--dc-line:rg
 .dc-paypill.other{background:rgba(234,88,12,.12);color:#c2410c}
 .dc-sum-rows small.incl{display:block;font-size:11px;color:var(--text-soft);font-weight:500}
 .dc-sum-rows>div b{white-space:nowrap}
+/* all money together, recharges included */
+.dc-sum-all{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:-4px 0 12px;padding:9px 12px;border-radius:12px;background:rgba(15,23,42,.05);font-size:13px;font-weight:700}
+html[data-theme="dark"] .dc-sum-all{background:rgba(148,163,184,.1)}
+.dc-sum-all b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.dc-mtile.allin{background:rgba(15,23,42,.06)}
+.dc-mtile.allin b{color:var(--text)}
+.dc-table td.allin{font-weight:800}
+.dc-mtiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (min-width:1500px){.dc-mtiles{grid-template-columns:repeat(8,minmax(0,1fr))}}
+@media (max-width:620px){.dc-mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dc-table td:last-child,.dc-table th:last-child{color:var(--text)}
+.dc-table td.inc,.dc-table th.inc{color:var(--blue)}
+.dc-table td.allin,.dc-table th.allin{font-weight:800}
