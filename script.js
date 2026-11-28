@@ -554,8 +554,53 @@ function updateCurrencyBadgeFor(groupId){
   if(!badgeId) return;
   const badge = document.getElementById(badgeId);
   const selected = document.getElementById(groupId)?.dataset.selected;
-  if(badge) badge.textContent = (selected==='alipay' || selected==='wechat') ? '¥' : '₩';
+  if(badge) badge.textContent = '₩';   // prices are always typed in won; RMB has its own box
+  rmbRowUpdate(groupId.slice(0,2));
 }
+/* ---------------- Paid in RMB (Alipay / WeChat) ----------------
+   The plan price stays in won (e.g. ₩36,000). When the customer pays with Alipay or WeChat,
+   a "Paid in RMB" box appears, filled in from the exchange rate (₩36,000 ÷ 200 = ¥180) and
+   editable. The yuan amount is kept in reminderState as 'rmb:<planId>' (synced everywhere),
+   so reports can show both: ¥180 · ₩36,000. */
+function rmbRate(){ return Number(DB.reminderState && DB.reminderState['setting:rmbRate']) || 200; }
+function isRmbMethod(m){ return /alipay|wechat|支付宝|微信/i.test(String(m||'')); }
+function rmbOf(s){   // yuan paid for a plan: what staff typed, else worked out from the won price
+  const v = DB.reminderState && DB.reminderState['rmb:'+s.id];
+  if(v!=null && v!=='' && !isNaN(Number(v))) return {yuan: Number(v), typed: true};
+  return {yuan: Math.round((Number(s.sellingPrice)||0) / rmbRate()), typed: false};
+}
+function rmbRowUpdate(prefix){
+  const row = document.getElementById(prefix+'_rmbRow'), grp = document.getElementById(prefix+'_paymentMethod_group');
+  if(!row || !grp) return;
+  const on = isRmbMethod(grp.dataset.selected);
+  row.hidden = !on;
+  if(!on) return;
+  const zh = LANG==='zh', inp = document.getElementById(prefix+'_rmb'), won = prepaidTotal(prefix), rate = rmbRate();
+  document.getElementById(prefix+'_rmbLabel').textContent = zh ? '人民币实收（支付宝 / 微信）' : 'Paid in RMB (Alipay / WeChat)';
+  if(!inp.dataset.touched) inp.value = won ? Math.round(won / rate) : '';
+  document.getElementById(prefix+'_rmbHint').textContent = zh ? `= ${fmtWon(won)} · 汇率 ₩${rate} = ¥1` : `= ${fmtWon(won)} · rate ₩${rate} = ¥1`;
+}
+function rmbRowReset(prefix, svc){
+  const inp = document.getElementById(prefix+'_rmb'); if(!inp) return;
+  delete inp.dataset.touched; inp.value = '';
+  if(svc){ const v = DB.reminderState && DB.reminderState['rmb:'+svc.id]; if(v!=null && v!==''){ inp.value = v; inp.dataset.touched = '1'; } }
+  rmbRowUpdate(prefix);
+}
+function rmbFromForm(prefix){
+  const grp = document.getElementById(prefix+'_paymentMethod_group'), inp = document.getElementById(prefix+'_rmb');
+  if(!grp || !inp || !isRmbMethod(grp.dataset.selected) || inp.value==='') return null;
+  return Number(inp.value)||0;
+}
+function rmbStore(serviceId, yuan){
+  DB.reminderState = DB.reminderState || {};
+  if(yuan==null){ if(DB.reminderState['rmb:'+serviceId]) DB.reminderState['rmb:'+serviceId] = ''; return; }
+  DB.reminderState['rmb:'+serviceId] = String(yuan);
+}
+document.addEventListener('input', e=>{
+  const id = e.target.id || '';
+  if(id==='p3_rmb' || id==='pa_rmb'){ e.target.dataset.touched = '1'; return; }
+  const m = id.match(/^(p3|pa)_(price|discount|tax)$/); if(m) rmbRowUpdate(m[1]);
+});
 document.addEventListener('click', e=>{
   const tile = e.target.closest('.tile-radio-group[id$="paymentMethod_group"] .tile-radio');
   if(!tile) return;
@@ -1940,7 +1985,9 @@ function setActiveSubscription(customerId, newServiceData, reason){
     s.endedSeq = Date.now(); // millisecond-precision tiebreak so same-day history sorts correctly
     s.changeReason = reason || 'other';
   });
+  const rmb = newServiceData._rmb; delete newServiceData._rmb;
   const svc = { id: uid('s'), isActive:true, endedAt:null, changeReason:'new', ...newServiceData, customerId };
+  if(rmb!=null) rmbStore(svc.id, rmb);
   DB.services.push(svc);
   const cust = getCustomer(customerId);
   if(cust && isSubscriptionType(svc.type)) cust.subType = svc.type;
@@ -3678,7 +3725,7 @@ function openCustomerModal(customer){
   updatePrepaidPriceFromPlan();
   renderSimTypeTiles('p3_simType_group', 'physical');
   renderTileRadioGroup('p3_paymentMethod_group', PAYMENT_METHODS, '');
-  updateCurrencyBadgeFor('p3_paymentMethod_group');
+  updateCurrencyBadgeFor('p3_paymentMethod_group'); rmbRowReset('p3');
   // Payment method only makes sense once there's actually something to record — a brand
   // new customer hasn't paid yet at the point their info is being entered, so asking for it
   // here just gets skipped or guessed at. It stays available on Edit Profile (and Sheet
@@ -3710,7 +3757,7 @@ function openCustomerModal(customer){
     renderTileRadioGroup('p3_company_group', companies, companies.includes(currentSvc.company) ? currentSvc.company : '');
     renderTileRadioGroup('p3_svcCarrierType_group', carriers, carriers.includes(currentSvc.svcCarrierType) ? currentSvc.svcCarrierType : '');
     renderTileRadioGroup('p3_paymentMethod_group', PAYMENT_METHODS, PAYMENT_METHODS.includes(currentSvc.paymentMethod) ? currentSvc.paymentMethod : '');
-    updateCurrencyBadgeFor('p3_paymentMethod_group');
+    updateCurrencyBadgeFor('p3_paymentMethod_group'); rmbRowReset('p3', currentSvc);
     document.getElementById('prepaid3mHint').textContent = t('prepaid3m.editHint');
   } else if(!editingCustomerId){
     document.getElementById('prepaid3mHint').textContent = t('prepaid3m.hint');
@@ -3956,6 +4003,7 @@ function saveCustomerFromForm(){
         svcCarrierType: document.getElementById('p3_svcCarrierType_group').dataset.selected || currentSvc.svcCarrierType,
         carrier: document.getElementById('p3_svcCarrierType_group').dataset.selected || currentSvc.carrier,
         paymentMethod: document.getElementById('p3_paymentMethod_group').dataset.selected ?? (currentSvc.paymentMethod||''),
+        ...(()=>{ rmbStore(currentSvc.id, rmbFromForm('p3')); return {}; })(),
         simType: document.getElementById('p3_simType_group').dataset.selected || currentSvc.simType,
       });
       if(currentSvc.activationDate && durationDays){
@@ -4075,7 +4123,7 @@ function buildPrepaidServiceFromForm(cust){
     usimNumber: document.getElementById('p3_usimNumber').value.trim(),
     simType: document.getElementById('p3_simType_group').dataset.selected || 'physical', activationDate, durationDays,
     expiryDate: d.toISOString().slice(0,10), status:'active',
-    price, discount, sellingPrice:finalPrice, cost:0, received:finalPrice, paymentMethod: document.getElementById('p3_paymentMethod_group').dataset.selected || '', commission:0, notes:'',
+    price, discount, sellingPrice:finalPrice, cost:0, received:finalPrice, paymentMethod: document.getElementById('p3_paymentMethod_group').dataset.selected || '', commission:0, notes:'', _rmb: rmbFromForm('p3'),
     company: document.getElementById('p3_company_group').dataset.selected || '',
     svcCarrierType: document.getElementById('p3_svcCarrierType_group').dataset.selected || '',
     monthlyFee:0, firstMonthPayment:0, activationFee:0, simFee:0,
@@ -5435,7 +5483,7 @@ function openPrepaidAssignModal(customerId, mode){
   document.getElementById('pa_notes').value = '';
   // a new payment (recharge, change plan, extension…) starts blank — not the last plan's method
   renderTileRadioGroup('pa_paymentMethod_group', PAYMENT_METHODS, '');
-  updateCurrencyBadgeFor('pa_paymentMethod_group');
+  updateCurrencyBadgeFor('pa_paymentMethod_group'); rmbRowReset('pa');
   document.getElementById('prepaidAssignModalOverlay').classList.add('show');
 }
 function updatePrepaidAssignPriceFromPlan(){
@@ -5481,7 +5529,7 @@ document.getElementById('savePrepaidAssignBtn').addEventListener('click', ()=>{
     simType: ext ? (before.simType || 'physical') : 'physical', activationDate, durationDays,
     expiryDate: d.toISOString().slice(0,10), status:'active',
     price, discount, sellingPrice:finalPrice, received:finalPrice, cost:0,
-    monthlyFee:0, firstMonthPayment:0, activationFee:0, simFee:0, paymentMethod: document.getElementById('pa_paymentMethod_group').dataset.selected || '', commission:0,
+    monthlyFee:0, firstMonthPayment:0, activationFee:0, simFee:0, paymentMethod: document.getElementById('pa_paymentMethod_group').dataset.selected || '', commission:0, _rmb: rmbFromForm('pa'),
     notes:document.getElementById('pa_notes').value.trim(),
     company: document.getElementById('pa_company_group').dataset.selected || '',
     svcCarrierType: document.getElementById('pa_svcCarrierType_group').dataset.selected || '',
@@ -9188,7 +9236,7 @@ function dcReplacedSameDay(s){
     && (o.isActive || (Number(o.endedSeq)||0) > (Number(s.endedSeq)||0)));
 }
 function dcAuto(day){
-  const a = {otherPayN:0, otherPayAmt:0, otherPayNames:new Set(), cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
+  const a = {rmbY:0, rmbEst:false, otherPayN:0, otherPayAmt:0, otherPayNames:new Set(), cashList:[], d90:0, d60:0, d30:0, d15:0, rc:0, dOther:0, preCount:0, cash:0, transfer:0, card:0, rmb:0, unpaidN:0, unpaidAmt:0,
              postN:0, postAmt:0, rc36:0, rcOther:0, rcAmt:0};
   DB.services.forEach(s=>{
     if(!isSubscriptionType(s.type) || s.activationDate!==day) return;
@@ -9202,15 +9250,16 @@ function dcAuto(day){
       if(k==='unpaid'){ a.unpaidN++; a.unpaidAmt += amt; }
       else if(k==='other'){ a.otherPayN++; a.otherPayAmt += amt; a.otherPayNames.add(String(s.paymentMethod)); }
       else a[k] += amt;
+      if(k==='rmb'){ const r = rmbOf(s); a.rmbY += r.yuan; if(!r.typed) a.rmbEst = true; }
       if(k==='cash') a.cashList.push({name: (getCustomer(s.customerId)||{}).name || '', plan: planLengthLabel(s)[1], amt, cid: s.customerId});
-      if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; if(k!=='unpaid' && k!=='rmb') a.rcAmt += amt; }
+      if(planLengthLabel(s)[0]==='rc'){ const p = Number(s.price)||0; if(p===36000 || p===36300) a.rc36++; else a.rcOther++; if(k!=='unpaid' && k!=='other') a.rcAmt += amt; }
     } else if(s.type==='postpaid'){
       a.postN++; a.postAmt += (s.actualProfit ? Number(s.actualProfit) : Number(s.expectedProfit)) || 0;
     }
   });
   // money in by method (₩) still includes recharges — that's what is in the drawer / bank.
   // Recharges are kept apart from the income: prePlans = prepaid money without recharges.
-  a.preTotal = a.cash + a.transfer + a.card;   // ₩ only — RMB is kept separately
+  a.preTotal = a.cash + a.transfer + a.card + a.rmb;   // RMB sales counted at their won price
   a.prePlans = a.preTotal - a.rcAmt;
   return a;
 }
@@ -9236,7 +9285,7 @@ function dcCalc(day, d){
   const topAll = d.topups.reduce((x,t)=> x + amt(t), 0), topPaid = 0, topOwed = 0;
   // money in by method, prepaid sales and other sales (screen protectors…) together
   const cashAll = a.cash + o.cash, tfAll = a.transfer + o.transfer, cardAll = a.card + o.card;
-  const total = cashAll + tfAll + cardAll;
+  const total = cashAll + tfAll + cardAll + a.rmb;   // RMB sales at their won price (e.g. ¥180 = ₩36,000)
   const income = total - a.rcAmt + a.postAmt;   // recharges are not part of the income
   const allIn = total + a.postAmt;              // everything together, recharges included
   const drawerOut = topStore;
@@ -9260,6 +9309,8 @@ function renderDailyClosing(){
   document.getElementById('dcToday').classList.toggle('on', dcDay===todayISO());
   document.getElementById('dcExport').textContent = zh ? '导出本月 Excel' : 'Export month to Excel';
   document.getElementById('dcSaved').textContent = '';
+  { const ri = document.getElementById('dcRate'); if(ri && document.activeElement!==ri) ri.value = rmbRate();
+    const rl = document.getElementById('dcRateLbl'); if(rl) rl.textContent = zh ? '人民币汇率' : 'RMB rate'; }
   const d = dcLoad(dcDay), c = dcCalc(dcDay, d), a = c.a;
   const W = n=> fmtWon(n);
   const step = (n, title, sub, body, done)=> `<div class="card dc-step ${done?'done':''}">
@@ -9281,10 +9332,10 @@ function renderDailyClosing(){
         <div><span><i class="dcdot dc-cash"></i>${zh?'现金':'Cash'}</span><b>${W(c.cashAll)}</b></div>
         <div><span><i class="dcdot dc-tf"></i>${zh?'转账':'Transfer'}</span><b>${W(c.tfAll)}</b></div>
         <div><span><i class="dcdot dc-card"></i>${zh?'刷卡':'Card'}</span><b>${W(c.cardAll)}</b></div>
+        ${a.rmb ? `<div><span><i class="dcdot dc-rmb"></i>${zh?'人民币':'RMB'} <small class="incl" style="display:inline">${a.rmbEst?'≈ ':''}${dcFmtY(a.rmbY)}</small></span><b>${W(a.rmb)}</b></div>` : ''}
         <div class="sub"><span><b>${zh?'合计':'Total'}</b>${c.o.total ? `<small class="incl">${zh?`含其他销售 ${W(c.o.total)}`:`incl. other sales ${W(c.o.total)}`}</small>` : ''}</span><b>${W(c.total)}</b></div>
         ${a.rcAmt || a.rc ? `<div class="sub rcline"><span>${zh?`− 其中充值 ${a.rc} 笔`:`− of which recharge × ${a.rc}`}<small class="incl">${zh?'不算收入':'not counted as income'}</small></span><b>${W(a.rcAmt)}</b></div>` : ''}
         <div class="sub"><span>${zh?'+ 后付':'+ Postpaid'}</span><b>${W(a.postAmt)}</b></div>
-        ${(a.rmb + c.o.rmb) ? `<div class="sub muted"><span>${zh?'人民币（另计）':'RMB (separate)'}</span><b>${dcFmtY(a.rmb + c.o.rmb)}</b></div>` : ''}
       </div>
       ${a.otherPayN ? `<div class="dc-alert">${zh?`${a.otherPayN} 笔用了其他付款方式（${escapeHtml([...a.otherPayNames].join(', '))}）${W(a.otherPayAmt)} — 没算进现金/转账/刷卡`:`${a.otherPayN} sale${a.otherPayN===1?'':'s'} paid by another method (${escapeHtml([...a.otherPayNames].join(', '))}) ${W(a.otherPayAmt)} — not in cash / transfer / card`}</div>` : ''}
       ${a.skipped ? `<div class="dc-alert soft">${zh?`${a.skipped} 笔当天换了套餐，只算新的那笔`:`${a.skipped} plan${a.skipped===1?'':'s'} changed the same day — only the new one counts`}</div>` : ''}
@@ -9402,7 +9453,8 @@ function dcWhoListHtml(day){
   const payTag = s=>{ const k = dcPayKey(s.paymentMethod);
     return k==='unpaid' ? `<span class="dc-unpaid">${zh?'未付款':'Not paid'}</span>`
          : k==='other' ? `<span class="dc-paypill other" title="${zh?'没算进现金/转账/刷卡':'Not in cash / transfer / card'}">${escapeHtml(String(s.paymentMethod))}</span>`
-         : `<span class="dc-paypill ${k==='rmb'?'rmb':k}">${dcPayName(k)}</span>`; };
+         : k==='rmb' ? `<span class="dc-paypill rmb">${escapeHtml(String(s.paymentMethod))} ${rmbOf(s).typed?'':'≈'}${dcFmtY(rmbOf(s).yuan)}</span>`
+         : `<span class="dc-paypill ${k}">${dcPayName(k)}</span>`; };
   const row = s=>{
     const c = getCustomer(s.customerId) || {}, pre = s.type==='prepaid', skip = dcReplacedSameDay(s);
     const plan = pre ? planLengthLabel(s)[1] : (s.plan || (zh?'后付':'Postpaid'));
@@ -9506,7 +9558,7 @@ function renderDailyMonth(){
     {h: zh?'现金':'Cash', v: r=> r.c.cashAll, k:'w', grp:'money', t: zh?'先付 + 其他销售':'Prepaid + other sales'},
     {h: zh?'转账':'Transfer', v: r=> r.c.tfAll, k:'w'},
     {h: zh?'刷卡':'Card', v: r=> r.c.cardAll, k:'w'},
-    {h: zh?'人民币':'RMB ¥', v: r=> r.a.rmb + r.c.o.rmb, k:'y', cls:'rmb', t: zh?'支付宝 / 微信（人民币，不算进韩元合计）':'Alipay / WeChat in yuan — not added to the ₩ totals'},
+    {h: zh?'人民币':'RMB', v: r=> r, k:'rmb', cls:'rmb', t: zh?'支付宝 / 微信：人民币实收 · 韩元价格（算进合计）':'Alipay / WeChat: yuan paid · won price (counted in the total)'},
     {h: zh?'合计':'Total', v: r=> r.c.total, k:'w', grp:'sum', t: zh?'现金 + 转账 + 刷卡（含充值和其他销售）':'Cash + transfer + card (incl. recharge and other sales)'},
     {h: zh?'其中充值':'Recharge ₩', v: r=> r.a.rcAmt, k:'w', cls:'rcw', t: zh?'包含在合计里，但不算收入':'Part of the total, but not counted as income'},
     {h: zh?'后付金额':'Postpaid ₩', v: r=> r.a.postAmt, k:'w'},
@@ -9516,13 +9568,14 @@ function renderDailyMonth(){
   ];
   const cell = (v, k)=> k==='w' ? (v ? fmtWon(v) : '<span class="z">–</span>')
     : k==='y' ? (v ? dcFmtY(v) : '<span class="z">–</span>')
+    : k==='rmb' ? (v && v.a.rmb ? `${v.a.rmbEst?'≈':''}${dcFmtY(v.a.rmbY)}<small class="won">${fmtWon(v.a.rmb)}</small>` : '<span class="z">–</span>')
     : k==='u' ? (v ? `<span class="dc-unpaid">${fmtWon(v)}</span>` : '<span class="z">–</span>')
     : k==='n' ? (v ? `<span class="dc-cnt">${v}</span>` : '<span class="z">–</span>') : v;
   const sumTiles = [
     [zh?'先付+后付+其他':'Prepaid + Postpaid + Other', fmtWon(tot(r=>r.c.income)), 'main'],
     [zh?'全部（含充值）':'All incl. recharge', fmtWon(tot(r=>r.c.allIn)), 'allin'],
     [zh?'现金':'Cash', fmtWon(tot(r=>r.c.cashAll))], [zh?'转账':'Transfer', fmtWon(tot(r=>r.c.tfAll))], [zh?'刷卡':'Card', fmtWon(tot(r=>r.c.cardAll))],
-    [zh?'人民币':'RMB ¥', dcFmtY(tot(r=>r.a.rmb + r.c.o.rmb)), 'rmb'],
+    [zh?'人民币':'RMB', `${dcFmtY(tot(r=>r.a.rmbY))} · ${fmtWon(tot(r=>r.a.rmb))}`, 'rmb'],
     [zh?'充值（另计）':'Recharge (separate)', `${tot(r=>r.a.rc)} · ${fmtWon(tot(r=>r.a.rcAmt))}`, 'rc'],
     [zh?'先付':'Plans', `${tot(r=>r.a.preCount - r.a.rc)} · ${fmtWon(tot(r=>r.a.prePlans))}`], [zh?'后付':'Postpaid', `${tot(r=>r.a.postN)} · ${fmtWon(tot(r=>r.a.postAmt))}`],
   ];
@@ -9538,7 +9591,7 @@ function renderDailyMonth(){
       <thead><tr>${cols.map(c2=>`<th class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}" ${c2.t?`title="${escapeHtml(c2.t)}"`:''}>${c2.h}</th>`).join('')}</tr></thead>
       <tbody>${shown.map(r=>`<tr data-dc-day="${r.day}" class="${r.day===dcDay?'on':''}" tabindex="0">${cols.map(c2=>`<td class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}">${cell(c2.v(r), c2.k)}</td>`).join('')}</tr>`).join('')
         || `<tr><td colspan="${cols.length}" class="dc-none">${zh?'这个月还没有记录':'Nothing this month yet'}</td></tr>`}</tbody>
-      <tfoot><tr>${cols.map((c2,i)=>`<td class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}">${i===0 ? (zh?'合计':'Total') : cell(tot(c2.v), c2.k)}</td>`).join('')}</tr></tfoot>
+      <tfoot><tr>${cols.map((c2,i)=>`<td class="${c2.k} ${c2.grp?'g-'+c2.grp:''} ${c2.cls||''}">${i===0 ? (zh?'合计':'Total') : c2.k==='rmb' ? (tot(r=>r.a.rmb) ? `${dcFmtY(tot(r=>r.a.rmbY))}<small class="won">${fmtWon(tot(r=>r.a.rmb))}</small>` : '<span class="z">–</span>') : cell(tot(c2.v), c2.k)}</td>`).join('')}</tr></tfoot>
     </table></div>`;
 }
 /* Excel in the same layout as the old sheet (two header rows, Chinese headers) */
@@ -9547,7 +9600,7 @@ function exportDailyMonth(){
   const h1 = ['日期','先付办理数量','','','','','','当日现金（cash）','转账金额（tf）','刷卡金额（card）','合计（含其他）','存现金额','人民币金额','后付卡数量','后付卡总金额','当日收入总（不含充值）','全部合计（含充值）','充值','','','贴膜','','','垫付合计','备注'];
   const h2 = ['','90天','60天','1个月','15天','充值','合计','','','','','','','','','','','36/363','其他','充值金额','数量','收费','未收费','',''];
   const data = rows.map(r=>[r.day, r.a.d90, r.a.d60, r.a.d30, r.a.d15, r.a.rc, r.a.preCount, r.c.cashAll, r.c.tfAll, r.c.cardAll, r.c.total,
-    r.c.counted==null ? '' : r.c.counted, r.a.rmb + r.c.o.rmb, r.a.postN, r.a.postAmt, r.c.income, r.c.allIn, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
+    r.c.counted==null ? '' : r.c.counted, r.a.rmbY, r.a.postN, r.a.postAmt, r.c.income, r.c.allIn, r.a.rc36, r.a.rcOther, r.a.rcAmt, r.c.o.spQty, r.c.o.spCharged, r.c.o.spFree, r.c.topAll, r.d.note||'']);
   const sumCol = i=> data.reduce((x,r)=> x + (Number(r[i])||0), 0);
   const total = ['合计', ...Array.from({length:23}, (_,k)=> sumCol(k+1)), ''];
   const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data, total]);
@@ -9577,6 +9630,12 @@ function exportDailyMonth(){
   document.getElementById('dcToday').addEventListener('click', ()=> go(todayISO()));
   document.getElementById('dcDate').addEventListener('change', e=> go(e.target.value));
   document.getElementById('dcExport').addEventListener('click', exportDailyMonth);
+  // RMB exchange rate (won per 1 yuan) — used to fill in "Paid in RMB" and for older sales
+  document.getElementById('dcRate').addEventListener('change', e=>{
+    const v = Math.round(Number(e.target.value)); if(!(v>0)){ e.target.value = rmbRate(); return; }
+    DB.reminderState = DB.reminderState || {}; DB.reminderState['setting:rmbRate'] = String(v); saveDB(DB); renderDailyClosing();
+    toast(LANG==='zh' ? `汇率已改为 ₩${v} = ¥1` : `Rate set to ₩${v} = ¥1`);
+  });
   // typing: save right away, refresh the totals once the field is left (so the cursor isn't lost)
   const edit = (e, rerender)=>{
     const el = e.target; if(!el.classList || !el.classList.contains('dc-in') && !(el.type==='checkbox' && el.dataset.f)) return;

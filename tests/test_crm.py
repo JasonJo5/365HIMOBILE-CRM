@@ -434,8 +434,8 @@ def run(b):
         out.rc = [c.a.rcAmt, c.a.prePlans, c.income, c.allIn, /All total [(]incl[.] recharge[)]/.test(document.querySelector('.dc-sum').textContent)];
         { const tr = document.querySelector('[data-dc-day="'+day+'"]'), hd = [...document.querySelectorAll('#dcMonthCard thead th')].map(x=>x.textContent.trim());
           const val = h=> Number((tr.children[hd.indexOf(h)].textContent||'').replace(/[^0-9]/g,''))||0;
-          out.rmbCol = hd.includes('RMB ¥') && /¥300/.test(tr.children[hd.indexOf('RMB ¥')].textContent);
-          out.rowAdds = val('Cash') + val('Transfer') + val('Card') === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Prepaid + Postpaid + Other') && val('Cash') === 55000 + 10000; }
+          out.rmbCol = hd.includes('RMB') && /¥2/.test(tr.children[hd.indexOf('RMB')].textContent) && /₩300/.test(tr.children[hd.indexOf('RMB')].textContent);
+          out.rowAdds = val('Cash') + val('Transfer') + val('Card') + 300 === val('Total') && val('Total') - val('Recharge ₩') + val('Postpaid ₩') === val('Prepaid + Postpaid + Other') && val('Cash') === 55000 + 10000; }
         out.rcCol = /Recharge ₩/.test(document.querySelector("#dcMonthCard thead").textContent) && /Recharge [(]separate[)]/.test(document.querySelector('.dc-mtiles').textContent);
         // Jason's and Jihan's own top-ups: totals per person, the drawer is not touched
         addTop('Jason', '5000'); await new Promise(r=>setTimeout(r, 30));
@@ -484,13 +484,13 @@ def run(b):
         DB.services = DB.services.filter(s=>!ids.includes(s.id)); delete DB.reminderState['daily:'+day]; goTo('dashboard');
         return out; })()""")
     check("Daily closing counts the day from the CRM: 90/60 days, 1 month and recharge separately, 15 days, cash, transfer, card, RMB, unpaid, postpaid, recharge 36",
-          dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111000, 300, 1, 1, 100000, 1], dc["auto"])
+          dc["auto"] == [1, 1, 1, 1, 1, 5, 55000, 20000, 36000, 111300, 300, 1, 1, 100000, 1], dc["auto"])
     check("recharge kept apart: income 185,000 without it; 'All total (incl. recharge)' 221,000 = income + 36,000",
-          dc["rc"] == [36000, 75000, 185000, 221000, True] and dc["rcCol"], dc["rc"])
-    check("month table has an RMB ¥ column (Alipay / WeChat), kept out of the ₩ totals", dc["rmbCol"], dc)
-    check("month table adds up: Cash + Transfer + Card = Total (other sales included); Total − recharge + Postpaid = Income", dc["rowAdds"], dc)
+          dc["rc"] == [36000, 75300, 185300, 221300, True] and dc["rcCol"], dc["rc"])
+    check("month table RMB column shows yuan and the won price (₩300 at ₩200 = ¥1 → ≈¥2), counted in the total", dc["rmbCol"], dc)
+    check("month table adds up: Cash + Transfer + Card + RMB (won) = Total (other sales included); Total − recharge + Postpaid = Income", dc["rowAdds"], dc)
     check("screen protector and a store-money top-up: drawer today should be 55,000+10,000-30,000 = 35,000 and it matches",
-          dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185000] and dc["kpiOk"], dc["calc"])
+          dc["calc"] == [1, 10000, 30000, 0, 35000, 0, 185300] and dc["kpiOk"], dc["calc"])
     check("Jason / Jihan top-ups: a total for each person, no 'paid back', and they don't change the drawer",
           dc["noPaidBack"] and dc["who"] == [30000, 8000, 7000, 35000, 4] and dc["short"]
           and dc["totals"] == ["Jason ₩8,000", "Jihan ₩7,000", "Store money ₩30,000", "Total ₩45,000"], [dc["who"], dc["totals"]])
@@ -520,6 +520,25 @@ def run(b):
         goTo('dashboard'); return out; })()""")
     check("Daily closing is the 'Closing' tab in Reports (next to Monthly / Daily), not a separate menu item",
           cl == ["reports", "closing", True, ["Monthly", "Daily", "Closing"], True, "none", True, ""], cl)
+
+    print("Paid in RMB")
+    rm = pg.evaluate("""(()=>{ const c = DB.customers.find(c=>{const a=activeSubscriptionFor(c.id); return a && a.type==='prepaid';}); const out = {};
+        closeAllModals(); openPrepaidAssignModal(c.id, 'recharge');
+        out.hiddenFirst = document.getElementById('pa_rmbRow').hidden;
+        const pr = document.getElementById('pa_price'); pr.value = 36000; pr.dispatchEvent(new Event('input', {bubbles:true}));
+        document.querySelector('#pa_paymentMethod_group [data-val="alipay"]').click();
+        return new Promise(r=> setTimeout(()=>{
+          out.shown = !document.getElementById('pa_rmbRow').hidden; out.auto = document.getElementById('pa_rmb').value;
+          out.badge = document.getElementById('pa_currencyBadge').textContent;
+          const y = document.getElementById('pa_rmb'); y.value = '175'; y.dispatchEvent(new Event('input', {bubbles:true}));
+          document.getElementById('pa_company_group').querySelector('[data-val]')?.click();
+          document.getElementById('pa_svcCarrierType_group').querySelector('[data-val]')?.click();
+          document.getElementById('savePrepaidAssignBtn').click();
+          const n = activeSubscriptionFor(c.id); out.saved = [n.paymentMethod, n.sellingPrice, DB.reminderState['rmb:'+n.id], rmbOf(n).yuan];
+          closeAllModals(); r(out); }, 50)); })()""")
+    check("Alipay / WeChat: a 'Paid in RMB' box appears, filled from the rate (₩36,000 ÷ 200 = ¥180); price stays in ₩",
+          rm["hiddenFirst"] and rm["shown"] and rm["auto"] == "180" and rm["badge"] == "₩", rm)
+    check("the yuan typed (¥175) is saved with the plan; the plan keeps its won price", rm["saved"] == ["alipay", 36000, "175", 175], rm["saved"])
 
     print("Daily closing: payment methods however written")
     pk = pg.evaluate("['card','Card',' CARD ','카드','刷卡','cash','현금','bank transfer','Transfer','이체','alipay','WeChat','kakaopay','',null].map(dcPayKey)")
