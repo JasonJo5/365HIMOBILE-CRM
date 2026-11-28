@@ -385,6 +385,13 @@ def run(b):
     check("deleting removes it, and it stays deleted after syncing with the server", dh.get("gone") and dh.get("staysGone"), dh)
     check("Undo brings the deleted plan back, also after syncing", dh.get("back") and dh.get("backAfterPull"), dh)
 
+    print("Picking the right paper form")
+    pf = pg.evaluate("""(()=>{ const T = [{id:'a', name:'FREET SKT', carrier:'SKT'}, {id:'b', name:'FREET LGU', carrier:'LGU+'}, {id:'c', name:'SMARTEL SKT', carrier:'SKT'}, {id:'d', name:'KT ASIA (1 MONTH)', carrier:'KT'}];
+        const pick = (co, ct)=> (bestTemplateFor(T, co, ct)||{}).id || null;
+        return [pick('프리티Free T','SKT알뜰폰'), pick('프리티Free T','LGU알뜰폰'), pick('스마텔SMS','SKT알뜰폰'), pick('스마델SMS','SKT알뜰폰'), pick('아시아Asia','KT알뜰폰'), pick('모빙Mobing','SKT알뜰폰'), pick('','')]; })()""")
+    check("form picked by company + carrier: freeT SKT / freeT LGU / Smartel SKT / KT Asia; unknown company → no guess",
+          pf == ["a", "b", "c", "c", "d", None, None], pf)
+
     print("Daily closing")
     dc = pg.evaluate("""(async()=>{ const cs = DB.customers.slice(0,6), day = '2020-02-11', ids = [], out = {};
         const add = (c, o) => { const s = Object.assign({id: uid('s'), customerId: c.id, isActive:false, activationDate: day, endedAt: day, endedSeq: 1}, o); DB.services.push(s); ids.push(s.id); };

@@ -617,6 +617,7 @@ document.addEventListener('click', e=>{
   if(!group) return;
   group.dataset.selected = tile.dataset.val;
   group.querySelectorAll('.tile-radio').forEach(t=> t.classList.toggle('selected', t===tile));
+  if(group.id==='p3_company_group' || group.id==='p3_svcCarrierType_group') refreshP3TemplateOptions();
 });
 /* Renders a colored, clickable pill for a single-select field. `recordType` is 'customer'
    or 'service'; clicking it opens a popover with all `options`, and picking one writes
@@ -3829,6 +3830,41 @@ function updatePeNetExpectedPreview(){
 ['pe_expectedProfit','pe_usimFee','pe_discountPerMonth','pe_discountMonths'].forEach(id=>{
   document.getElementById(id).addEventListener('input', updatePeNetExpectedPreview);
 });
+/* ---------------- Picking the right paper form ----------------
+   Forms differ per company AND carrier: freeT SKT, freeT LGU, Smartel SKT, KT Asia …
+   A template's company/carrier is read from its name and carrier field (e.g. "FREET LGU"),
+   the plan's from its Company and Carrier type. Best match wins: company counts double. */
+function formCompanyKey(v){
+  v = String(v||'');
+  if(/프리티|free\s*t|freet|periti|preeti/i.test(v)) return 'freet';
+  if(/스마텔|스마델|smartel|smart|sms/i.test(v)) return 'smartel';
+  if(/아시아|asia/i.test(v)) return 'asia';
+  if(/벨류|value|vcnk|smt/i.test(v)) return 'value';
+  if(/모빙|mobing/i.test(v)) return 'mobing';
+  return '';
+}
+function formCarrierKey(v){
+  v = String(v||'').toUpperCase();
+  if(/SKT|SK텔|\bSK\b/.test(v)) return 'skt';
+  if(/LG/.test(v)) return 'lgu';
+  if(/KT/.test(v)) return 'kt';
+  return '';
+}
+function templateMatchScore(tp, company, carrierType){
+  const tc = formCompanyKey(tp.name+' '+(tp.carrier||'')), tr = formCarrierKey(tp.name+' '+(tp.carrier||''));
+  const sc = formCompanyKey(company), sr = formCarrierKey(carrierType);
+  let score = 0;
+  if(sc && tc){ if(sc===tc) score += 2; else return -1; }
+  if(sr && tr){ if(sr===tr) score += 1; else return -1; }
+  return score;
+}
+/* best template for a company + carrier type; null when nothing fits clearly */
+function bestTemplateFor(templates, company, carrierType){
+  let best = null, bestScore = 0, tie = false;
+  templates.forEach(tp=>{ const sc = templateMatchScore(tp, company, carrierType);
+    if(sc > bestScore){ best = tp; bestScore = sc; tie = false; } else if(sc===bestScore && sc>0) tie = true; });
+  return bestScore>0 && !tie ? best : null;
+}
 function refreshP3TemplateOptions(){
   const days = Number(document.getElementById('p3_prepaidPlan_group').dataset.selected)||90;
   const p3tpl = document.getElementById('p3_template');
@@ -3842,8 +3878,13 @@ function refreshP3TemplateOptions(){
     return;
   }
   p3tpl.innerHTML = generalTemplates.map(tp=>`<option value="${tp.id}">${escapeHtml(tp.name)}</option>`).join('');
+  // the form for the chosen company + carrier type (freeT SKT, freeT LGU, Smartel SKT …)
+  const cg = document.getElementById('p3_company_group'), tg = document.getElementById('p3_svcCarrierType_group');
+  const match = bestTemplateFor(generalTemplates, cg && cg.dataset.selected, tg && tg.dataset.selected);
   const preeti = getTemplate('tpl_preeti_3m');
-  if(days===90 && preeti){
+  if(match){
+    p3tpl.value = match.id;
+  } else if(days===90 && preeti){
     p3tpl.value = preeti.id;
   } else {
     // the 15/30/60-day tiers use a different template than the fixed 90-day ("3-month
@@ -7701,7 +7742,8 @@ function quickPrintService(customerId, serviceId){
     goTo('templates');
     return;
   }
-  const carrierMatch = generalTemplates.find(tp=> tp.carrier && svc.carrier && tp.carrier.trim()===svc.carrier.trim());
+  const best = bestTemplateFor(generalTemplates, svc.company, svc.svcCarrierType || svc.carrier);
+  const carrierMatch = best || generalTemplates.find(tp=> tp.carrier && svc.carrier && tp.carrier.trim()===svc.carrier.trim());
   openPrintPreview(customerId, serviceId, carrierMatch ? carrierMatch.id : generalTemplates[0].id);
 }
 /* Prints the ID change (Passport -> Resident Card) form as one continuous 2-page job —
@@ -7718,6 +7760,7 @@ function getIdChangeFormPairs(){
   return getIdChangeTemplates()
     .filter(tp=> tp.imageDataUrl) // page 1 is the only hard requirement
     .map(tp=> ({
+      tp, name: tp.name||'',
       carrier: tp.carrier||'',
       page1: {imageDataUrl: tp.imageDataUrl, fields: tp.fields||[]},
       page2: tp.imageDataUrl2 ? {imageDataUrl: tp.imageDataUrl2, fields: tp.fields2||[]} : null,
@@ -7734,13 +7777,15 @@ function printIdChangeForm(customerId){
   // More than one carrier's form is on file — try an exact match against the customer's
   // current service first, since that's almost always the right one without having to ask.
   const svc = activeSubscriptionFor(customerId);
-  const autoMatch = svc && pairs.find(p=> p.carrier && svc.carrier && p.carrier.trim()===svc.carrier.trim());
+  // freeT SKT / freeT LGU / Smartel SKT: pick by the plan's company + carrier type
+  const bestTp = svc && bestTemplateFor(pairs.map(p=>p.tp), svc.company, svc.svcCarrierType || svc.carrier);
+  const autoMatch = (bestTp && pairs.find(p=> p.tp===bestTp)) || (svc && pairs.find(p=> p.carrier && svc.carrier && p.carrier.trim()===svc.carrier.trim()));
   if(autoMatch){ doPrintIdChangePair(customerId, autoMatch); return; }
   // No confident match — let staff pick rather than silently guessing wrong and printing
   // the wrong carrier's form.
   idChangePrintCustomerId = customerId;
   const sel = document.getElementById('idcp_carrier');
-  sel.innerHTML = pairs.map((p,i)=>`<option value="${i}">${escapeHtml(p.carrier || (LANG==='zh'?'（未填写通信社）':'(no carrier set)'))}</option>`).join('');
+  sel.innerHTML = pairs.map((p,i)=>`<option value="${i}">${escapeHtml(p.name || p.carrier || (LANG==='zh'?'（未填写通信社）':'(no carrier set)'))}</option>`).join('');
   document.getElementById('idChangePrintPickerOverlay').classList.add('show');
 }
 /* Both pages go out as a single print job — the OfficeJet Pro 9010 has automatic duplex, so

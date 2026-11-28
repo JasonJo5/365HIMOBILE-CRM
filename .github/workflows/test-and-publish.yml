@@ -52,6 +52,7 @@ jobs:
           mkdir _site
           cp index.html script.js style.css _site/
           for f in *.jpg *.jpeg *.png *.svg *.ico *.webmanifest; do [ -e "$f" ] && cp "$f" _site/; done
+          [ -d forms ] && cp -r forms _site/
           ls -la _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
